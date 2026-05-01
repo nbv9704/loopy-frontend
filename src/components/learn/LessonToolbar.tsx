@@ -1,0 +1,80 @@
+/**
+ * LessonToolbar — Editor toolbar with tab switching, run code, and grading actions.
+ *
+ * Two tabs: "Lý thuyết" (theory/content) and "Bài tập" (code editor).
+ * Auto-completes lesson when grading score ≥ 85.
+ */
+
+import { FiPlay, FiBookOpen, FiCode } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
+import GradingDepthDropdown from '../grading/GradingDepthDropdown'
+import type { GradingDepth } from '../../types/grading.types'
+
+export type EditorTab = 'theory' | 'exercise'
+
+interface LessonToolbarProps {
+  hasLessons: boolean
+  activeTab: EditorTab
+  isGrading?: boolean
+  onTabChange: (tab: EditorTab) => void
+  onRunCode: () => void
+  onSubmitGrading?: (depth: GradingDepth) => void
+}
+
+const LessonToolbar: React.FC<LessonToolbarProps> = ({
+  hasLessons,
+  activeTab,
+  isGrading = false,
+  onTabChange,
+  onRunCode,
+  onSubmitGrading,
+}) => {
+  const { t } = useTranslation()
+
+  const tabClass = (tab: EditorTab) =>
+    `flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
+      activeTab === tab
+        ? 'bg-brand-teal/15 border border-brand-teal/40 text-brand-teal shadow-sm shadow-brand-teal/10'
+        : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+    }`
+
+  return (
+    <div className="bg-[#0a0e1a]/80 backdrop-blur-sm px-5 py-3 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+      {/* Left: Tab switcher */}
+      <div className="flex items-center gap-2">
+        <button onClick={() => onTabChange('theory')} className={tabClass('theory')}>
+          <FiBookOpen className="w-4 h-4" />
+          Lý thuyết
+        </button>
+        <button onClick={() => onTabChange('exercise')} className={tabClass('exercise')}>
+          <FiCode className="w-4 h-4" />
+          Bài tập
+        </button>
+      </div>
+
+      {/* Right: Action buttons (only visible in exercise tab) */}
+      {activeTab === 'exercise' && (
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={onRunCode}
+            disabled={!hasLessons}
+            className={`rounded-xl px-7 py-2.5 bg-brand-teal/20 border border-brand-teal/50 text-brand-teal text-sm font-bold flex items-center gap-2 transition-all duration-300 shadow-lg shadow-brand-teal/20 ${
+              hasLessons
+                ? 'cursor-pointer hover:bg-brand-teal/30 hover:border-brand-teal hover:shadow-brand-teal/30'
+                : 'cursor-not-allowed opacity-50'
+            }`}
+          >
+            <FiPlay className="w-5 h-5" />
+            {t('learn.runCode')}
+          </button>
+
+          {hasLessons && onSubmitGrading && (
+            <GradingDepthDropdown isGrading={isGrading} onGrade={onSubmitGrading} />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default LessonToolbar
