@@ -30,10 +30,23 @@ const AuthPage: React.FC = () => {
     try {
       if (isLogin) {
         await signIn(email, password)
+        navigate(from, { replace: true })
       } else {
-        await signUp(email, password, displayName)
+        const result = await signUp(email, password, displayName)
+        
+        // Check if email confirmation is required (production mode)
+        if (result.requiresEmailConfirmation) {
+          setError('') // Clear any errors
+          // Show success message
+          alert(result.message || 'Vui lòng kiểm tra email để xác nhận tài khoản')
+          // Switch to login form
+          setIsLogin(true)
+          setPassword('') // Clear password for security
+        } else {
+          // Development mode: auto logged in
+          navigate(from, { replace: true })
+        }
       }
-      navigate(from, { replace: true })
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi')
     } finally {

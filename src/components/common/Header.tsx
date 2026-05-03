@@ -10,6 +10,7 @@ import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 const NAV_ITEMS = [
   { id: 'learn', label: 'Học tập', path: '/select-language' },
   { id: 'playground', label: 'Playground', path: '/playground' },
+  { id: 'pvp', label: 'PvP', path: '/pvp' },
   { id: 'docs', label: 'Tài liệu', path: '/docs' },
 ]
 

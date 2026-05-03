@@ -7,6 +7,8 @@ import LanguageSelectorPage from '../pages/LanguageSelectorPage'
 import LearnPage from '../pages/LearnPage'
 import PlaygroundPage from '../pages/PlaygroundPage'
 import SettingsPage from '../pages/SettingsPage'
+import PvPLobbyPage from '../pages/PvPLobbyPage'
+import PvPMatchPage from '../pages/PvPMatchPage'
 import ProtectedRoute from '../components/admin/ProtectedRoute'
 import AdminLayout from '../components/admin/layout/AdminLayout'
 
@@ -43,6 +45,10 @@ const AppRouter: React.FC = () => {
         <Route path="/learn/:language/*" element={<LearnPage />} />
         <Route path="/playground" element={<PlaygroundPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+
+        {/* PvP routes */}
+        <Route path="/pvp" element={<PvPLobbyPage />} />
+        <Route path="/pvp/match/:roomCode" element={<PvPMatchPage />} />
 
         {/* Admin login route (not protected) */}
         <Route
