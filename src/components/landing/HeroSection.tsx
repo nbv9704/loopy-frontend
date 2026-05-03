@@ -49,11 +49,11 @@ const HeroSectionV2: React.FC<HeroSectionV2Props> = ({
             >
               <h1 className="mb-6">
                 <img
-                  src={`/src/assets/images/hero/${i18n.language}/textbanner-w1024.png`}
-                  srcSet={`/src/assets/images/hero/${i18n.language}/textbanner-w256.png 256w,
-                          /src/assets/images/hero/${i18n.language}/textbanner-w512.png 512w,
-                          /src/assets/images/hero/${i18n.language}/textbanner-w1024.png 1024w,
-                          /src/assets/images/hero/${i18n.language}/textbanner-w2048.png 2048w`}
+                  src={`/images/hero/${i18n.language}/textbanner-w1024.png`}
+                  srcSet={`/images/hero/${i18n.language}/textbanner-w256.png 256w,
+                          /images/hero/${i18n.language}/textbanner-w512.png 512w,
+                          /images/hero/${i18n.language}/textbanner-w1024.png 1024w,
+                          /images/hero/${i18n.language}/textbanner-w2048.png 2048w`}
                   sizes="(max-width: 768px) 55vw, (max-width: 1024px) 45vw, 500px"
                   alt="Học code thực chiến"
                   className="w-full max-w-xl h-auto"
