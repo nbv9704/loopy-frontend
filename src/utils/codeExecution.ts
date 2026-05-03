@@ -45,7 +45,7 @@ export const executeCode = (code: string, language: string): ExecutionResult => 
 // Browser chỉ có JavaScript engine, không có C++ compiler
 // Giải pháp: Hiển thị hướng dẫn để user chạy code C++ trên máy local hoặc online compiler
 // ============================================================================
- 
+
 const executeCpp = (codeParam: string): ExecutionResult => {
   // Avoid unused parameter warning
   void codeParam
@@ -77,7 +77,7 @@ const executeCpp = (codeParam: string): ExecutionResult => {
 // Browser không có Python interpreter built-in
 // Giải pháp tương lai: Có thể dùng Pyodide (Python compiled to WebAssembly)
 // ============================================================================
- 
+
 const executePython = (codeParam: string): ExecutionResult => {
   // Avoid unused parameter warning
   void codeParam

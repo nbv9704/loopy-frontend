@@ -100,7 +100,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await api.refreshToken(refreshToken)
       if (response.success && (response.data as any)?.session) {
-        const { access_token: accessToken, refresh_token: newRefreshToken } = (response.data as any).session
+        const { access_token: accessToken, refresh_token: newRefreshToken } = (response.data as any)
+          .session
 
         api.setToken(accessToken)
         localStorage.setItem('auth_token', accessToken)
