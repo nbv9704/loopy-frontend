@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run quality:check && tsc && vite build",
+    "build:prod": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives",
     "lint:strict": "eslint . --report-unused-disable-directives --max-warnings 0",
@@ -55,7 +56,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^8.55.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",

@@ -9,8 +9,12 @@
 
 import React from 'react'
 import { FiClock, FiChevronRight } from 'react-icons/fi'
-import type { SubmissionHistoryData, SubmissionSummary } from '../../types/grading.types'
-import { GRADE_LABELS, GRADE_COLORS } from '../../types/grading.types'
+import {
+  type SubmissionHistoryData,
+  type SubmissionSummary,
+  GRADE_LABELS,
+  GRADE_COLORS,
+} from '../../types/grading.types'
 
 interface SubmissionHistoryProps {
   history: SubmissionHistoryData
@@ -29,8 +33,7 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
   // Find best submission ID
   const bestSubmissionId = highlightBest
     ? history.submissions.reduce(
-        (best, s) =>
-          (s.finalScore ?? 0) > (best?.finalScore ?? 0) ? s : best,
+        (best, s) => ((s.finalScore ?? 0) > (best?.finalScore ?? 0) ? s : best),
         history.submissions[0]
       )?.id
     : null
@@ -69,7 +72,7 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
         </div>
       ) : (
         <div className="space-y-2">
-          {history.submissions.map((submission) => (
+          {history.submissions.map(submission => (
             <SubmissionRow
               key={submission.id}
               submission={submission}
@@ -117,12 +120,8 @@ interface SubmissionRowProps {
 }
 
 const SubmissionRow: React.FC<SubmissionRowProps> = ({ submission, isBest, onClick }) => {
-  const gradeColor = submission.gradeLevel
-    ? GRADE_COLORS[submission.gradeLevel]
-    : '#6b7280'
-  const gradeLabel = submission.gradeLevel
-    ? GRADE_LABELS[submission.gradeLevel]
-    : '—'
+  const gradeColor = submission.gradeLevel ? GRADE_COLORS[submission.gradeLevel] : '#6b7280'
+  const gradeLabel = submission.gradeLevel ? GRADE_LABELS[submission.gradeLevel] : '—'
 
   const formattedDate = submission.submittedAt
     ? new Date(submission.submittedAt).toLocaleString('vi-VN', {
@@ -137,9 +136,7 @@ const SubmissionRow: React.FC<SubmissionRowProps> = ({ submission, isBest, onCli
     <button
       onClick={onClick}
       className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all hover:bg-white/[0.03] ${
-        isBest
-          ? 'border-brand-teal/30 bg-brand-teal/5'
-          : 'border-white/5 bg-bg-primary'
+        isBest ? 'border-brand-teal/30 bg-brand-teal/5' : 'border-white/5 bg-bg-primary'
       }`}
     >
       <div className="flex items-center gap-3">

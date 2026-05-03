@@ -93,9 +93,7 @@ export const pvpService = {
    * Get user stats
    */
   async getUserStats(token: string, userId?: string): Promise<PvPUserStats> {
-    const url = userId
-      ? `${API_BASE_URL}/api/pvp/stats/${userId}`
-      : `${API_BASE_URL}/api/pvp/stats`
+    const url = userId ? `${API_BASE_URL}/api/pvp/stats/${userId}` : `${API_BASE_URL}/api/pvp/stats`
 
     const response = await axios.get(url, {
       headers: {

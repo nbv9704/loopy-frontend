@@ -1,11 +1,11 @@
 /**
  * Static Content Constants
- * 
+ *
  * All static UI text, navigation, and content that was previously managed via CMS.
  * This approach is faster, simpler, and eliminates unnecessary database queries.
- * 
+ *
  * To update content: Edit this file directly and redeploy.
- * 
+ *
  * Note: Header navigation and footer are now hardcoded in their respective components.
  * This file only contains landing page and documentation content.
  */

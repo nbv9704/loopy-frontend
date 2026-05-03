@@ -10,11 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePvPSocket } from '../hooks/usePvPSocket'
 import { pvpService } from '../services/pvp.service'
 import toast from 'react-hot-toast'
-import type {
-  PvPMatch,
-  PvPQuestion,
-  FinalScore,
-} from '../types/pvp.types'
+import type { PvPMatch, PvPQuestion, FinalScore } from '../types/pvp.types'
 
 // Components
 import MatchLobby from '../components/pvp/MatchLobby'
@@ -40,7 +36,7 @@ const PvPMatchPage: React.FC = () => {
   // Load match data
   useEffect(() => {
     if (!roomCode || !user) return
-    
+
     // Don't reload if already have match data
     if (match && match.room_code === roomCode) {
       return
@@ -54,35 +50,34 @@ const PvPMatchPage: React.FC = () => {
 
     const loadMatch = async (retryCount = 0) => {
       try {
-        
         // Small delay to ensure participant is inserted
         if (retryCount === 0) {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
-        
+
         const matchData = await pvpService.getMatch(roomCode, token)
-        
+
         setMatch(matchData)
         setIsLoading(false)
-        
+
         // Join match via socket
         socket.joinMatch(roomCode)
       } catch (error: any) {
-        
         // Retry once if first attempt fails
         if (retryCount === 0) {
           setTimeout(() => loadMatch(1), 1000)
           return
         }
-        
-        const errorMessage = error.response?.data?.error?.message || 
-                            error.response?.data?.message ||
-                            error.message || 
-                            'Failed to load match'
-        
+
+        const errorMessage =
+          error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to load match'
+
         toast.error(errorMessage)
         setIsLoading(false)
-        
+
         // Navigate away after showing error
         setTimeout(() => {
           navigate('/pvp')
@@ -163,7 +158,7 @@ const PvPMatchPage: React.FC = () => {
         if (!prev) {
           return prev
         }
-        
+
         const updated = {
           ...prev,
           participants: prev.participants?.map(p => {
@@ -171,7 +166,7 @@ const PvPMatchPage: React.FC = () => {
             return isMatch ? { ...p, is_ready: true } : p
           }),
         }
-        
+
         return updated
       })
     })
@@ -273,11 +268,7 @@ const PvPMatchPage: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <MatchResults
-              match={match}
-              finalScores={finalScores}
-              currentUserId={user?.id || ''}
-            />
+            <MatchResults match={match} finalScores={finalScores} currentUserId={user?.id || ''} />
           </motion.div>
         )}
       </AnimatePresence>

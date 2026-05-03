@@ -46,7 +46,9 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
             <h1 className="text-4xl font-bold text-white">Match Lobby</h1>
           </div>
           <div className="mb-6">
-            <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider font-semibold">Room Code</p>
+            <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider font-semibold">
+              Room Code
+            </p>
             <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-4 rounded-2xl">
               <span className="text-4xl font-mono font-bold tracking-[0.2em] text-brand-teal">
                 {match.room_code || '------'}
@@ -185,9 +187,7 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
             </div>
             <div>
               <p className="text-slate-400 text-sm mb-1">Language</p>
-              <p className="text-white font-semibold">
-                {match.language_id || 'Mixed'}
-              </p>
+              <p className="text-white font-semibold">{match.language_id || 'Mixed'}</p>
             </div>
           </div>
         </motion.div>

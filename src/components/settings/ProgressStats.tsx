@@ -76,12 +76,19 @@ const ProgressStats = () => {
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6 text-center">
           <p className="text-brand-teal font-bold text-4xl">{progressStats.completedLessons}</p>
-          <p className="text-slate-500 text-xs font-medium mt-2">{t('settings.completedLessons')}</p>
-          <p className="text-slate-600 text-xs mt-1">{t('settings.totalLessonsOf', { count: progressStats.totalLessons })}</p>
+          <p className="text-slate-500 text-xs font-medium mt-2">
+            {t('settings.completedLessons')}
+          </p>
+          <p className="text-slate-600 text-xs mt-1">
+            {t('settings.totalLessonsOf', { count: progressStats.totalLessons })}
+          </p>
         </div>
         <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6 text-center">
           <p className="text-green-400 font-bold text-4xl">
-            {progressStats.totalLessons > 0 ? Math.round((progressStats.completedLessons / progressStats.totalLessons) * 100) : 0}%
+            {progressStats.totalLessons > 0
+              ? Math.round((progressStats.completedLessons / progressStats.totalLessons) * 100)
+              : 0}
+            %
           </p>
           <p className="text-slate-500 text-xs font-medium mt-2">{t('settings.completionRate')}</p>
           <p className="text-slate-600 text-xs mt-1">{t('settings.keepItUp')}</p>

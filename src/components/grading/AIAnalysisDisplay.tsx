@@ -28,7 +28,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
   )
 
   const toggleSection = (section: string) => {
-    setExpandedSections((prev) => {
+    setExpandedSections(prev => {
       const next = new Set(prev)
       if (next.has(section)) {
         next.delete(section)
@@ -50,7 +50,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
 
       {/* Score Breakdown Bars */}
       <div className="space-y-3 mb-6">
-        {SCORE_CRITERIA.map((criteria) => {
+        {SCORE_CRITERIA.map(criteria => {
           const score = analysis.scores[criteria.key]
           return (
             <div key={criteria.key}>
@@ -157,10 +157,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       {isExpanded && (
         <div className="px-3 pb-3 space-y-2 animate-slideDown">
           {items.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-start gap-2 text-sm text-gray-300"
-            >
+            <div key={index} className="flex items-start gap-2 text-sm text-gray-300">
               <span className="text-gray-600 mt-0.5">•</span>
               <span>{item}</span>
             </div>

@@ -19,9 +19,7 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant, isCurren
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className={`p-4 rounded-xl border transition-all ${
-        isCurrentUser
-          ? 'bg-brand-teal/10 border-brand-teal'
-          : 'bg-white/5 border-white/10'
+        isCurrentUser ? 'bg-brand-teal/10 border-brand-teal' : 'bg-white/5 border-white/10'
       } ${!participant.is_connected ? 'opacity-50' : ''}`}
     >
       <div className="flex items-center gap-3 mb-3">
@@ -44,9 +42,7 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant, isCurren
             {participant.display_name || 'Anonymous'}
             {isCurrentUser && <span className="text-brand-teal ml-1">(You)</span>}
           </h4>
-          {!participant.is_connected && (
-            <p className="text-red-400 text-xs">Disconnected</p>
-          )}
+          {!participant.is_connected && <p className="text-red-400 text-xs">Disconnected</p>}
         </div>
       </div>
 

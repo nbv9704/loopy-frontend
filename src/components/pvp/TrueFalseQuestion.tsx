@@ -26,7 +26,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   // Fixed order: TRUE first, FALSE second (no shuffle)
   const options = question.options || [
     { id: 'true', text: 'True' },
-    { id: 'false', text: 'False' }
+    { id: 'false', text: 'False' },
   ]
 
   const getButtonStyle = (optionId: string) => {
@@ -64,13 +64,11 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   return (
     <div className="space-y-6">
       {/* Question */}
-      <h2 className="text-2xl font-bold text-white mb-8 text-center">
-        {question.question_text}
-      </h2>
+      <h2 className="text-2xl font-bold text-white mb-8 text-center">{question.question_text}</h2>
 
       {/* True/False Buttons - Fixed order (TRUE left, FALSE right) */}
       <div className="grid grid-cols-2 gap-6">
-        {options.map((option) => {
+        {options.map(option => {
           const isTrue = option.id === 'true'
           const Icon = isTrue ? Check : X
           const label = isTrue ? 'TRUE' : 'FALSE'

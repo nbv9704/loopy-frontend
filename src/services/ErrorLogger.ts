@@ -152,8 +152,10 @@ export class ErrorLogger {
     }
   }
 
-  private async sendLogs(_logs: LogEntry[]): Promise<void> {
+  private async sendLogs(logsParam: LogEntry[]): Promise<void> {
     // Future: send to logging service (Sentry, etc.)
+    // Avoid unused parameter warning
+    void logsParam
   }
 
   private generateId(): string {

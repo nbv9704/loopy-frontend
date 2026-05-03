@@ -33,7 +33,7 @@ const AuthPage: React.FC = () => {
         navigate(from, { replace: true })
       } else {
         const result = await signUp(email, password, displayName)
-        
+
         // Check if email confirmation is required (production mode)
         if (result.requiresEmailConfirmation) {
           setError('') // Clear any errors

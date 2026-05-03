@@ -63,9 +63,7 @@ const PreferencesSettings = () => {
             </button>
           </div>
         </div>
-        <p className="text-slate-500 text-xs mt-3">
-          {t('settings.fontSizeHint')}
-        </p>
+        <p className="text-slate-500 text-xs mt-3">{t('settings.fontSizeHint')}</p>
       </div>
 
       {/* Preview */}

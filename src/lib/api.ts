@@ -250,9 +250,7 @@ class ApiClient {
   }
 
   async getGradedSubmissionDetail(exerciseId: string, submissionId: string) {
-    return this.request(
-      `/api/grading/exercises/${exerciseId}/submissions/${submissionId}`
-    )
+    return this.request(`/api/grading/exercises/${exerciseId}/submissions/${submissionId}`)
   }
 
   // Profile (requires auth)

@@ -19,7 +19,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set())
 
   const toggleExpanded = (testCaseId: string) => {
-    setExpandedTests((prev) => {
+    setExpandedTests(prev => {
       const next = new Set(prev)
       if (next.has(testCaseId)) {
         next.delete(testCaseId)
@@ -30,7 +30,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
     })
   }
 
-  const passedCount = testRunResult.results.filter((r) => r.passed).length
+  const passedCount = testRunResult.results.filter(r => r.passed).length
   const totalCount = testRunResult.results.length
 
   return (
@@ -47,9 +47,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
           >
             {passedCount}/{totalCount} đạt
           </span>
-          <span className="text-xs text-gray-500">
-            {testRunResult.totalExecutionTime}ms
-          </span>
+          <span className="text-xs text-gray-500">{testRunResult.totalExecutionTime}ms</span>
         </div>
       </div>
 
@@ -84,9 +82,7 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
   return (
     <div
       className={`rounded-lg border transition-colors ${
-        result.passed
-          ? 'border-green-500/20 bg-green-500/5'
-          : 'border-red-500/20 bg-red-500/5'
+        result.passed ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'
       }`}
     >
       {/* Header Row */}
@@ -107,12 +103,8 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
           )}
 
           <div>
-            <span className="text-sm text-white font-medium">
-              Test #{index + 1}
-            </span>
-            <span className="text-xs text-gray-400 ml-2">
-              {result.description}
-            </span>
+            <span className="text-sm text-white font-medium">Test #{index + 1}</span>
+            <span className="text-xs text-gray-400 ml-2">{result.description}</span>
           </div>
         </div>
 

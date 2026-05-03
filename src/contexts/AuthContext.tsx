@@ -80,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Calculate time until expiry in milliseconds
     const timeUntilExpiry = decoded.exp * 1000 - Date.now()
-    
+
     // Refresh 5 minutes before expiry
     const refreshTime = timeUntilExpiry - 5 * 60 * 1000
 
@@ -100,20 +100,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await api.refreshToken(refreshToken)
       if (response.success && (response.data as any)?.session) {
-        const { access_token, refresh_token: new_refresh_token } = (response.data as any).session
-        
-        api.setToken(access_token)
-        localStorage.setItem('auth_token', access_token)
-        if (new_refresh_token) {
-          localStorage.setItem('refresh_token', new_refresh_token)
+        const { access_token: accessToken, refresh_token: newRefreshToken } = (response.data as any).session
+
+        api.setToken(accessToken)
+        localStorage.setItem('auth_token', accessToken)
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken)
         }
-        
+
         // Dispatch event for other listeners (like PvP Socket)
         window.dispatchEvent(
-          new CustomEvent('auth:token_refreshed', { detail: { token: access_token } })
+          new CustomEvent('auth:token_refreshed', { detail: { token: accessToken } })
         )
 
-        scheduleTokenRefresh(access_token)
+        scheduleTokenRefresh(accessToken)
       } else {
         signOut()
       }

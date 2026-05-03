@@ -42,8 +42,11 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [reactions, setReactions] = useState<Array<{ emoji: string; userId: string }>>([])
-  const [submissionResult, setSubmissionResult] = useState<{ isCorrect: boolean; points: number } | null>(null)
-  
+  const [submissionResult, setSubmissionResult] = useState<{
+    isCorrect: boolean
+    points: number
+  } | null>(null)
+
   // Shuffle options client-side for fairness (different for each player)
   // Re-shuffle when question changes
   const shuffledOptions = React.useMemo(() => {
@@ -51,15 +54,15 @@ const MatchArena: React.FC<MatchArenaProps> = ({
       // Fisher-Yates shuffle
       const shuffled = [...question.options]
       for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
       return shuffled
     }
     // True/False: no shuffle, keep original order
     return question.options || []
   }, [question.id, question.type, question.options])
-  
+
   // Track shown toasts to prevent duplicates
   const shownRanks = React.useRef(new Set<string>())
   const shownSubmissions = React.useRef(new Set<string>()) // Track shown submission toasts
@@ -86,25 +89,25 @@ const MatchArena: React.FC<MatchArenaProps> = ({
       if (submission.user_id === currentUserId) {
         // Create unique key for this submission
         const key = `${submission.user_id}-${submission.question_id}`
-        
+
         // Only process if not already processed
         if (!shownSubmissions.current.has(key)) {
           shownSubmissions.current.add(key)
-          
+
           setHasSubmitted(true)
           // Set result for visual feedback
           setSubmissionResult({
             isCorrect: submission.is_correct,
-            points: submission.points_earned
+            points: submission.points_earned,
           })
-          
+
           // Show single toast with points
           if (submission.points_earned > 0) {
             toast.success(`+${submission.points_earned} points!`, { icon: '🎯' })
           } else {
             toast.error('+0 points', { icon: '❌' })
           }
-          
+
           console.log('Showed submission toast:', key)
         } else {
           console.log('Skipped duplicate submission toast:', key)
@@ -218,7 +221,10 @@ const MatchArena: React.FC<MatchArenaProps> = ({
               <Smile className="w-6 h-6 text-brand-teal" />
             </button>
             {showReactionPicker && (
-              <ReactionPicker onSelect={handleSendReaction} onClose={() => setShowReactionPicker(false)} />
+              <ReactionPicker
+                onSelect={handleSendReaction}
+                onClose={() => setShowReactionPicker(false)}
+              />
             )}
           </div>
         </div>
@@ -253,7 +259,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     hasSubmitted={hasSubmitted}
                     submissionResult={submissionResult}
                   />
-                  
+
                   {/* Submit Button */}
                   <button
                     onClick={handleSubmitAnswer}
@@ -280,13 +286,15 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                           ? 'border-green-500'
                           : 'border-red-500'
                         : isSelected
-                        ? 'border-brand-teal'
-                        : 'border-white/10'
-                      
+                          ? 'border-brand-teal'
+                          : 'border-white/10'
+
                       return (
                         <button
                           key={option.id}
-                          onClick={() => !hasSubmitted && timeRemaining > 0 && setSelectedAnswer(option.id)}
+                          onClick={() =>
+                            !hasSubmitted && timeRemaining > 0 && setSelectedAnswer(option.id)
+                          }
                           disabled={hasSubmitted || timeRemaining <= 0}
                           className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
                             isSelected
@@ -389,7 +397,9 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-4">Round Over!</h2>
                 <p className="text-xl text-slate-300">
-                  {isMatchOverCooldown ? 'Đang tổng hợp kết quả chung cuộc...' : 'Chuẩn bị câu hỏi tiếp theo...'}
+                  {isMatchOverCooldown
+                    ? 'Đang tổng hợp kết quả chung cuộc...'
+                    : 'Chuẩn bị câu hỏi tiếp theo...'}
                 </p>
               </motion.div>
             </motion.div>

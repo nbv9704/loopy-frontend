@@ -24,11 +24,13 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
     if (finalScores && finalScores.length > 0) {
       return finalScores
     }
-    
+
     // Fallback: calculate from match participants
     if (match.participants && match.participants.length > 0) {
-      const sorted = [...match.participants].sort((a, b) => (b.total_score || 0) - (a.total_score || 0))
-      
+      const sorted = [...match.participants].sort(
+        (a, b) => (b.total_score || 0) - (a.total_score || 0)
+      )
+
       let currentRank = 1
       let previousScore = sorted.length > 0 ? sorted[0].total_score || 0 : null
 
@@ -38,7 +40,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
           currentRank = index + 1
         }
         previousScore = score
-        
+
         return {
           userId: p.user_id,
           displayName: p.display_name || 'Anonymous',
@@ -47,7 +49,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
         }
       })
     }
-    
+
     return []
   }, [finalScores, match.participants])
 
@@ -65,7 +67,6 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
       })
     }
   }, [isWinner])
-
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -118,16 +119,20 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
           </motion.div>
 
           <h1 className="text-5xl font-bold text-white mb-4">
-            {isWinner && !isDraw ? 'Victory!' : isWinner && isDraw ? "It's a Draw!" : 'Match Complete'}
+            {isWinner && !isDraw
+              ? 'Victory!'
+              : isWinner && isDraw
+                ? "It's a Draw!"
+                : 'Match Complete'}
           </h1>
           <p className="text-slate-400 text-xl">
             {isWinner && !isDraw
               ? 'Congratulations! You won the match!'
               : isWinner && isDraw
-              ? 'Great effort! You tied for first place!'
-              : `You finished in ${currentUserScore?.rank}${
-                  currentUserScore?.rank === 2 ? 'nd' : currentUserScore?.rank === 3 ? 'rd' : 'th'
-                } place`}
+                ? 'Great effort! You tied for first place!'
+                : `You finished in ${currentUserScore?.rank}${
+                    currentUserScore?.rank === 2 ? 'nd' : currentUserScore?.rank === 3 ? 'rd' : 'th'
+                  } place`}
           </p>
         </motion.div>
 
@@ -163,9 +168,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
                         <span className="ml-2 text-sm text-brand-teal">(You)</span>
                       )}
                     </h3>
-                    <p className="text-slate-400 text-sm">
-                      Rank #{score.rank}
-                    </p>
+                    <p className="text-slate-400 text-sm">Rank #{score.rank}</p>
                   </div>
 
                   {/* Score */}

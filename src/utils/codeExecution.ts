@@ -45,8 +45,10 @@ export const executeCode = (code: string, language: string): ExecutionResult => 
 // Browser chỉ có JavaScript engine, không có C++ compiler
 // Giải pháp: Hiển thị hướng dẫn để user chạy code C++ trên máy local hoặc online compiler
 // ============================================================================
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const executeCpp = (_code: string): ExecutionResult => {
+ 
+const executeCpp = (codeParam: string): ExecutionResult => {
+  // Avoid unused parameter warning
+  void codeParam
   return {
     logs: [
       '⚠️  C++ KHÔNG THỂ CHẠY TRONG BROWSER',
@@ -75,8 +77,10 @@ const executeCpp = (_code: string): ExecutionResult => {
 // Browser không có Python interpreter built-in
 // Giải pháp tương lai: Có thể dùng Pyodide (Python compiled to WebAssembly)
 // ============================================================================
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const executePython = (_code: string): ExecutionResult => {
+ 
+const executePython = (codeParam: string): ExecutionResult => {
+  // Avoid unused parameter warning
+  void codeParam
   return {
     logs: [
       '⚠️  PYTHON KHÔNG THỂ CHẠY TRONG BROWSER',

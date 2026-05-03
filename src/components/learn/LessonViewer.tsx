@@ -5,8 +5,7 @@ import { FiX } from 'react-icons/fi'
 import { executeCode, formatError } from '../../utils/codeExecution'
 import { useLessonData } from '../../hooks/useLessonData'
 import LessonSidebar from './LessonSidebar'
-import LessonToolbar from './LessonToolbar'
-import type { EditorTab } from './LessonToolbar'
+import LessonToolbar, { type EditorTab } from './LessonToolbar'
 import CodeEditor from '../common/CodeEditor'
 import Terminal from '../common/Terminal'
 import GradingResults from '../grading/GradingResults'
@@ -66,14 +65,10 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
     const lines = rawCode.split('\n')
 
     // Find exercise separator (BÀI TẬP or BAI TAP)
-    const exerciseIndex = lines.findIndex(line =>
-      /BÀI TẬP|BAI T[AẬ]P/i.test(line)
-    )
+    const exerciseIndex = lines.findIndex(line => /BÀI TẬP|BAI T[AẬ]P/i.test(line))
 
     // Find answer separator (ĐÁP ÁN or DAP AN)
-    const answerIndex = lines.findIndex(line =>
-      /ĐÁP ÁN|DAP AN/i.test(line)
-    )
+    const answerIndex = lines.findIndex(line => /ĐÁP ÁN|DAP AN/i.test(line))
 
     // Determine end of relevant code (before answers)
     let endIndex = answerIndex !== -1 ? answerIndex : lines.length
@@ -95,7 +90,12 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
     // Remove separator line above BÀI TẬP if it's a divider
     if (theoryEnd > 0 && lines[theoryEnd - 1]?.match(/^(\/\/\s*)?=+|console\.log/)) {
       // Also skip blank lines and console.log separators
-      while (theoryEnd > 0 && (lines[theoryEnd - 1].trim() === '' || /console\.log\(\s*["']\s*["']\s*\)/.test(lines[theoryEnd - 1]) || /=== BA/.test(lines[theoryEnd - 1]))) {
+      while (
+        theoryEnd > 0 &&
+        (lines[theoryEnd - 1].trim() === '' ||
+          /console\.log\(\s*["']\s*["']\s*\)/.test(lines[theoryEnd - 1]) ||
+          /=== BA/.test(lines[theoryEnd - 1]))
+      ) {
         theoryEnd--
       }
     }
@@ -142,13 +142,16 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
     if (gradingResult && currentLesson && user && gradingResult.finalScore >= 85) {
       const lessonId = currentLesson.id
       if (!completedLessons.has(lessonId)) {
-        api.completeLesson(lessonId).then(response => {
-          if (response.success) {
-            setCompletedLessons(prev => new Set(prev).add(lessonId))
-          }
-        }).catch(() => {
-          // Silent fail — not critical
-        })
+        api
+          .completeLesson(lessonId)
+          .then(response => {
+            if (response.success) {
+              setCompletedLessons(prev => new Set(prev).add(lessonId))
+            }
+          })
+          .catch(() => {
+            // Silent fail — not critical
+          })
       }
     }
   }, [gradingResult, currentLesson, user, completedLessons, setCompletedLessons])
@@ -164,49 +167,48 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
     }
   }
 
-  const submitForGrading = useCallback(async (depth: GradingDepth = 'quick') => {
-    if (!currentLesson) {
-      setOutputLogs(['Chọn bài học trước khi chấm điểm'])
-      return
-    }
+  const submitForGrading = useCallback(
+    async (depth: GradingDepth = 'quick') => {
+      if (!currentLesson) {
+        setOutputLogs(['Chọn bài học trước khi chấm điểm'])
+        return
+      }
 
-    // Debounce: prevent re-submission while grading
-    if (isGrading) return
+      // Debounce: prevent re-submission while grading
+      if (isGrading) return
 
-    setIsGrading(true)
-    setGradingResult(null)
-    const depthLabels = { quick: 'sơ qua', careful: 'cẩn thận', thorough: 'kĩ càng' }
-    setOutputLogs([`⏳ Đang chấm điểm (${depthLabels[depth]})...`])
+      setIsGrading(true)
+      setGradingResult(null)
+      const depthLabels = { quick: 'sơ qua', careful: 'cẩn thận', thorough: 'kĩ càng' }
+      setOutputLogs([`⏳ Đang chấm điểm (${depthLabels[depth]})...`])
 
-    try {
-      // Send the exercise template as starter code for accurate diff comparison
-      const { exercise: exerciseTemplate } = splitLessonCode(currentLesson.code || '')
-      const response = await api.submitForGrading(
-        currentLesson.id,
-        code,
-        language,
-        'both',
-        {
+      try {
+        // Send the exercise template as starter code for accurate diff comparison
+        const { exercise: exerciseTemplate } = splitLessonCode(currentLesson.code || '')
+        const response = (await api.submitForGrading(currentLesson.id, code, language, 'both', {
           starterCode: exerciseTemplate,
           lessonTitle: currentLesson.title,
           lessonDescription: currentLesson.description,
           lessonInsight: currentLesson.insight,
           gradingDepth: depth,
-        }
-      ) as any
+        })) as any
 
-      if (response.success && response.data) {
-        setGradingResult(response.data as GradingResult)
-        setOutputLogs([`✅ Chấm điểm hoàn tất — ${response.data.finalScore}/100 (${response.data.gradeLevel})`])
-      } else {
-        setOutputLogs(['❌ Chấm điểm thất bại: ' + (response.error?.message || 'Unknown error')])
+        if (response.success && response.data) {
+          setGradingResult(response.data as GradingResult)
+          setOutputLogs([
+            `✅ Chấm điểm hoàn tất — ${response.data.finalScore}/100 (${response.data.gradeLevel})`,
+          ])
+        } else {
+          setOutputLogs(['❌ Chấm điểm thất bại: ' + (response.error?.message || 'Unknown error')])
+        }
+      } catch (error: any) {
+        setOutputLogs(['❌ Lỗi: ' + (error.message || 'Không thể kết nối server')])
+      } finally {
+        setIsGrading(false)
       }
-    } catch (error: any) {
-      setOutputLogs(['❌ Lỗi: ' + (error.message || 'Không thể kết nối server')])
-    } finally {
-      setIsGrading(false)
-    }
-  }, [currentLesson, code, language, isGrading])
+    },
+    [currentLesson, code, language, isGrading]
+  )
 
   if (loading) {
     return (
@@ -231,7 +233,9 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
       />
 
       <main className="flex-1 flex flex-col gap-4 min-w-0 h-full">
-        <div className={`flex-1 flex flex-col bg-white/3 border border-brand-teal/10 rounded-card min-h-0 ${!hasLessons ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div
+          className={`flex-1 flex flex-col bg-white/3 border border-brand-teal/10 rounded-card min-h-0 ${!hasLessons ? 'opacity-50 pointer-events-none' : ''}`}
+        >
           {/* Toolbar with tab switcher */}
           <div className="relative flex-shrink-0">
             <LessonToolbar

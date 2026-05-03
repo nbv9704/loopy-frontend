@@ -104,7 +104,7 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
         console.log('Socket auth token updated silently')
       }
     }
-    
+
     window.addEventListener('auth:token_refreshed', handleTokenRefresh)
 
     return () => {
@@ -127,13 +127,19 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     socketRef.current?.emit('match:ready', matchId)
   }, [])
 
-  const submitAnswer = useCallback((matchId: string, questionId: string, answer: string, timeTaken: number) => {
-    socketRef.current?.emit('submission:answer', { matchId, questionId, answer, timeTaken })
-  }, [])
+  const submitAnswer = useCallback(
+    (matchId: string, questionId: string, answer: string, timeTaken: number) => {
+      socketRef.current?.emit('submission:answer', { matchId, questionId, answer, timeTaken })
+    },
+    []
+  )
 
-  const submitCode = useCallback((matchId: string, questionId: string, code: string, timeTaken: number) => {
-    socketRef.current?.emit('submission:code', { matchId, questionId, code, timeTaken })
-  }, [])
+  const submitCode = useCallback(
+    (matchId: string, questionId: string, code: string, timeTaken: number) => {
+      socketRef.current?.emit('submission:code', { matchId, questionId, code, timeTaken })
+    },
+    []
+  )
 
   const sendReaction = useCallback((matchId: string, emoji: string, targetUserId?: string) => {
     socketRef.current?.emit('reaction:send', { matchId, emoji, targetUserId })
@@ -218,15 +224,12 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     }
   }, [])
 
-  const onSubmissionRanked = useCallback(
-    (callback: (payload: SubmissionRankedPayload) => void) => {
-      socketRef.current?.on('submission:ranked', callback)
-      return () => {
-        socketRef.current?.off('submission:ranked', callback)
-      }
-    },
-    []
-  )
+  const onSubmissionRanked = useCallback((callback: (payload: SubmissionRankedPayload) => void) => {
+    socketRef.current?.on('submission:ranked', callback)
+    return () => {
+      socketRef.current?.off('submission:ranked', callback)
+    }
+  }, [])
 
   const onReactionReceived = useCallback((callback: (reaction: PvPReaction) => void) => {
     socketRef.current?.on('reaction:received', callback)

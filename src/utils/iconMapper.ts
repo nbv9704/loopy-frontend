@@ -3,12 +3,32 @@
  */
 
 import {
-  FiCode, FiBook, FiZap, FiShield, FiCpu, FiLayers,
-  FiGlobe, FiTerminal, FiDatabase, FiGitBranch,
-  FiAward, FiUsers, FiBookOpen, FiTrendingUp,
-  FiCheckCircle, FiStar, FiHeart, FiPlay,
-  FiMonitor, FiSmartphone, FiCloud, FiLock,
-  FiRefreshCw, FiSettings, FiTarget, FiFeather,
+  FiCode,
+  FiBook,
+  FiZap,
+  FiShield,
+  FiCpu,
+  FiLayers,
+  FiGlobe,
+  FiTerminal,
+  FiDatabase,
+  FiGitBranch,
+  FiAward,
+  FiUsers,
+  FiBookOpen,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiStar,
+  FiHeart,
+  FiPlay,
+  FiMonitor,
+  FiSmartphone,
+  FiCloud,
+  FiLock,
+  FiRefreshCw,
+  FiSettings,
+  FiTarget,
+  FiFeather,
 } from 'react-icons/fi'
 import type { IconType } from 'react-icons'
 

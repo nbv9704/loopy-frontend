@@ -9,8 +9,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { FiCheckCircle, FiCpu, FiClock } from 'react-icons/fi'
-import type { GradingResult, GradingDepth } from '../../types/grading.types'
-import { GRADE_LABELS, GRADE_COLORS } from '../../types/grading.types'
+import {
+  type GradingResult,
+  type GradingDepth,
+  GRADE_LABELS,
+  GRADE_COLORS,
+} from '../../types/grading.types'
 import TestCaseResults from './TestCaseResults'
 import AIAnalysisDisplay from './AIAnalysisDisplay'
 import GradingDepthDropdown from './GradingDepthDropdown'
@@ -25,7 +29,12 @@ interface GradingResultsProps {
   isGrading?: boolean
 }
 
-const GradingResults: React.FC<GradingResultsProps> = ({ result, showDetails = true, onRetry, isGrading = false }) => {
+const GradingResults: React.FC<GradingResultsProps> = ({
+  result,
+  showDetails = true,
+  onRetry,
+  isGrading = false,
+}) => {
   const gradeColor = GRADE_COLORS[result.gradeLevel]
   const gradeLabel = GRADE_LABELS[result.gradeLevel]
 
@@ -50,7 +59,8 @@ const GradingResults: React.FC<GradingResultsProps> = ({ result, showDetails = t
   }, [result.finalScore])
 
   // Determine if test cases exist
-  const hasTestResults = result.feedback.testResults && result.feedback.testResults.results.length > 0
+  const hasTestResults =
+    result.feedback.testResults && result.feedback.testResults.results.length > 0
   const showBothScores = hasTestResults && result.aiScore !== null
 
   // Format date in Vietnamese locale (Requirement 15.7)
@@ -118,9 +128,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({ result, showDetails = t
               <FiClock className="w-3 h-3" />
               {formattedDate}
             </p>
-            <p className="text-xs mt-1">
-              {(result.executionTime / 1000).toFixed(1)}s
-            </p>
+            <p className="text-xs mt-1">{(result.executionTime / 1000).toFixed(1)}s</p>
           </div>
         </div>
 

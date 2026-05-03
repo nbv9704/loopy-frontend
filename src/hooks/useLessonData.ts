@@ -39,7 +39,7 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
   useEffect(() => {
     curriculumLoaded.current = false
     initialLessonSet.current = false
-    
+
     const loadCurriculum = async () => {
       setLoading(true)
       try {

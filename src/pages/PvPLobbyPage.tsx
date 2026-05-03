@@ -49,12 +49,12 @@ const PvPLobbyPage: React.FC = () => {
       toast.success('Match found!')
       navigate(`/pvp/match/${match.room_code}`)
     } catch (error: any) {
-      
-      const errorMessage = error.response?.data?.error?.message || 
-                          error.response?.data?.message ||
-                          error.message || 
-                          'Failed to find match'
-      
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to find match'
+
       toast.error(errorMessage)
     } finally {
       setIsSearching(false)
@@ -124,7 +124,9 @@ const PvPLobbyPage: React.FC = () => {
               >
                 <Trophy className="w-12 h-12 text-slate-500 mb-4 mx-auto" />
                 <h3 className="text-xl font-bold text-white mb-2">Battle Royale</h3>
-                <p className="text-slate-400 text-sm">Coming soon - Compete with multiple players</p>
+                <p className="text-slate-400 text-sm">
+                  Coming soon - Compete with multiple players
+                </p>
               </button>
             </div>
           </motion.div>
