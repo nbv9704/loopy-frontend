@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../lib/api'
 import type { ProgressStats as ProgressStatsType } from '../../types/common'
 import LoadingSpinner from '../common/LoadingSpinner'
+import ActivityHeatmap from './ActivityHeatmap'
 
 const ProgressStats = () => {
   const { t } = useTranslation()
@@ -14,6 +15,7 @@ const ProgressStats = () => {
     currentStreak: 0,
     longestStreak: 0,
   })
+  const [activityDates, setActivityDates] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,13 +26,23 @@ const ProgressStats = () => {
     try {
       const response = await api.getUserProgress()
       if (response.success && response.data) {
-        const progress = response.data as any
+        const data = response.data as any
         setProgressStats({
-          completedLessons: progress.completed_lessons || 0,
-          totalLessons: progress.total_lessons || 99,
-          currentStreak: progress.current_streak || 0,
-          longestStreak: progress.longest_streak || 0,
+          completedLessons: data.completed_lessons || 0,
+          totalLessons: data.total_lessons || 99,
+          currentStreak: data.current_streak || 0,
+          longestStreak: data.longest_streak || 0,
         })
+
+        // Extract completion dates for heatmap
+        const dates: string[] = []
+        if (Array.isArray(data.progress)) {
+          for (const p of data.progress) {
+            if (p.completed_at) dates.push(p.completed_at)
+            if (p.updated_at) dates.push(p.updated_at)
+          }
+        }
+        setActivityDates(dates)
       }
     } catch (error) {
       console.error('Failed to load progress:', error)
@@ -70,6 +82,11 @@ const ProgressStats = () => {
         <p className="text-slate-500 text-xs mt-2">
           {t('settings.longestStreak', { count: progressStats.longestStreak })}
         </p>
+      </div>
+
+      {/* Activity Heatmap */}
+      <div className="mb-8">
+        <ActivityHeatmap activityDates={activityDates} />
       </div>
 
       {/* Stats */}

@@ -28,23 +28,13 @@ const PvPLobbyPage: React.FC = () => {
       return
     }
 
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      toast.error('Authentication token not found. Please login again.')
-      navigate('/auth')
-      return
-    }
-
     setIsSearching(true)
 
     try {
-      const match = await pvpService.findMatch(
-        {
-          mode: selectedMode,
-          difficulty: selectedDifficulty,
-        },
-        token
-      )
+      const match = await pvpService.findMatch({
+        mode: selectedMode,
+        difficulty: selectedDifficulty,
+      })
 
       toast.success('Match found!')
       navigate(`/pvp/match/${match.room_code}`)

@@ -27,7 +27,7 @@ apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const requestStartTime = Date.now()
     // Store start time for duration tracking
-    ;(config as any).requestStartTime = requestStartTime
+    ;(config as { requestStartTime?: number }).requestStartTime = requestStartTime
 
     const token = useAuthStore.getState().token
 
@@ -100,7 +100,8 @@ apiClient.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
-    const requestStartTime = (originalRequest as any).requestStartTime || Date.now()
+    const requestStartTime =
+      (originalRequest as { requestStartTime?: number }).requestStartTime || Date.now()
     const duration = Date.now() - requestStartTime
 
     // Log API errors with context

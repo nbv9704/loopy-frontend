@@ -5,12 +5,12 @@
  * Auto-completes lesson when grading score ≥ 85.
  */
 
-import { FiPlay, FiBookOpen, FiCode } from 'react-icons/fi'
+import { FiPlay, FiBookOpen, FiCode, FiFileText } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import GradingDepthDropdown from '../grading/GradingDepthDropdown'
 import type { GradingDepth } from '../../types/grading.types'
 
-export type EditorTab = 'theory' | 'exercise'
+export type EditorTab = 'theory' | 'example' | 'exercise'
 
 interface LessonToolbarProps {
   hasLessons: boolean
@@ -45,6 +45,10 @@ const LessonToolbar: React.FC<LessonToolbarProps> = ({
         <button onClick={() => onTabChange('theory')} className={tabClass('theory')}>
           <FiBookOpen className="w-4 h-4" />
           Lý thuyết
+        </button>
+        <button onClick={() => onTabChange('example')} className={tabClass('example')}>
+          <FiFileText className="w-4 h-4" />
+          Ví dụ
         </button>
         <button onClick={() => onTabChange('exercise')} className={tabClass('exercise')}>
           <FiCode className="w-4 h-4" />

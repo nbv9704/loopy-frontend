@@ -2,9 +2,14 @@
  * Authentication Context
  *
  * Manages user authentication state across the app using backend API
+ *
+ * SECURITY UPDATE: Tokens are now stored in httpOnly cookies (backend-managed)
+ * - No more localStorage token storage (XSS protection)
+ * - Cookies are automatically sent with every request
+ * - Backend sets/clears cookies on login/logout
  */
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
 import FullscreenLoader from '../components/common/FullscreenLoader'
@@ -25,13 +30,9 @@ interface AuthContextType {
   refreshUser: () => Promise<void>
 }
 
-const parseJwt = (token: string) => {
-  try {
-    return JSON.parse(atob(token.split('.')[1]))
-  } catch (e) {
-    return null
-  }
-}
+// REMOVED: parseJwt function (no longer needed - tokens in httpOnly cookies)
+// REMOVED: scheduleTokenRefresh function (backend handles token refresh)
+// REMOVED: refreshAuthToken function (backend handles token refresh)
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -51,78 +52,83 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { t } = useTranslation()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  /**
+   * Clear auto-refresh interval on unmount or logout
+   */
+  const stopAutoRefresh = () => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
+  }
+
+  /**
+   * Start auto-refresh interval - refresh token every 14 minutes
+   * (Access token expires in 15 minutes, so refresh 1 minute before expiry)
+   */
+  const startAutoRefresh = () => {
+    stopAutoRefresh() // Clear any existing interval
+
+    const REFRESH_INTERVAL = 14 * 60 * 1000 // 14 minutes
+
+    refreshIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await api.refreshToken()
+        if (!response.success) {
+          // Refresh failed, logout user
+          console.warn('Token refresh failed, logging out')
+          setUser(null)
+          stopAutoRefresh()
+        }
+      } catch (error) {
+        // Network error or server error, logout user
+        console.error('Token refresh error:', error)
+        setUser(null)
+        stopAutoRefresh()
+      }
+    }, REFRESH_INTERVAL)
+  }
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const token = localStorage.getItem('auth_token')
-    const userData = localStorage.getItem('user_data')
-
-    if (token && userData) {
+    // Check if user is logged in by calling /api/auth/me
+    // Tokens are now in httpOnly cookies, so we can't read them directly
+    const checkAuth = async () => {
       try {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
-        api.setToken(token)
-        scheduleTokenRefresh(token)
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('user_data')
-        localStorage.removeItem('refresh_token')
-      }
-    }
-
-    setLoading(false)
-  }, [])
-
-  const scheduleTokenRefresh = (token: string) => {
-    const decoded = parseJwt(token)
-    if (!decoded || !decoded.exp) return
-
-    // Calculate time until expiry in milliseconds
-    const timeUntilExpiry = decoded.exp * 1000 - Date.now()
-
-    // Refresh 5 minutes before expiry
-    const refreshTime = timeUntilExpiry - 5 * 60 * 1000
-
-    if (refreshTime <= 0) {
-      refreshAuthToken()
-    } else {
-      setTimeout(() => {
-        refreshAuthToken()
-      }, refreshTime)
-    }
-  }
-
-  const refreshAuthToken = async () => {
-    const refreshToken = localStorage.getItem('refresh_token')
-    if (!refreshToken) return
-
-    try {
-      const response = await api.refreshToken(refreshToken)
-      if (response.success && (response.data as any)?.session) {
-        const { access_token: accessToken, refresh_token: newRefreshToken } = (response.data as any)
-          .session
-
-        api.setToken(accessToken)
-        localStorage.setItem('auth_token', accessToken)
-        if (newRefreshToken) {
-          localStorage.setItem('refresh_token', newRefreshToken)
+        const response = await api.getCurrentUser()
+        if (response.success && response.data) {
+          const userData = (
+            response.data as {
+              user: User & { profile?: { avatar_url?: string; display_name?: string } }
+            }
+          ).user
+          const newUser: User = {
+            id: userData.id,
+            email: userData.email,
+            displayName: userData.profile?.display_name || userData.email?.split('@')[0],
+            avatarUrl: userData.profile?.avatar_url,
+          }
+          setUser(newUser)
+          // Start auto-refresh when user is authenticated
+          startAutoRefresh()
         }
-
-        // Dispatch event for other listeners (like PvP Socket)
-        window.dispatchEvent(
-          new CustomEvent('auth:token_refreshed', { detail: { token: accessToken } })
-        )
-
-        scheduleTokenRefresh(accessToken)
-      } else {
-        signOut()
+      } catch (error) {
+        // Not authenticated or token expired
+        setUser(null)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to refresh token:', error)
-      signOut()
     }
-  }
+
+    checkAuth()
+
+    // Cleanup interval on unmount
+    return () => {
+      stopAutoRefresh()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     const response = await api.signup(email, password, displayName)
@@ -131,12 +137,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error(response.error?.message || 'Đăng ký thất bại')
     }
 
-    const { user: userData, session, message } = response.data as any
-    const token = session?.access_token
+    const { user: userData, message } = response.data as { user: User; message: string }
 
-    // Production mode: No session returned (email confirmation required)
-    if (!token) {
-      // Return success message without logging in
+    // Check if email confirmation is required
+    if (!userData) {
       return {
         success: true,
         requiresEmailConfirmation: true,
@@ -144,7 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    // Development mode: Session returned, auto login
+    // Development mode: Auto login (tokens are in httpOnly cookies)
     const newUser: User = {
       id: userData.id,
       email: userData.email,
@@ -152,13 +156,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     setUser(newUser)
-    api.setToken(token)
-    localStorage.setItem('auth_token', token)
-    if (session?.refresh_token) {
-      localStorage.setItem('refresh_token', session.refresh_token)
-    }
-    localStorage.setItem('user_data', JSON.stringify(newUser))
-    scheduleTokenRefresh(token)
 
     return {
       success: true,
@@ -174,13 +171,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error(response.error?.message || 'Đăng nhập thất bại')
     }
 
-    const { user: userData, session } = response.data as any
-    const token = session?.access_token
+    const { user: userData } = response.data as { user: User }
 
-    if (!token) {
-      throw new Error('No access token received')
-    }
-
+    // Tokens are now in httpOnly cookies (set by backend)
     const newUser: User = {
       id: userData.id,
       email: userData.email,
@@ -188,13 +181,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     setUser(newUser)
-    api.setToken(token)
-    localStorage.setItem('auth_token', token)
-    if (session?.refresh_token) {
-      localStorage.setItem('refresh_token', session.refresh_token)
-    }
-    localStorage.setItem('user_data', JSON.stringify(newUser))
-    scheduleTokenRefresh(token)
+    // Start auto-refresh after successful login
+    startAutoRefresh()
 
     return response
   }
@@ -202,16 +190,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     await api.logout()
     setUser(null)
-    api.setToken(null)
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user_data')
+    stopAutoRefresh()
+    // Cookies are cleared by backend
   }
 
   const refreshUser = async () => {
     const response = await api.getMyProfile()
     if (response.success && response.data) {
-      const profileData = (response.data as any).profile
+      const profileData = (
+        response.data as { profile: { id: string; display_name?: string; avatar_url?: string } }
+      ).profile
       const newUser: User = {
         id: profileData.id,
         email: user?.email || '',
@@ -219,7 +207,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         avatarUrl: profileData.avatar_url,
       }
       setUser(newUser)
-      localStorage.setItem('user_data', JSON.stringify(newUser))
     }
   }
 

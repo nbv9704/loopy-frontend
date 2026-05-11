@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronRight, Maximize2, X } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Lesson {
   id: string
@@ -59,6 +61,9 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
       return newSet
     })
   }
+
+  // State quản lý popup tóm tắt
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
 
   // Group lessons by chapter
   const lessonsByChapter = lessons.reduce(
@@ -173,15 +178,59 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
       </nav>
 
       {/* Key Insight Panel */}
-      {hasLessons && currentLesson && (
+      {hasLessons && currentLesson && currentLesson.description && (
         <div className="border-t border-yellow-400/20 bg-gradient-to-br from-yellow-400/10 to-transparent p-5 flex-shrink-0">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-7 h-7 border-2 border-yellow-400/50 rounded-lg flex items-center justify-center bg-yellow-400/10">
               <span className="text-yellow-400 text-sm font-bold">!</span>
             </div>
-            <div className="flex-1">
-              <h4 className="text-yellow-400 text-sm font-bold mb-2">{t('learn.keyInsight')}</h4>
-              <p className="text-slate-300 text-sm leading-relaxed">{currentLesson.insight}</p>
+            <div className="flex-1 overflow-hidden">
+              <h4 className="text-yellow-400 text-sm font-bold mb-2">
+                {t('learn.summary', 'Tóm tắt')}
+              </h4>
+              <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap line-clamp-3">
+                {currentLesson.description}
+              </p>
+              {currentLesson.description.length > 100 && (
+                <button
+                  onClick={() => setIsSummaryModalOpen(true)}
+                  className="mt-2 text-xs font-semibold text-yellow-400/80 hover:text-yellow-400 flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <Maximize2 className="w-3 h-3" />
+                  {t('learn.readMore', 'Xem chi tiết')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Modal */}
+      {isSummaryModalOpen && currentLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-yellow-400/30 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-yellow-400/5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 border-2 border-yellow-400/50 rounded-lg flex items-center justify-center bg-yellow-400/10">
+                  <span className="text-yellow-400 font-bold">!</span>
+                </div>
+                <h3 className="text-yellow-400 font-bold text-lg">
+                  {t('learn.summary', 'Tóm tắt')}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsSummaryModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="prose prose-invert prose-yellow max-w-none text-slate-300 text-sm leading-relaxed font-sans">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentLesson.description}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         </div>

@@ -92,7 +92,6 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* TODO: Add charts in Phase 2 */}
       <div className="bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
         <h2 className="text-xl font-bold text-white mb-4">Biểu đồ & Phân tích</h2>
         <p className="text-slate-400 text-center py-8">Biểu đồ chi tiết sẽ được thêm vào Phase 2</p>

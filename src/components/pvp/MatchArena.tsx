@@ -5,13 +5,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Send, Code, Smile } from 'lucide-react'
+import { Clock, Send, Code, Smile, WifiOff } from 'lucide-react'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { python } from '@codemirror/lang-python'
 import { cpp } from '@codemirror/lang-cpp'
 import { oneDark } from '@codemirror/theme-one-dark'
-import type { PvPMatch, PvPQuestion } from '../../types/pvp.types'
+import type { PvPMatch, PvPQuestion, MatchPausedPayload } from '../../types/pvp.types'
 import type { UsePvPSocketReturn } from '../../hooks/usePvPSocket'
 import ParticipantCard from './ParticipantCard'
 import ReactionPicker from './ReactionPicker'
@@ -26,6 +26,9 @@ interface MatchArenaProps {
   currentUserId: string
   isCooldown?: boolean
   isMatchOverCooldown?: boolean
+  isPaused?: boolean
+  pauseInfo?: MatchPausedPayload | null
+  pauseCountdown?: number
 }
 
 const MatchArena: React.FC<MatchArenaProps> = ({
@@ -36,6 +39,9 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   currentUserId,
   isCooldown = false,
   isMatchOverCooldown = false,
+  isPaused = false,
+  pauseInfo = null,
+  pauseCountdown = 0,
 }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('')
   const [code, setCode] = useState<string>(question.starter_code || '')
@@ -400,6 +406,67 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   {isMatchOverCooldown
                     ? 'Đang tổng hợp kết quả chung cuộc...'
                     : 'Chuẩn bị câu hỏi tiếp theo...'}
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause Overlay — Disconnect Grace Period */}
+        <AnimatePresence>
+          {isPaused && pauseInfo && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0a0e1a]/90 backdrop-blur-md"
+            >
+              <motion.div
+                initial={{ scale: 0.8, y: 30 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, y: 30 }}
+                className="bg-slate-800/90 border-2 border-amber-500/40 rounded-2xl p-10 text-center max-w-md mx-auto shadow-2xl shadow-amber-500/10"
+              >
+                {/* Animated disconnect icon */}
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <div className="w-24 h-24 border-4 border-amber-500/30 rounded-full"></div>
+                    <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="46"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeDasharray={`${2 * Math.PI * 46}`}
+                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - pauseCountdown / (pauseInfo.timeoutSeconds || 30))}`}
+                        className="text-amber-500 transition-all duration-1000 ease-linear"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <WifiOff className="w-10 h-10 text-amber-400 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+
+                <h2 className="text-2xl font-bold text-amber-400 mb-2">Trận đấu tạm dừng</h2>
+                <p className="text-slate-300 mb-6">
+                  <span className="font-semibold text-white">{pauseInfo.displayName}</span> đã mất
+                  kết nối
+                </p>
+
+                {/* Countdown */}
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-6 py-4 mb-4">
+                  <p className="text-slate-400 text-sm mb-1">Đang chờ kết nối lại</p>
+                  <p className="text-4xl font-bold text-amber-400 tabular-nums">
+                    {pauseCountdown}s
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs">
+                  Nếu không kết nối lại kịp, người chơi sẽ bị xử thua
                 </p>
               </motion.div>
             </motion.div>

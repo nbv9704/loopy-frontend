@@ -20,30 +20,21 @@ interface ApiResponse<T> {
 
 class ApiClient {
   private baseUrl: string
-  private token: string | null = null
-
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
   }
 
-  setToken(token: string | null) {
-    this.token = token
-  }
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  public async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
-    }
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
     }
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include', // CRITICAL: Send cookies with every request
       })
 
       // Handle HTTP errors with interceptor logic
@@ -75,7 +66,7 @@ class ApiClient {
       case 401:
         // Unauthorized - only show error message, don't redirect
         // Let individual components handle auth requirements
-        toast.error('Phiên đăng nhập đã hết hạn')
+        toast.error('Phiên đăng nhập đã hết hạn', { id: 'session-expired-toast' })
         break
 
       case 403:
@@ -126,10 +117,12 @@ class ApiClient {
     return this.request('/api/auth/me')
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken?: string) {
+    // New: Refresh token is in httpOnly cookie (no need to send in body)
+    // Legacy: Accept refreshToken parameter for backward compatibility
     return this.request('/api/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
+      body: refreshToken ? JSON.stringify({ refreshToken }) : JSON.stringify({}),
     })
   }
 

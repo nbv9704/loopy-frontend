@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePvPSocket } from '../hooks/usePvPSocket'
 import { pvpService } from '../services/pvp.service'
 import toast from 'react-hot-toast'
-import type { PvPMatch, PvPQuestion, FinalScore } from '../types/pvp.types'
+import type { PvPMatch, PvPQuestion, FinalScore, MatchPausedPayload } from '../types/pvp.types'
 
 // Components
 import MatchLobby from '../components/pvp/MatchLobby'
@@ -30,6 +30,9 @@ const PvPMatchPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isCooldown, setIsCooldown] = useState(false)
   const [isMatchOverCooldown, setIsMatchOverCooldown] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [pauseInfo, setPauseInfo] = useState<MatchPausedPayload | null>(null)
+  const [pauseCountdown, setPauseCountdown] = useState(0)
 
   const socket = usePvPSocket()
 
@@ -42,12 +45,6 @@ const PvPMatchPage: React.FC = () => {
       return
     }
 
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      navigate('/auth')
-      return
-    }
-
     const loadMatch = async (retryCount = 0) => {
       try {
         // Small delay to ensure participant is inserted
@@ -55,7 +52,7 @@ const PvPMatchPage: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
 
-        const matchData = await pvpService.getMatch(roomCode, token)
+        const matchData = await pvpService.getMatch(roomCode)
 
         setMatch(matchData)
         setIsLoading(false)
@@ -176,6 +173,37 @@ const PvPMatchPage: React.FC = () => {
       toast.error(error.message)
     })
 
+    // --- Disconnect Grace Period events ---
+    socket.onMatchPaused(payload => {
+      setIsPaused(true)
+      setPauseInfo(payload)
+      setPauseCountdown(payload.timeoutSeconds)
+      toast(`⏸️ ${payload.displayName} đã mất kết nối. Đợi ${payload.timeoutSeconds}s...`, {
+        duration: 5000,
+        id: 'match-paused',
+      })
+    })
+
+    socket.onMatchResumed(payload => {
+      setIsPaused(false)
+      setPauseInfo(null)
+      setPauseCountdown(0)
+      toast.success(`🔄 ${payload.displayName} đã kết nối lại! Tiếp tục trận đấu.`, {
+        id: 'match-resumed',
+      })
+    })
+
+    socket.onMatchForfeit(payload => {
+      setIsPaused(false)
+      setPauseInfo(null)
+      setPauseCountdown(0)
+      toast(`🏳️ ${payload.displayName} đã bị xử thua do mất kết nối.`, {
+        duration: 5000,
+        icon: '⚠️',
+        id: 'match-forfeit',
+      })
+    })
+
     // Cleanup function
     return () => {
       // Note: The socket hook's event listeners already handle cleanup
@@ -183,16 +211,27 @@ const PvPMatchPage: React.FC = () => {
     }
   }, [socket.socket, roomCode]) // Depend on both socket.socket and roomCode
 
-  // Timer countdown
+  // Timer countdown (pauses when match is paused)
   useEffect(() => {
-    if (timeRemaining <= 0 || match?.status !== 'in_progress') return
+    if (timeRemaining <= 0 || match?.status !== 'in_progress' || isPaused) return
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => Math.max(0, prev - 1))
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [timeRemaining, match?.status])
+  }, [timeRemaining, match?.status, isPaused])
+
+  // Pause grace period countdown
+  useEffect(() => {
+    if (!isPaused || pauseCountdown <= 0) return
+
+    const timer = setInterval(() => {
+      setPauseCountdown(prev => Math.max(0, prev - 1))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [isPaused, pauseCountdown])
 
   if (isLoading) {
     return (
@@ -257,6 +296,9 @@ const PvPMatchPage: React.FC = () => {
               currentUserId={user?.id || ''}
               isCooldown={isCooldown}
               isMatchOverCooldown={isMatchOverCooldown}
+              isPaused={isPaused}
+              pauseInfo={pauseInfo}
+              pauseCountdown={pauseCountdown}
             />
           </motion.div>
         )}

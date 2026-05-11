@@ -14,8 +14,8 @@ interface UseApiState<T> {
   refetch: () => Promise<void>
 }
 
-export function useLanguages(): UseApiState<any[]> {
-  const [data, setData] = useState<any[] | null>(null)
+export function useLanguages(): UseApiState<unknown[]> {
+  const [data, setData] = useState<unknown[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,7 +26,7 @@ export function useLanguages(): UseApiState<any[]> {
     const response = await api.getLanguages()
 
     if (response.success && response.data) {
-      setData((response.data as any).languages)
+      setData((response.data as { languages: unknown[] }).languages)
     } else {
       setError(response.error?.message || 'Failed to fetch languages')
     }
@@ -41,8 +41,8 @@ export function useLanguages(): UseApiState<any[]> {
   return { data, loading, error, refetch: fetchData }
 }
 
-export function useChapters(languageId: string | null): UseApiState<any[]> {
-  const [data, setData] = useState<any[] | null>(null)
+export function useChapters(languageId: string | null): UseApiState<unknown[]> {
+  const [data, setData] = useState<unknown[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,7 +58,7 @@ export function useChapters(languageId: string | null): UseApiState<any[]> {
     const response = await api.getChaptersByLanguage(languageId)
 
     if (response.success && response.data) {
-      setData((response.data as any).chapters)
+      setData((response.data as { chapters: unknown[] }).chapters)
     } else {
       setError(response.error?.message || 'Failed to fetch chapters')
     }
@@ -73,8 +73,8 @@ export function useChapters(languageId: string | null): UseApiState<any[]> {
   return { data, loading, error, refetch: fetchData }
 }
 
-export function useLessons(chapterId: string | null): UseApiState<any[]> {
-  const [data, setData] = useState<any[] | null>(null)
+export function useLessons(chapterId: string | null): UseApiState<unknown[]> {
+  const [data, setData] = useState<unknown[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,7 +90,7 @@ export function useLessons(chapterId: string | null): UseApiState<any[]> {
     const response = await api.getLessonsByChapter(chapterId)
 
     if (response.success && response.data) {
-      setData((response.data as any).lessons)
+      setData((response.data as { lessons: unknown[] }).lessons)
     } else {
       setError(response.error?.message || 'Failed to fetch lessons')
     }
@@ -105,8 +105,8 @@ export function useLessons(chapterId: string | null): UseApiState<any[]> {
   return { data, loading, error, refetch: fetchData }
 }
 
-export function useLesson(lessonId: string | null): UseApiState<any> {
-  const [data, setData] = useState<any | null>(null)
+export function useLesson(lessonId: string | null): UseApiState<unknown> {
+  const [data, setData] = useState<unknown | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -122,7 +122,7 @@ export function useLesson(lessonId: string | null): UseApiState<any> {
     const response = await api.getLesson(lessonId)
 
     if (response.success && response.data) {
-      setData((response.data as any).lesson)
+      setData((response.data as { lesson: unknown }).lesson)
     } else {
       setError(response.error?.message || 'Failed to fetch lesson')
     }
@@ -137,8 +137,8 @@ export function useLesson(lessonId: string | null): UseApiState<any> {
   return { data, loading, error, refetch: fetchData }
 }
 
-export function useUserProgress(): UseApiState<any> {
-  const [data, setData] = useState<any | null>(null)
+export function useUserProgress(): UseApiState<unknown> {
+  const [data, setData] = useState<unknown | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

@@ -50,8 +50,8 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
           return
         }
 
-        const data = curriculumResponse.data as any
-        const chaptersData = data.chapters || []
+        const data = curriculumResponse.data as { lessons: Lesson[]; chapters?: unknown[] }
+        const chaptersData = (data.chapters as Chapter[]) || []
         const allLessons: Lesson[] = data.lessons || []
 
         setChapters(chaptersData)
@@ -93,9 +93,11 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
       try {
         const progressResponse = await api.getUserProgress()
         if (progressResponse.success && progressResponse.data) {
-          const progress = (progressResponse.data as any).progress || []
+          const progress =
+            (progressResponse.data as { progress: { status: string; lesson_id: string }[] })
+              .progress || []
           const completed = new Set<string>(
-            progress.filter((p: any) => p.status === 'completed').map((p: any) => p.lesson_id)
+            progress.filter(p => p.status === 'completed').map(p => p.lesson_id)
           )
           setCompletedLessons(completed)
         }

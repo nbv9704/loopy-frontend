@@ -116,6 +116,22 @@ npm run lint
 npm run lint:fix
 ```
 
+## 📚 Documentation
+
+### 📖 Complete Documentation Hub
+
+See [**docs/README.md**](docs/README.md) for all documentation.
+
+### 🔒 Security Documentation
+
+- [Security and Bugs Report](docs/SECURITY_AND_BUGS_REPORT.md) - Comprehensive security audit
+- [Critical Fix Complete](docs/CRITICAL_FIX_COMPLETE.md) - Cookie authentication implementation
+
+### Related Backend Documentation
+
+- [Backend Testing Guide](../loopy-backend/docs/QUICK_START_TESTING.md)
+- [Token Security Migration](../loopy-backend/docs/TOKEN_SECURITY_MIGRATION.md)
+
 ## 🔗 Backend API
 
 This frontend requires the Loopy Backend API to function properly.

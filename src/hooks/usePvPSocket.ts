@@ -1,6 +1,11 @@
 /**
  * PvP Socket Hook
  * Real-time WebSocket connection for PvP matches
+ *
+ * SECURITY UPDATE: Authentication via httpOnly cookies
+ * - No longer reads tokens from localStorage
+ * - Socket.io automatically sends cookies with connection
+ * - Backend validates token from cookie
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
@@ -18,6 +23,9 @@ import type {
   TypingPayload,
   ErrorPayload,
   CooldownPayload,
+  MatchPausedPayload,
+  MatchResumedPayload,
+  MatchForfeitPayload,
 } from '../types/pvp.types'
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -54,6 +62,9 @@ export interface UsePvPSocketReturn {
   onTypingStopped: (callback: (payload: TypingPayload) => void) => void
   onError: (callback: (error: ErrorPayload) => void) => void
   onCooldown: (callback: (payload: CooldownPayload) => void) => void
+  onMatchPaused: (callback: (payload: MatchPausedPayload) => void) => void
+  onMatchResumed: (callback: (payload: MatchResumedPayload) => void) => void
+  onMatchForfeit: (callback: (payload: MatchForfeitPayload) => void) => void
 }
 
 export const usePvPSocket = (): UsePvPSocketReturn => {
@@ -66,14 +77,15 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
   useEffect(() => {
     if (!user) return
 
-    const token = localStorage.getItem('auth_token')
-    if (!token) return
-
+    // Tokens are now in httpOnly cookies
+    // Socket.io will automatically send cookies with connection
     const socket = io(SOCKET_URL, {
       auth: {
-        token: token,
+        // Backend will read token from cookie
+        // No need to send token explicitly
       },
       transports: ['websocket', 'polling'],
+      withCredentials: true, // CRITICAL: Send cookies
     })
 
     socket.on('connect', () => {
@@ -95,20 +107,10 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
 
     socketRef.current = socket
 
-    // Listen for silent token refreshes
-    const handleTokenRefresh = (e: any) => {
-      const newToken = e.detail?.token
-      if (newToken && socketRef.current) {
-        // Update the token used for any future reconnections
-        ;(socketRef.current.auth as any).token = newToken
-        console.log('Socket auth token updated silently')
-      }
-    }
-
-    window.addEventListener('auth:token_refreshed', handleTokenRefresh)
+    // Note: Token refresh events are no longer needed
+    // Backend manages token refresh via cookies automatically
 
     return () => {
-      window.removeEventListener('auth:token_refreshed', handleTokenRefresh)
       socket.disconnect()
       socketRef.current = null
     }
@@ -266,6 +268,27 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     }
   }, [])
 
+  const onMatchPaused = useCallback((callback: (payload: MatchPausedPayload) => void) => {
+    socketRef.current?.on('match:paused', callback)
+    return () => {
+      socketRef.current?.off('match:paused', callback)
+    }
+  }, [])
+
+  const onMatchResumed = useCallback((callback: (payload: MatchResumedPayload) => void) => {
+    socketRef.current?.on('match:resumed', callback)
+    return () => {
+      socketRef.current?.off('match:resumed', callback)
+    }
+  }, [])
+
+  const onMatchForfeit = useCallback((callback: (payload: MatchForfeitPayload) => void) => {
+    socketRef.current?.on('match:forfeit', callback)
+    return () => {
+      socketRef.current?.off('match:forfeit', callback)
+    }
+  }, [])
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -298,5 +321,8 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     onTypingStopped,
     onError,
     onCooldown,
+    onMatchPaused,
+    onMatchResumed,
+    onMatchForfeit,
   }
 }

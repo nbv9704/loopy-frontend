@@ -1,6 +1,11 @@
 /**
  * Token Refresh Service — Manages automatic JWT token refresh for admin sessions.
  *
+ * SECURITY UPDATE: Tokens are now in httpOnly cookies (backend-managed)
+ * - No longer reads/stores tokens in localStorage
+ * - Backend automatically refreshes tokens via cookies
+ * - This service now only triggers refresh requests
+ *
  * Provides a singleton instance and class export for component lifecycle management.
  */
 
@@ -66,19 +71,14 @@ export class TokenRefreshService {
   }
 
   private async _doRefresh(): Promise<void> {
-    const { token, setAuth, clearAuth } = useAuthStore.getState()
-    if (!token) {
-      throw new Error('No token available for refresh')
-    }
-
     try {
+      // Tokens are in httpOnly cookies - backend handles refresh automatically
       const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
-        credentials: 'include',
+        credentials: 'include', // CRITICAL: Send cookies
       })
 
       if (!response.ok) {
@@ -86,13 +86,18 @@ export class TokenRefreshService {
       }
 
       const data = await response.json()
-      if (data.token) {
-        setAuth(data.token, data.user || useAuthStore.getState().user)
-      } else {
-        throw new Error('No token in refresh response')
+
+      // Backend sets new cookies automatically
+      // Just verify success
+      if (!data.success) {
+        throw new Error('Token refresh failed')
       }
+
+      // Note: We don't update store with tokens anymore
+      // Tokens are in httpOnly cookies (backend-managed)
     } catch (error) {
       console.error('Token refresh failed:', error)
+      const { clearAuth } = useAuthStore.getState()
       clearAuth()
       throw error
     }

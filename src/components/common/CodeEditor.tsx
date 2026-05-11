@@ -5,16 +5,55 @@
 import { useState, useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
-import { javascript } from '@codemirror/lang-javascript'
+import type { Extension } from '@codemirror/state'
 
 interface CodeEditorProps {
   value: string
   onChange: (value: string) => void
   editable?: boolean
+  language?: string
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange, editable = true }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({
+  value,
+  onChange,
+  editable = true,
+  language = 'javascript',
+}) => {
   const [fontSize, setFontSize] = useState(14)
+  const [extensions, setExtensions] = useState<Extension[]>([])
+
+  useEffect(() => {
+    let isMounted = true
+    const loadLanguage = async () => {
+      try {
+        let langExt: Extension
+        switch (language.toLowerCase()) {
+          case 'python':
+            const { python } = await import('@codemirror/lang-python')
+            langExt = python()
+            break
+          case 'cpp':
+          case 'c++':
+            const { cpp } = await import('@codemirror/lang-cpp')
+            langExt = cpp()
+            break
+          case 'javascript':
+          default:
+            const { javascript } = await import('@codemirror/lang-javascript')
+            langExt = javascript()
+            break
+        }
+        if (isMounted) setExtensions([langExt])
+      } catch (err) {
+        console.error('Failed to load language extension', err)
+      }
+    }
+    loadLanguage()
+    return () => {
+      isMounted = false
+    }
+  }, [language])
 
   useEffect(() => {
     const saved = localStorage.getItem('editor_font_size')
@@ -34,7 +73,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ value, onChange, editable = tru
       value={value}
       height="100%"
       theme={oneDark}
-      extensions={[javascript()]}
+      extensions={extensions}
       onChange={onChange}
       editable={editable}
       readOnly={!editable}

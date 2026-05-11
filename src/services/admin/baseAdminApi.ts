@@ -10,14 +10,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export class BaseAdminApiService {
   protected baseUrl: string
-  protected token: string | null = null
-
   constructor(baseUrl: string = API_URL) {
     this.baseUrl = baseUrl
-  }
-
-  setToken(token: string | null) {
-    this.token = token
   }
 
   protected async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -26,14 +20,11 @@ export class BaseAdminApiService {
       ...(options.headers as Record<string, string>),
     }
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
-    }
-
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -61,9 +52,7 @@ export class BaseAdminApiService {
 
   protected async requestBlob(endpoint: string): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
+      credentials: 'include',
     })
 
     if (!response.ok) {

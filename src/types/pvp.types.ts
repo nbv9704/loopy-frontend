@@ -194,3 +194,20 @@ export interface CooldownPayload {
   isMatchOver: boolean
   nextQuestionIndex?: number
 }
+
+export interface MatchPausedPayload {
+  disconnectedUserId: string
+  displayName: string
+  timeoutSeconds: number
+}
+
+export interface MatchResumedPayload {
+  reconnectedUserId: string
+  displayName: string
+}
+
+export interface MatchForfeitPayload {
+  forfeitUserId: string
+  displayName: string
+  reason: 'disconnect_timeout'
+}

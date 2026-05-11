@@ -22,7 +22,6 @@ const ProfileSettings = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // TODO: In production, upload to Supabase Storage instead of base64
       // For now, using base64 for development (not recommended for production)
       if (file.size > 2 * 1024 * 1024) {
         alert(t('common.fileTooLarge'))

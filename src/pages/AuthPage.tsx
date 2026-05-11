@@ -20,7 +20,7 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const from = (location.state as any)?.from?.pathname || '/playground'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/playground'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -215,6 +215,44 @@ const AuthPage: React.FC = () => {
                 )}
               </button>
             </div>
+
+            {/* Dev Login - only in development */}
+            {import.meta.env.DEV && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true)
+                    setError('')
+                    try {
+                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+                      const res = await fetch(`${API_URL}/api/auth/dev-login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                      })
+                      const data = await res.json()
+                      if (data.success) {
+                        window.location.href = from
+                      } else {
+                        setError(data.error || 'Dev login failed')
+                      }
+                    } catch (err: any) {
+                      setError(err.message || 'Dev login failed')
+                    } finally {
+                      setLoading(false)
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-amber-500/15 border border-amber-500/30 text-amber-400 font-semibold rounded-xl cursor-pointer hover:bg-amber-500/25 hover:border-amber-400 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  ⚡ Dev Login (dev-admin)
+                </button>
+                <p className="text-slate-500 text-xs text-center mt-2">
+                  Chỉ hiển thị trong môi trường development
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

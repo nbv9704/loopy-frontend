@@ -14,6 +14,8 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 import type { GradingResult, GradingDepth } from '../../types/grading.types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface LessonViewerProps {
   language: string
@@ -42,7 +44,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
 
   const handleTabChange = (tab: EditorTab) => {
     setEditorTab(tab)
-    if (tab === 'theory') {
+    if (tab === 'theory' || tab === 'example') {
       setGradingResult(null)
     }
   }
@@ -191,7 +193,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
           lessonDescription: currentLesson.description,
           lessonInsight: currentLesson.insight,
           gradingDepth: depth,
-        })) as any
+        })) as { success: boolean; data?: GradingResult; error?: { message: string } }
 
         if (response.success && response.data) {
           setGradingResult(response.data as GradingResult)
@@ -252,12 +254,34 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
           <div className="flex-1 overflow-auto min-h-0">
             {editorTab === 'theory' ? (
               (() => {
+                if (!currentLesson?.insight) {
+                  return (
+                    <div className="p-6">
+                      <p className="text-slate-500 italic">
+                        Chưa có nội dung lý thuyết cho bài này.
+                      </p>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="flex-1 p-6 overflow-y-auto bg-slate-900/50">
+                    <div className="prose prose-invert prose-brand max-w-none text-slate-300 text-sm leading-relaxed font-sans">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {currentLesson.insight}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )
+              })()
+            ) : editorTab === 'example' ? (
+              (() => {
                 const { theory } = splitLessonCode(currentLesson?.code || '')
                 return theory ? (
                   <CodeEditor value={theory} onChange={() => {}} editable={false} />
                 ) : (
                   <div className="p-6">
-                    <p className="text-slate-500 italic">Chưa có nội dung lý thuyết cho bài này.</p>
+                    <p className="text-slate-500 italic">Chưa có ví dụ minh họa cho bài này.</p>
                   </div>
                 )
               })()

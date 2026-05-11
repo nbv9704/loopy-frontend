@@ -70,7 +70,6 @@ const AppRouter: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<AdminDashboardPage />} />
                     <Route path="dashboard" element={<AdminDashboardPage />} />
-                    {/* TODO: Add more admin routes (Lesson Management, Submissions, etc.) */}
                   </Routes>
                 </Suspense>
               </AdminLayout>

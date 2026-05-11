@@ -32,7 +32,8 @@ const LanguageSelectorPage: React.FC = () => {
       try {
         const response = await api.getLanguages()
         if (response.success && response.data) {
-          const languagesData = (response.data as any).languages || []
+          const languagesData =
+            (response.data as { languages: Record<string, unknown>[] }).languages || []
           setLanguages(languagesData)
         }
       } catch (error) {
