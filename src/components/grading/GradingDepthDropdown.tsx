@@ -6,43 +6,47 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { FiSend, FiZap, FiEye, FiSearch, FiChevronDown } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import type { GradingDepth } from '../../types/grading.types'
 
 interface GradingDepthDropdownProps {
   isGrading: boolean
   onGrade: (depth: GradingDepth) => void
-  /** Custom label for the main button (default: 'Chấm điểm') */
+  /** Custom label for the main button */
   label?: string
   /** Open menu upward instead of downward */
   dropUp?: boolean
 }
 
-const GRADING_MODES: { key: GradingDepth; label: string; desc: string; icon: React.ReactNode }[] = [
-  { key: 'quick', label: 'Chấm sơ qua', desc: '~3-5s', icon: <FiZap className="w-3.5 h-3.5" /> },
-  {
-    key: 'careful',
-    label: 'Chấm cẩn thận',
-    desc: '~8-12s',
-    icon: <FiEye className="w-3.5 h-3.5" />,
-  },
-  {
-    key: 'thorough',
-    label: 'Chấm kĩ càng',
-    desc: '~15-25s',
-    icon: <FiSearch className="w-3.5 h-3.5" />,
-  },
-]
-
 const GradingDepthDropdown: React.FC<GradingDepthDropdownProps> = ({
   isGrading,
   onGrade,
-  label = 'Chấm điểm',
+  label,
   dropUp = false,
 }) => {
+  const { t } = useTranslation()
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const resolvedLabel = label || t('gradingUI.grade')
+
+  const GRADING_MODES: { key: GradingDepth; label: string; desc: string; icon: React.ReactNode }[] = [
+    { key: 'quick', label: t('gradingUI.quick'), desc: '~3-5s', icon: <FiZap className="w-3.5 h-3.5" /> },
+    {
+      key: 'careful',
+      label: t('gradingUI.careful'),
+      desc: '~8-12s',
+      icon: <FiEye className="w-3.5 h-3.5" />,
+    },
+    {
+      key: 'thorough',
+      label: t('gradingUI.thorough'),
+      desc: '~15-25s',
+      icon: <FiSearch className="w-3.5 h-3.5" />,
+    },
+  ]
 
   // Close menu on outside click
   useEffect(() => {
@@ -86,7 +90,7 @@ const GradingDepthDropdown: React.FC<GradingDepthDropdownProps> = ({
           ) : (
             <FiSend className="w-4 h-4" />
           )}
-          {isGrading ? 'Đang chấm...' : label}
+          {isGrading ? t('gradingUI.grading') : resolvedLabel}
         </button>
 
         {/* Dropdown trigger */}

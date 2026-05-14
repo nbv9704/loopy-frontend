@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import LandingNav from '../components/landing/LandingNav'
@@ -14,6 +15,7 @@ import { pageMetadata } from '../utils/seo'
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   // Container ref for global scroll tracking
   const containerRef = useRef<HTMLDivElement>(null)
@@ -77,7 +79,11 @@ const LandingPage: React.FC = () => {
   const ctaBlur = useTransform(ctaProgress, [0.5, 1], [0, 6])
 
   const handleStartCoding = () => {
-    navigate('/select-language')
+    if (user) {
+      navigate('/select-language')
+    } else {
+      navigate('/auth')
+    }
   }
 
   const handleViewDocs = () => {

@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { FiCheckCircle, FiCpu, FiClock } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import {
   type GradingResult,
   type GradingDepth,
@@ -35,6 +36,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
   onRetry,
   isGrading = false,
 }) => {
+  const { t } = useTranslation()
   const gradeColor = GRADE_COLORS[result.gradeLevel]
   const gradeLabel = GRADE_LABELS[result.gradeLevel]
 
@@ -109,7 +111,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-white">Kết quả chấm điểm</h3>
+              <h3 className="text-lg font-semibold text-white">{t('gradingUI.result')}</h3>
               <span
                 className="inline-block px-3 py-1 mt-1 text-sm font-medium rounded-full"
                 style={{
@@ -200,7 +202,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
       {/* Retry with mode selection */}
       {onRetry && (
         <div className="flex justify-center pt-2">
-          <GradingDepthDropdown isGrading={isGrading} onGrade={onRetry} label="Chấm lại" dropUp />
+          <GradingDepthDropdown isGrading={isGrading} onGrade={onRetry} label={t('gradingUI.regrade')} dropUp />
         </div>
       )}
     </div>

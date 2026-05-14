@@ -6,6 +6,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Check, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { PvPQuestion } from '../../types/pvp.types'
 
 interface TrueFalseQuestionProps {
@@ -23,6 +24,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   hasSubmitted,
   submissionResult,
 }) => {
+  const { t } = useTranslation()
   // Fixed order: TRUE first, FALSE second (no shuffle)
   const options = question.options || [
     { id: 'true', text: 'True' },
@@ -109,7 +111,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
       {/* Hint */}
       {!hasSubmitted && (
         <p className="text-center text-slate-400 text-sm mt-4">
-          Chọn đáp án rồi bấm Submit bên dưới
+          {t('pvpQuestion.selectAndSubmit')}
         </p>
       )}
     </div>

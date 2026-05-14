@@ -172,7 +172,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
   const submitForGrading = useCallback(
     async (depth: GradingDepth = 'quick') => {
       if (!currentLesson) {
-        setOutputLogs(['Chọn bài học trước khi chấm điểm'])
+        setOutputLogs([t('grading.selectLesson')])
         return
       }
 
@@ -181,8 +181,8 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
 
       setIsGrading(true)
       setGradingResult(null)
-      const depthLabels = { quick: 'sơ qua', careful: 'cẩn thận', thorough: 'kĩ càng' }
-      setOutputLogs([`⏳ Đang chấm điểm (${depthLabels[depth]})...`])
+      const depthLabels = { quick: 'quick', careful: 'careful', thorough: 'thorough' }
+      setOutputLogs([t('grading.processing', { depth: depthLabels[depth] })])
 
       try {
         // Send the exercise template as starter code for accurate diff comparison
@@ -198,18 +198,21 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
         if (response.success && response.data) {
           setGradingResult(response.data as GradingResult)
           setOutputLogs([
-            `✅ Chấm điểm hoàn tất — ${response.data.finalScore}/100 (${response.data.gradeLevel})`,
+            t('grading.complete', {
+              score: response.data.finalScore,
+              grade: response.data.gradeLevel,
+            }),
           ])
         } else {
-          setOutputLogs(['❌ Chấm điểm thất bại: ' + (response.error?.message || 'Unknown error')])
+          setOutputLogs([t('grading.failed', { error: response.error?.message || 'Unknown error' })])
         }
       } catch (error: any) {
-        setOutputLogs(['❌ Lỗi: ' + (error.message || 'Không thể kết nối server')])
+        setOutputLogs([t('grading.error', { message: error.message || 'Server error' })])
       } finally {
         setIsGrading(false)
       }
     },
-    [currentLesson, code, language, isGrading]
+    [currentLesson, code, language, isGrading, t]
   )
 
   if (loading) {
@@ -258,7 +261,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
                   return (
                     <div className="p-6">
                       <p className="text-slate-500 italic">
-                        Chưa có nội dung lý thuyết cho bài này.
+                        {t('learn.noContent')}
                       </p>
                     </div>
                   )
@@ -281,7 +284,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
                   <CodeEditor value={theory} onChange={() => {}} editable={false} />
                 ) : (
                   <div className="p-6">
-                    <p className="text-slate-500 italic">Chưa có ví dụ minh họa cho bài này.</p>
+                    <p className="text-slate-500 italic">{t('learn.noExample')}</p>
                   </div>
                 )
               })()
@@ -301,7 +304,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
               <button
                 onClick={() => setGradingResult(null)}
                 className="sticky top-2 right-2 float-right z-10 w-8 h-8 flex items-center justify-center rounded-lg bg-bg-primary/80 backdrop-blur-sm border border-white/10 text-gray-400 hover:text-white hover:border-brand-teal/50 transition-colors cursor-pointer"
-                title="Đóng kết quả"
+                title={t('learn.closeResults')}
               >
                 <FiX className="w-4 h-4" />
               </button>

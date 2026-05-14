@@ -9,6 +9,7 @@
 
 import React, { useState } from 'react'
 import { FiCheckCircle, FiXCircle, FiChevronDown, FiShield } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import type { TestRunResult, TestCaseResult } from '../../types/grading.types'
 
 interface TestCaseResultsProps {
@@ -16,6 +17,7 @@ interface TestCaseResultsProps {
 }
 
 const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
+  const { t } = useTranslation()
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set())
 
   const toggleExpanded = (testCaseId: string) => {
@@ -45,7 +47,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
           <span
             className={`text-sm font-medium ${passedCount === totalCount ? 'text-green-400' : 'text-yellow-400'}`}
           >
-            {passedCount}/{totalCount} đạt
+            {t('grading.passed', { passed: passedCount, total: totalCount })}
           </span>
           <span className="text-xs text-gray-500">{testRunResult.totalExecutionTime}ms</span>
         </div>

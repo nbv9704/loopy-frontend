@@ -7,10 +7,12 @@
 
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 interface ActivityHeatmapProps {
   /** Array of ISO date strings (YYYY-MM-DD) when user completed lessons */
   activityDates: string[]
+  totalActivities: number
 }
 
 const CELL_SIZE = 13
@@ -50,8 +52,10 @@ function getLevel(count: number): number {
   return 4
 }
 
-const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
-  const { grid, monthPositions, totalActivities } = useMemo(() => {
+const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates, totalActivities }) => {
+  const { t } = useTranslation()
+
+  const { grid, monthPositions } = useMemo(() => {
     // Count activities per date
     const dateCount = new Map<string, number>()
     for (const d of activityDates) {
@@ -98,7 +102,6 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
     return {
       grid: cells,
       monthPositions: months,
-      totalActivities: activityDates.length,
     }
   }, [activityDates])
 
@@ -107,10 +110,10 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
 
   return (
     <div className="bg-white/3 border border-brand-teal/10 rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold text-sm">Hoạt động học tập</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-white font-semibold text-sm">{t('heatmap.title')}</h3>
         <span className="text-slate-500 text-xs">
-          {totalActivities} bài hoàn thành trong năm qua
+          {t('heatmap.completedInYear', { count: totalActivities })}
         </span>
       </div>
 
@@ -130,13 +133,12 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
           ))}
 
           {/* Day cells */}
-          {grid.map((cell, i) => {
+          {grid.map(cell => {
             const level = getLevel(cell.count)
             const colorClass = LEVEL_COLORS[level]
-            // We use foreignObject to leverage Tailwind classes
             return (
               <foreignObject
-                key={i}
+                key={cell.date}
                 x={cell.weekIndex * TOTAL + 30}
                 y={cell.dayOfWeek * TOTAL + 16}
                 width={CELL_SIZE}
@@ -145,9 +147,8 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.0008, duration: 0.2 }}
-                  className={`w-full h-full rounded-[3px] ${colorClass} border border-white/5`}
-                  title={`${cell.date}: ${cell.count} bài`}
+                  className={`w-3 h-3 rounded-[2px] transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-white/30`}
+                  title={`${cell.date}: ${t('heatmap.countLessons', { count: cell.count })}`}
                 />
               </foreignObject>
             )
@@ -156,15 +157,17 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ activityDates }) => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-1.5 mt-3">
-        <span className="text-slate-600 text-[10px] mr-1">Ít</span>
-        {LEVEL_COLORS.map((color, i) => (
-          <div
-            key={i}
-            className={`w-[11px] h-[11px] rounded-[2px] ${color} border border-white/5`}
-          />
-        ))}
-        <span className="text-slate-600 text-[10px] ml-1">Nhiều</span>
+      <div className="mt-6 flex items-center justify-end gap-2">
+        <span className="text-slate-600 text-[10px] mr-1">{t('heatmap.less')}</span>
+        <div className="flex gap-1">
+          {LEVEL_COLORS.map((color, i) => (
+            <div
+              key={i}
+              className={`w-2.5 h-2.5 rounded-[1px] ${color} border border-white/5`}
+            />
+          ))}
+        </div>
+        <span className="text-slate-600 text-[10px] ml-1">{t('heatmap.more')}</span>
       </div>
     </div>
   )

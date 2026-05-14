@@ -86,7 +86,7 @@ class ErrorBoundary extends Component<Props, State> {
 
               {/* Title */}
               <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
-                Có lỗi xảy ra
+                {this.props.t('errorBoundary.title')}
               </h1>
 
               {/* Description */}
@@ -100,7 +100,7 @@ class ErrorBoundary extends Component<Props, State> {
                   onClick={this.handleReset}
                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all hover:scale-105 border border-white/20"
                 >
-                  Thử lại
+                  {this.props.t('errorBoundary.retry')}
                 </button>
                 <button
                   onClick={this.handleReload}
@@ -118,7 +118,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <div className="mt-8 pt-8 border-t border-white/10">
                   <details className="group">
                     <summary className="cursor-pointer text-slate-400 hover:text-white transition-colors mb-4 font-medium">
-                      Chi tiết lỗi (Development Mode)
+                      {this.props.t('errorBoundary.details')}
                     </summary>
                     <div className="bg-black/30 rounded-xl p-4 border border-red-500/20">
                       <div className="mb-4">

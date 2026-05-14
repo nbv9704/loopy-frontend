@@ -5,8 +5,10 @@
  */
 
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 const GradingSkeleton: React.FC = () => {
+  const { t } = useTranslation()
   return (
     <div className="space-y-4 animate-pulse">
       {/* Score Overview Skeleton */}
@@ -63,7 +65,7 @@ const GradingSkeleton: React.FC = () => {
 
       {/* Shimmer overlay */}
       <div className="text-center py-2">
-        <p className="text-sm text-brand-cyan/60 animate-pulse">AI đang phân tích code...</p>
+        <p className="text-sm text-brand-cyan/60 animate-pulse">{t('gradingUI.analyzing')}</p>
       </div>
     </div>
   )

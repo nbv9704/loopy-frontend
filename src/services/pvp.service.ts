@@ -44,6 +44,17 @@ export const pvpService = {
   },
 
   /**
+   * Join a specific match
+   */
+  async joinMatch(matchId: string): Promise<PvPMatch> {
+    const response = await api.request<any>(`/api/pvp/matches/${matchId}/join`, {
+      method: 'POST',
+    })
+    if (!response.success) throw new Error(response.error?.message || 'Failed to join match')
+    return response.data.match
+  },
+
+  /**
    * Find or create a match (matchmaking)
    */
   async findMatch(request: FindMatchRequest): Promise<PvPMatch> {

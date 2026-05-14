@@ -46,25 +46,25 @@ export interface UsePvPSocketReturn {
   stopTyping: (matchId: string) => void
 
   // Event listeners
-  onMatchUpdated: (callback: (payload: MatchUpdatedPayload) => void) => void
-  onMatchStarted: (callback: (match: PvPMatch) => void) => void
-  onQuestionChanged: (callback: (payload: QuestionChangedPayload) => void) => void
-  onMatchCompleted: (callback: (payload: MatchCompletedPayload) => void) => void
-  onParticipantJoined: (callback: (participant: PvPParticipant) => void) => void
-  onParticipantLeft: (callback: (participant: PvPParticipant) => void) => void
-  onParticipantReady: (callback: (participant: PvPParticipant) => void) => void
-  onParticipantDisconnected: (callback: (userId: string) => void) => void
-  onParticipantReconnected: (callback: (userId: string) => void) => void
-  onSubmissionReceived: (callback: (submission: PvPSubmission) => void) => void
-  onSubmissionRanked: (callback: (payload: SubmissionRankedPayload) => void) => void
-  onReactionReceived: (callback: (reaction: PvPReaction) => void) => void
-  onTypingStarted: (callback: (payload: TypingPayload) => void) => void
-  onTypingStopped: (callback: (payload: TypingPayload) => void) => void
-  onError: (callback: (error: ErrorPayload) => void) => void
-  onCooldown: (callback: (payload: CooldownPayload) => void) => void
-  onMatchPaused: (callback: (payload: MatchPausedPayload) => void) => void
-  onMatchResumed: (callback: (payload: MatchResumedPayload) => void) => void
-  onMatchForfeit: (callback: (payload: MatchForfeitPayload) => void) => void
+  onMatchUpdated: (callback: (payload: MatchUpdatedPayload) => void) => () => void
+  onMatchStarted: (callback: (match: PvPMatch) => void) => () => void
+  onQuestionChanged: (callback: (payload: QuestionChangedPayload) => void) => () => void
+  onMatchCompleted: (callback: (payload: MatchCompletedPayload) => void) => () => void
+  onParticipantJoined: (callback: (participant: PvPParticipant) => void) => () => void
+  onParticipantLeft: (callback: (participant: PvPParticipant) => void) => () => void
+  onParticipantReady: (callback: (participant: PvPParticipant) => void) => () => void
+  onParticipantDisconnected: (callback: (userId: string) => void) => () => void
+  onParticipantReconnected: (callback: (userId: string) => void) => () => void
+  onSubmissionReceived: (callback: (submission: PvPSubmission) => void) => () => void
+  onSubmissionRanked: (callback: (payload: SubmissionRankedPayload) => void) => () => void
+  onReactionReceived: (callback: (reaction: PvPReaction) => void) => () => void
+  onTypingStarted: (callback: (payload: TypingPayload) => void) => () => void
+  onTypingStopped: (callback: (payload: TypingPayload) => void) => () => void
+  onError: (callback: (error: ErrorPayload) => void) => () => void
+  onCooldown: (callback: (payload: CooldownPayload) => void) => () => void
+  onMatchPaused: (callback: (payload: MatchPausedPayload) => void) => () => void
+  onMatchResumed: (callback: (payload: MatchResumedPayload) => void) => () => void
+  onMatchForfeit: (callback: (payload: MatchForfeitPayload) => void) => () => void
 }
 
 export const usePvPSocket = (): UsePvPSocketReturn => {

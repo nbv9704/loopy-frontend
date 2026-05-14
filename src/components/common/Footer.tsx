@@ -1,32 +1,33 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Code2, BookOpen } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 
-// Static footer data (no need for API)
-const FOOTER_COLUMNS = [
-  {
-    id: 'about',
-    title: 'Về Loopy',
-    items: [
-      { label: 'Giới thiệu', path: '/about' },
-      { label: 'Đội ngũ', path: '/team' },
-      { label: 'Liên hệ', path: '/contact' },
-    ],
-  },
-  {
-    id: 'resources',
-    title: 'Tài nguyên',
-    items: [
-      { label: 'Tài liệu', path: '/docs' },
-      { label: 'Blog', path: '/blog' },
-      { label: 'FAQ', path: '/faq' },
-    ],
-  },
-]
-
 const Footer: React.FC = () => {
+  const { t } = useTranslation()
   const currentYear = new Date().getFullYear()
+
+  const FOOTER_COLUMNS = [
+    {
+      id: 'about',
+      title: t('footer.aboutLoopy'),
+      items: [
+        { label: t('footer.about'), path: '/about' },
+        { label: t('footer.team'), path: '/team' },
+        { label: t('footer.contact'), path: '/contact' },
+      ],
+    },
+    {
+      id: 'resources',
+      title: t('footer.resources'),
+      items: [
+        { label: t('footer.docs'), path: '/docs' },
+        { label: t('footer.blog'), path: '/blog' },
+        { label: t('footer.faq'), path: '/faq' },
+      ],
+    },
+  ]
 
   return (
     <footer className="relative bg-[#0B0F19] border-t border-white/5 mt-auto">
@@ -39,8 +40,7 @@ const Footer: React.FC = () => {
               <img src={headerLogo} alt="Loopy" className="h-10" />
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-md">
-              Nền tảng học lập trình hiện đại với AI hỗ trợ và chế độ đối kháng. Học code thông qua
-              thực hành và thi đấu.
+              {t('footer.description')}
             </p>
 
             {/* Social */}
@@ -94,14 +94,14 @@ const Footer: React.FC = () => {
         {/* Bottom Section */}
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-500 text-sm">
-            © {currentYear} Loopy. Nền tảng học lập trình tương tác.
+            {t('footer.copyright', { year: currentYear })}
           </p>
           <div className="flex items-center gap-6 text-sm">
             <a href="#" className="text-slate-500 hover:text-brand-teal transition-colors">
-              Điều khoản
+              {t('footer.terms')}
             </a>
             <a href="#" className="text-slate-500 hover:text-brand-teal transition-colors">
-              Quyền riêng tư
+              {t('footer.privacy')}
             </a>
           </div>
         </div>

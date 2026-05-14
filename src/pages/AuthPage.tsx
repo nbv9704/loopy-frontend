@@ -38,7 +38,7 @@ const AuthPage: React.FC = () => {
         if (result.requiresEmailConfirmation) {
           setError('') // Clear any errors
           // Show success message
-          alert(result.message || 'Vui lòng kiểm tra email để xác nhận tài khoản')
+          alert(result.message || t('auth.checkEmail'))
           // Switch to login form
           setIsLogin(true)
           setPassword('') // Clear password for security
@@ -48,7 +48,7 @@ const AuthPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi')
+      setError(err.message || t('common.unexpectedError'))
     } finally {
       setLoading(false)
     }
@@ -249,7 +249,7 @@ const AuthPage: React.FC = () => {
                   ⚡ Dev Login (dev-admin)
                 </button>
                 <p className="text-slate-500 text-xs text-center mt-2">
-                  Chỉ hiển thị trong môi trường development
+                  {t('auth.devLoginOnly')}
                 </p>
               </div>
             )}

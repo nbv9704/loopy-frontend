@@ -36,6 +36,7 @@ export interface PvPMatch {
   mode: MatchMode
   status: MatchStatus
   language_id: string | null
+  difficulty?: 'easy' | 'medium' | 'hard'
   room_code: string
 
   // Questions

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { usePvPSocket } from '../hooks/usePvPSocket'
 import { pvpService } from '../services/pvp.service'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import type { PvPMatch, PvPQuestion, FinalScore, MatchPausedPayload } from '../types/pvp.types'
 
@@ -22,6 +23,7 @@ const PvPMatchPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   const [match, setMatch] = useState<PvPMatch | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState<PvPQuestion | null>(null)
@@ -52,7 +54,7 @@ const PvPMatchPage: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
 
-        const matchData = await pvpService.getMatch(roomCode)
+        const matchData = await pvpService.joinMatch(roomCode)
 
         setMatch(matchData)
         setIsLoading(false)
@@ -99,105 +101,146 @@ const PvPMatchPage: React.FC = () => {
     }
 
     // Match updated
-    socket.onMatchUpdated(payload => {
+    const cleanupUpdated = socket.onMatchUpdated(payload => {
       setMatch(payload.match)
     })
 
     // Match started
-    socket.onMatchStarted(updatedMatch => {
+    const cleanupStarted = socket.onMatchStarted(updatedMatch => {
       setMatch(updatedMatch)
-      toast.success('Match started!')
+      toast.success(t('pvp.match.started'))
     })
 
     // Question changed
-    socket.onQuestionChanged(payload => {
+    const cleanupQuestion = socket.onQuestionChanged(payload => {
       setMatch(payload.match)
       setCurrentQuestion(payload.question)
       setTimeRemaining(payload.timeRemaining)
       setIsCooldown(false) // Reset cooldown
-      toast('New question!', { icon: '❓' })
+      toast(t('pvp.match.newQuestion'), { icon: '❓' })
     })
 
     // Match completed
-    socket.onMatchCompleted(payload => {
+    const cleanupCompleted = socket.onMatchCompleted(payload => {
       setMatch(payload.match)
       setFinalScores(payload.finalScores)
       setIsCooldown(false) // Reset cooldown
-      toast.success('Match completed!')
+      toast.success(t('pvp.match.completed'))
     })
 
     // Cooldown
-    socket.onCooldown(payload => {
+    const cleanupCooldown = socket.onCooldown(payload => {
       setIsCooldown(true)
       setIsMatchOverCooldown(payload.isMatchOver)
     })
 
     // Participant events
-    socket.onParticipantJoined(participant => {
+    const cleanupJoined = socket.onParticipantJoined(participant => {
       console.log('Participant joined event:', participant)
-      toast.success(`${participant.display_name || 'Player'} joined!`)
+      toast.success(t('pvp.match.playerJoined', { name: participant.display_name || 'Player' }))
+      setMatch(prev => {
+        if (!prev) return prev
+        const existingParticipants = prev.participants || []
+        const index = existingParticipants.findIndex(p => p.user_id === participant.user_id)
+        
+        let newParticipants
+        if (index >= 0) {
+          // Update existing, preserving fields not sent by server if any
+          newParticipants = [...existingParticipants]
+          newParticipants[index] = { ...newParticipants[index], ...participant }
+        } else {
+          // Add new
+          newParticipants = [...existingParticipants, participant]
+        }
+
+        return { ...prev, participants: newParticipants }
+      })
+    })
+
+    const cleanupLeft = socket.onParticipantLeft(data => {
+      // Data might be { user_id } or full participant
+      const leftUserId = (data as any).user_id || (data as any).id
+      
+      setMatch(prev => {
+        if (!prev) return prev
+        const player = prev.participants?.find(p => p.user_id === leftUserId)
+        if (player) {
+          toast(t('pvp.match.playerLeft', { name: player.display_name || 'Player' }), { icon: '👋' })
+        }
+        return {
+          ...prev,
+          participants: prev.participants?.filter(p => p.user_id !== leftUserId) || [],
+        }
+      })
+    })
+
+    const cleanupDisc = socket.onParticipantDisconnected(userId => {
       setMatch(prev => {
         if (!prev) return prev
         return {
           ...prev,
-          participants: [...(prev.participants || []), participant],
+          participants: prev.participants?.map(p => 
+            p.user_id === userId ? { ...p, is_connected: false } : p
+          ) || [],
         }
       })
     })
 
-    socket.onParticipantLeft(participant => {
-      toast(`${participant.display_name || 'Player'} left`, { icon: '👋' })
+    const cleanupReconn = socket.onParticipantReconnected(userId => {
+      setMatch(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          participants: prev.participants?.map(p => 
+            p.user_id === userId ? { ...p, is_connected: true } : p
+          ) || [],
+        }
+      })
     })
 
-    socket.onParticipantReady(participant => {
-      toast(`${participant.display_name || 'Player'} is ready!`, { icon: '✅' })
+    const cleanupReady = socket.onParticipantReady(participant => {
+      toast(t('pvp.match.playerReady', { name: participant.display_name || 'Player' }), { icon: '✅' })
       setMatch(prev => {
-        if (!prev) {
-          return prev
-        }
-
-        const updated = {
+        if (!prev) return prev
+        return {
           ...prev,
-          participants: prev.participants?.map(p => {
-            const isMatch = p.user_id === participant.user_id
-            return isMatch ? { ...p, is_ready: true } : p
-          }),
+          participants: prev.participants?.map(p => 
+            p.user_id === participant.user_id ? { ...p, ...participant, is_ready: true } : p
+          ),
         }
-
-        return updated
       })
     })
 
     // Error handling
-    socket.onError(error => {
+    const cleanupError = socket.onError(error => {
       toast.error(error.message)
     })
 
     // --- Disconnect Grace Period events ---
-    socket.onMatchPaused(payload => {
+    const cleanupPaused = socket.onMatchPaused(payload => {
       setIsPaused(true)
       setPauseInfo(payload)
       setPauseCountdown(payload.timeoutSeconds)
-      toast(`⏸️ ${payload.displayName} đã mất kết nối. Đợi ${payload.timeoutSeconds}s...`, {
+      toast(t('pvp.match.paused', { name: payload.displayName, seconds: payload.timeoutSeconds }), {
         duration: 5000,
         id: 'match-paused',
       })
     })
 
-    socket.onMatchResumed(payload => {
+    const cleanupResumed = socket.onMatchResumed(payload => {
       setIsPaused(false)
       setPauseInfo(null)
       setPauseCountdown(0)
-      toast.success(`🔄 ${payload.displayName} đã kết nối lại! Tiếp tục trận đấu.`, {
+      toast.success(t('pvp.match.resumed', { name: payload.displayName }), {
         id: 'match-resumed',
       })
     })
 
-    socket.onMatchForfeit(payload => {
+    const cleanupForfeit = socket.onMatchForfeit(payload => {
       setIsPaused(false)
       setPauseInfo(null)
       setPauseCountdown(0)
-      toast(`🏳️ ${payload.displayName} đã bị xử thua do mất kết nối.`, {
+      toast(t('pvp.match.forfeit', { name: payload.displayName }), {
         duration: 5000,
         icon: '⚠️',
         id: 'match-forfeit',
@@ -206,8 +249,20 @@ const PvPMatchPage: React.FC = () => {
 
     // Cleanup function
     return () => {
-      // Note: The socket hook's event listeners already handle cleanup
-      // We don't need to manually unsubscribe here
+      if (typeof cleanupUpdated === 'function') cleanupUpdated()
+      if (typeof cleanupStarted === 'function') cleanupStarted()
+      if (typeof cleanupQuestion === 'function') cleanupQuestion()
+      if (typeof cleanupCompleted === 'function') cleanupCompleted()
+      if (typeof cleanupCooldown === 'function') cleanupCooldown()
+      if (typeof cleanupJoined === 'function') cleanupJoined()
+      if (typeof cleanupLeft === 'function') cleanupLeft()
+      if (typeof cleanupDisc === 'function') cleanupDisc()
+      if (typeof cleanupReconn === 'function') cleanupReconn()
+      if (typeof cleanupReady === 'function') cleanupReady()
+      if (typeof cleanupError === 'function') cleanupError()
+      if (typeof cleanupPaused === 'function') cleanupPaused()
+      if (typeof cleanupResumed === 'function') cleanupResumed()
+      if (typeof cleanupForfeit === 'function') cleanupForfeit()
     }
   }, [socket.socket, roomCode]) // Depend on both socket.socket and roomCode
 
@@ -244,14 +299,14 @@ const PvPMatchPage: React.FC = () => {
   if (!match) {
     return (
       <div className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">Match not found</p>
+        <p className="text-slate-400">{t('pvp.match.notFound')}</p>
         <p className="text-slate-500 text-sm">Room Code: {roomCode}</p>
         <p className="text-slate-500 text-sm">Loading: {isLoading ? 'Yes' : 'No'}</p>
         <button
           onClick={() => navigate('/pvp')}
           className="px-4 py-2 bg-brand-teal text-[#0a0e1a] rounded-lg hover:bg-brand-cyan transition-colors"
         >
-          Back to Lobby
+          {t('pvp.match.backToLobby')}
         </button>
       </div>
     )

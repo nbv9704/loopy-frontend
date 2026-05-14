@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { Play } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface CodeFile {
   id: string
@@ -23,6 +24,7 @@ const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   onRunCode,
   getLanguageExtension,
 }) => {
+  const { t } = useTranslation()
   const [fontSize, setFontSize] = useState(14)
 
   useEffect(() => {
@@ -63,7 +65,7 @@ const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
           className="rounded-button px-6 py-2 bg-brand-teal/20 border border-brand-teal/50 text-brand-teal text-sm font-semibold cursor-pointer hover:bg-brand-teal/30 hover:border-brand-teal transition-all flex items-center gap-2"
         >
           <Play className="w-4 h-4" />
-          Chạy code
+          {t('playground.runCode')}
         </button>
       </div>
 

@@ -55,7 +55,7 @@ const HeroSectionV2: React.FC<HeroSectionV2Props> = ({
                           /images/hero/${i18n.language}/textbanner-w1024.png 1024w,
                           /images/hero/${i18n.language}/textbanner-w2048.png 2048w`}
                   sizes="(max-width: 768px) 55vw, (max-width: 1024px) 45vw, 500px"
-                  alt="Học code thực chiến"
+                  alt={t('hero.title')}
                   className="w-full max-w-xl h-auto"
                 />
               </h1>

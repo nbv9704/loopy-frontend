@@ -5,7 +5,7 @@
  * Auto-completes lesson when grading score ≥ 85.
  */
 
-import { FiPlay, FiBookOpen, FiCode, FiFileText } from 'react-icons/fi'
+import { FileText, Play, Code2, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import GradingDepthDropdown from '../grading/GradingDepthDropdown'
 import type { GradingDepth } from '../../types/grading.types'
@@ -43,16 +43,16 @@ const LessonToolbar: React.FC<LessonToolbarProps> = ({
       {/* Left: Tab switcher */}
       <div className="flex items-center gap-2">
         <button onClick={() => onTabChange('theory')} className={tabClass('theory')}>
-          <FiBookOpen className="w-4 h-4" />
-          Lý thuyết
+          <BookOpen className="w-4 h-4" />
+          {t('learn.theory')}
         </button>
         <button onClick={() => onTabChange('example')} className={tabClass('example')}>
-          <FiFileText className="w-4 h-4" />
-          Ví dụ
+          <FileText className="w-4 h-4" />
+          {t('learn.example')}
         </button>
         <button onClick={() => onTabChange('exercise')} className={tabClass('exercise')}>
-          <FiCode className="w-4 h-4" />
-          Bài tập
+          <Code2 className="w-4 h-4" />
+          {t('learn.exercise')}
         </button>
       </div>
 
@@ -68,7 +68,7 @@ const LessonToolbar: React.FC<LessonToolbarProps> = ({
                 : 'cursor-not-allowed opacity-50'
             }`}
           >
-            <FiPlay className="w-5 h-5" />
+            <Play className="w-5 h-5" />
             {t('learn.runCode')}
           </button>
 

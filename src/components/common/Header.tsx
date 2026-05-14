@@ -6,12 +6,12 @@ import { useAuth } from '../../contexts/AuthContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 
-// Static navigation items (no need for API)
+// Static navigation items — labels resolved via i18n in render
 const NAV_ITEMS = [
-  { id: 'learn', label: 'Học tập', path: '/select-language' },
-  { id: 'playground', label: 'Playground', path: '/playground' },
-  { id: 'pvp', label: 'PvP', path: '/pvp' },
-  { id: 'docs', label: 'Tài liệu', path: '/docs' },
+  { id: 'learn', labelKey: 'nav.learn', path: '/select-language' },
+  { id: 'playground', labelKey: 'nav.playground', path: '/playground' },
+  { id: 'pvp', labelKey: 'nav.pvp', path: '/pvp' },
+  { id: 'docs', labelKey: 'nav.docs', path: '/docs' },
 ]
 
 const Header: React.FC = () => {
@@ -78,7 +78,7 @@ const Header: React.FC = () => {
                       : 'text-slate-300 hover:text-brand-teal hover:bg-white/5'
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                   {isActive(item.path) && (
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-gradient-to-r from-transparent via-brand-teal to-transparent rounded-full" />
                   )}

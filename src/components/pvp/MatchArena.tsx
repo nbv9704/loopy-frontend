@@ -5,12 +5,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Send, Code, Smile, WifiOff } from 'lucide-react'
+import { Clock, Send, Code, Smile, Loader2, AlertCircle } from 'lucide-react'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { python } from '@codemirror/lang-python'
 import { cpp } from '@codemirror/lang-cpp'
 import { oneDark } from '@codemirror/theme-one-dark'
+import { useTranslation } from 'react-i18next'
 import type { PvPMatch, PvPQuestion, MatchPausedPayload } from '../../types/pvp.types'
 import type { UsePvPSocketReturn } from '../../hooks/usePvPSocket'
 import ParticipantCard from './ParticipantCard'
@@ -28,7 +29,7 @@ interface MatchArenaProps {
   isMatchOverCooldown?: boolean
   isPaused?: boolean
   pauseInfo?: MatchPausedPayload | null
-  pauseCountdown?: number
+  pauseCountdown: number
 }
 
 const MatchArena: React.FC<MatchArenaProps> = ({
@@ -43,6 +44,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   pauseInfo = null,
   pauseCountdown = 0,
 }) => {
+  const { t } = useTranslation()
   const [selectedAnswer, setSelectedAnswer] = useState<string>('')
   const [code, setCode] = useState<string>(question.starter_code || '')
   const [hasSubmitted, setHasSubmitted] = useState(false)
@@ -134,16 +136,18 @@ const MatchArena: React.FC<MatchArenaProps> = ({
       }, 3000)
     }
 
-    socket.onSubmissionReceived(handleSubmissionReceived)
-    socket.onSubmissionRanked(handleSubmissionRanked)
-    socket.onReactionReceived(handleReactionReceived)
+    const cleanup1 = socket.onSubmissionReceived(handleSubmissionReceived)
+    const cleanup2 = socket.onSubmissionRanked(handleSubmissionRanked)
+    const cleanup3 = socket.onReactionReceived(handleReactionReceived)
 
     console.log('Submission listeners set up')
 
     // Cleanup
     return () => {
       console.log('Cleaning up submission listeners in MatchArena')
-      // Socket hook handles cleanup automatically
+      cleanup1()
+      cleanup2()
+      cleanup3()
     }
   }, [socket.socket, currentUserId]) // Only re-run if socket or currentUserId changes
 
@@ -241,9 +245,10 @@ const MatchArena: React.FC<MatchArenaProps> = ({
             <h3 className="text-lg font-bold text-white mb-4">Players</h3>
             {match.participants?.map(participant => (
               <ParticipantCard
-                key={participant.id}
+                key={participant.user_id}
                 participant={participant}
                 isCurrentUser={participant.user_id === currentUserId}
+                reactions={reactions.filter(r => r.userId === participant.user_id).map(r => r.emoji)}
               />
             ))}
           </div>
@@ -362,21 +367,6 @@ const MatchArena: React.FC<MatchArenaProps> = ({
           </div>
         </div>
 
-        {/* Floating Reactions */}
-        <div className="fixed bottom-20 right-8 space-y-2">
-          {reactions.map((reaction, index) => (
-            <motion.div
-              key={`${reaction.userId}-${index}`}
-              initial={{ opacity: 0, x: 50, scale: 0.5 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -50 }}
-              className="text-4xl"
-            >
-              {reaction.emoji}
-            </motion.div>
-          ))}
-        </div>
-
         {/* Cooldown Overlay */}
         <AnimatePresence>
           {isCooldown && (
@@ -402,11 +392,11 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   </div>
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-4">Round Over!</h2>
-                <p className="text-xl text-slate-300">
-                  {isMatchOverCooldown
-                    ? 'Đang tổng hợp kết quả chung cuộc...'
-                    : 'Chuẩn bị câu hỏi tiếp theo...'}
-                </p>
+                  <p className="text-brand-teal text-lg font-medium animate-pulse">
+                    {isMatchOverCooldown
+                      ? t('pvp.match.summarizing')
+                      : t('pvp.match.preparingNext')}
+                  </p>
               </motion.div>
             </motion.div>
           )}
@@ -425,48 +415,28 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                 initial={{ scale: 0.8, y: 30 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.8, y: 30 }}
-                className="bg-slate-800/90 border-2 border-amber-500/40 rounded-2xl p-10 text-center max-w-md mx-auto shadow-2xl shadow-amber-500/10"
+                className="bg-[#0a0e1a]/95 backdrop-blur-md border border-amber-500/30 rounded-3xl p-10 max-w-lg w-full text-center shadow-2xl"
               >
-                {/* Animated disconnect icon */}
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
-                    <div className="w-24 h-24 border-4 border-amber-500/30 rounded-full"></div>
-                    <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
-                      <circle
-                        cx="48"
-                        cy="48"
-                        r="46"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        strokeDasharray={`${2 * Math.PI * 46}`}
-                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - pauseCountdown / (pauseInfo.timeoutSeconds || 30))}`}
-                        className="text-amber-500 transition-all duration-1000 ease-linear"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <WifiOff className="w-10 h-10 text-amber-400 animate-pulse" />
-                    </div>
+                <div className="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle className="w-10 h-10 text-amber-500 animate-pulse" />
+                </div>
+                <h2 className="text-2xl font-bold text-amber-400 mb-2">{t('pvp.match.pausedTitle')}</h2>
+                <p className="text-slate-300 mb-8 leading-relaxed">
+                  <span className="font-semibold text-white">{pauseInfo.displayName}</span> {t('pvp.match.playerLeft')}
+                </p>
+
+                <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-8">
+                  <div className="flex items-center justify-center gap-4 mb-2">
+                    <Loader2 className="w-5 h-5 text-brand-teal animate-spin" />
+                    <p className="text-slate-400 text-sm mb-1">{t('pvp.match.waitingRecon')}</p>
+                  </div>
+                  <div className="text-4xl font-mono font-bold text-white tracking-wider">
+                    {pauseCountdown}s
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-bold text-amber-400 mb-2">Trận đấu tạm dừng</h2>
-                <p className="text-slate-300 mb-6">
-                  <span className="font-semibold text-white">{pauseInfo.displayName}</span> đã mất
-                  kết nối
-                </p>
-
-                {/* Countdown */}
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-6 py-4 mb-4">
-                  <p className="text-slate-400 text-sm mb-1">Đang chờ kết nối lại</p>
-                  <p className="text-4xl font-bold text-amber-400 tabular-nums">
-                    {pauseCountdown}s
-                  </p>
-                </div>
-
-                <p className="text-slate-500 text-xs">
-                  Nếu không kết nối lại kịp, người chơi sẽ bị xử thua
+                <p className="text-slate-500 text-sm">
+                  {t('pvp.match.reconHint')}
                 </p>
               </motion.div>
             </motion.div>

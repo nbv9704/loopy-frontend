@@ -9,6 +9,7 @@
 
 import React from 'react'
 import { FiClock, FiChevronRight } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import {
   type SubmissionHistoryData,
   type SubmissionSummary,
@@ -30,6 +31,7 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
   onPageChange,
   highlightBest = true,
 }) => {
+  const { t } = useTranslation()
   // Find best submission ID
   const bestSubmissionId = highlightBest
     ? history.submissions.reduce(
@@ -44,23 +46,23 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
       <div className="flex items-center justify-between mb-5">
         <h4 className="text-sm font-semibold text-white flex items-center gap-2">
           <FiClock className="w-4 h-4 text-brand-teal" />
-          Lịch sử nộp bài
+          {t('grading.history')}
         </h4>
-        <span className="text-xs text-gray-500">{history.totalAttempts} lần nộp</span>
+        <span className="text-xs text-gray-500">{t('gradingUI.submissionCount', { count: history.totalAttempts })}</span>
       </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
-          <p className="text-xs text-gray-500 mb-1">Điểm cao nhất</p>
+          <p className="text-xs text-gray-500 mb-1">{t('grading.bestScore')}</p>
           <p className="text-lg font-bold text-green-400">{history.bestScore}</p>
         </div>
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
-          <p className="text-xs text-gray-500 mb-1">Trung bình</p>
+          <p className="text-xs text-gray-500 mb-1">{t('grading.average')}</p>
           <p className="text-lg font-bold text-brand-cyan">{history.averageScore}</p>
         </div>
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
-          <p className="text-xs text-gray-500 mb-1">Số lần nộp</p>
+          <p className="text-xs text-gray-500 mb-1">{t('grading.history')}</p>
           <p className="text-lg font-bold text-white">{history.totalAttempts}</p>
         </div>
       </div>
@@ -68,7 +70,7 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
       {/* Submissions List */}
       {history.submissions.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-gray-500">Chưa có bài nộp nào</p>
+          <p className="text-sm text-gray-500">{t('gradingUI.noSubmissions')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -91,17 +93,17 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
             disabled={history.page <= 1}
             className="px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-bg-primary rounded-md border border-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            ← Trước
+            {t('gradingUI.previous')}
           </button>
           <span className="text-xs text-gray-500">
-            Trang {history.page} / {Math.ceil(history.totalAttempts / history.limit)}
+            {t('gradingUI.pageOf', { page: history.page, total: Math.ceil(history.totalAttempts / history.limit) })}
           </span>
           <button
             onClick={() => onPageChange?.(history.page + 1)}
             disabled={history.page >= Math.ceil(history.totalAttempts / history.limit)}
             className="px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-bg-primary rounded-md border border-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            Sau →
+            {t('gradingUI.next')}
           </button>
         </div>
       )}

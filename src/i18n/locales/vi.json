@@ -2,7 +2,8 @@
   "nav": {
     "home": "Trang chủ",
     "learn": "Học tập",
-    "playground": "Sân chơi",
+    "playground": "Playground",
+    "pvp": "PvP",
     "docs": "Tài liệu",
     "settings": "Cài đặt",
     "admin": "Quản trị"
@@ -39,7 +40,9 @@
     "noAccount": "Chưa có tài khoản?",
     "loginNow": "Đăng nhập",
     "signupNow": "Đăng ký ngay",
-    "processing": "Đang xử lý..."
+    "processing": "Đang xử lý...",
+    "checkEmail": "Vui lòng kiểm tra email để xác nhận tài khoản",
+    "devLoginOnly": "Chỉ hiển thị trong môi trường development"
   },
   "common": {
     "loading": "Đang tải...",
@@ -228,7 +231,15 @@
     "keyInsight": "Điểm chú ý",
     "markDone": "Đánh dấu xong",
     "completed": "Hoàn thành",
-    "runCode": "Chạy code"
+    "runCode": "Chạy code",
+    "theory": "Lý thuyết",
+    "example": "Ví dụ",
+    "exercise": "Bài tập",
+    "summary": "Tóm tắt",
+    "readMore": "Xem chi tiết",
+    "noContent": "Chưa có nội dung lý thuyết cho bài này.",
+    "noExample": "Chưa có ví dụ minh họa cho bài này.",
+    "closeResults": "Đóng kết quả"
   },
   "docs": {
     "title": "Tài liệu học tập",
@@ -279,7 +290,18 @@
   "footer": {
     "rights": "Bản quyền thuộc về",
     "madeWith": "Được xây dựng với",
-    "description": "Nền tảng học lập trình tương tác với nhiều ngôn ngữ. Học qua thực hành, code ngay trên trình duyệt."
+    "description": "Nền tảng học lập trình hiện đại với AI hỗ trợ và chế độ đối kháng. Học code thông qua thực hành và thi đấu.",
+    "copyright": "© {{year}} Loopy. Nền tảng học lập trình tương tác.",
+    "aboutLoopy": "Về Loopy",
+    "about": "Giới thiệu",
+    "team": "Đội ngũ",
+    "contact": "Liên hệ",
+    "resources": "Tài nguyên",
+    "docs": "Tài liệu",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "terms": "Điều khoản",
+    "privacy": "Quyền riêng tư"
   },
   "landing": {
     "whyChoose": "Tại sao chọn",
@@ -294,5 +316,101 @@
     "joinThousands": "Tham gia cùng hàng nghìn học viên đang học lập trình mỗi ngày",
     "startLearningFree": "Bắt đầu học miễn phí",
     "lessonsCount": "{{count}} bài học"
+  },
+  "pvp": {
+    "title": "Đấu trường PvP",
+    "subtitle": "Thi đấu lập trình thời gian thực với các nhà phát triển khác",
+    "selectMode": "Chọn chế độ chơi",
+    "duel": "Đối đầu 1v1",
+    "duelDesc": "Thử thách lập trình gay cấn với một đối thủ duy nhất",
+    "battleRoyale": "Battle Royale",
+    "battleRoyaleDesc": "Sắp ra mắt - Thi đấu với nhiều người chơi cùng lúc",
+    "selectDifficulty": "Chọn độ khó",
+    "easy": "Dễ",
+    "medium": "Trung bình",
+    "hard": "Khó",
+    "quickMatch": "Tìm trận nhanh",
+    "searching": "Đang tìm đối thủ...",
+    "joinRoom": "Tham gia phòng",
+    "joinRoomDesc": "Tham gia bằng mã phòng riêng",
+    "enterRoomCode": "Nhập mã phòng",
+    "joining": "Đang tham gia...",
+    "matchFound": "Đã tìm thấy trận đấu!",
+    "invalidRoomCode": "Mã phòng không hợp lệ hoặc không tồn tại",
+    "loginToPlay": "Vui lòng đăng nhập để thi đấu",
+    "realtime": "Thời gian thực",
+    "realtimeDesc": "Thi đấu trực tiếp với phản hồi và điểm số tức thì",
+    "skillBased": "Cân bằng trình độ",
+    "skillBasedDesc": "Hệ thống ghép cặp theo trình độ để đảm bảo công bằng",
+    "ranked": "Xếp hạng",
+    "rankedDesc": "Leo bảng xếp hạng và khẳng định kỹ năng của bạn",
+    "match": {
+      "started": "Trận đấu bắt đầu!",
+      "newQuestion": "Câu hỏi mới!",
+      "completed": "Trận đấu kết thúc!",
+      "playerJoined": "{{name}} đã tham gia!",
+      "playerLeft": "{{name}} đã rời đi",
+      "playerReady": "{{name}} đã sẵn sàng!",
+      "paused": "⏸️ {{name}} đã mất kết nối. Đợi {{seconds}}s...",
+      "resumed": "🔄 {{name}} đã kết nối lại! Tiếp tục trận đấu.",
+      "forfeit": "🏳️ {{name}} đã bị xử thua do mất kết nối.",
+      "notFound": "Không tìm thấy trận đấu",
+      "backToLobby": "Quay lại sảnh",
+      "preparingNext": "Chuẩn bị câu hỏi tiếp theo...",
+      "summarizing": "Đang tổng hợp kết quả chung cuộc...",
+      "pausedTitle": "Trận đấu tạm dừng",
+      "waitingRecon": "Đang chờ kết nối lại",
+      "reconHint": "Nếu không kết nối lại kịp, người chơi sẽ bị xử thua"
+    }
+  },
+  "grading": {
+    "title": "Chấm điểm",
+    "processing": "Đang chấm điểm ({{depth}})...",
+    "complete": "✅ Chấm điểm hoàn tất — {{score}}/100 ({{grade}})",
+    "failed": "❌ Chấm điểm thất bại: {{error}}",
+    "error": "❌ Lỗi: {{message}}",
+    "history": "Lịch sử nộp bài",
+    "attempts": "{{count}} lần nộp",
+    "bestScore": "Điểm cao nhất",
+    "average": "Trung bình",
+    "passed": "{{passed}}/{{total}} đạt",
+    "selectLesson": "Chọn bài học trước khi chấm điểm"
+  },
+  "heatmap": {
+    "title": "Hoạt động học tập",
+    "completedInYear": "{{count}} bài hoàn thành trong năm qua",
+    "less": "Ít",
+    "more": "Nhiều",
+    "countLessons": "{{count}} bài"
+  },
+  "errorBoundary": {
+    "title": "Có lỗi xảy ra",
+    "retry": "Thử lại",
+    "details": "Chi tiết lỗi (Development Mode)"
+  },
+  "gradingUI": {
+    "result": "Kết quả chấm điểm",
+    "regrade": "Chấm lại",
+    "grading": "Đang chấm...",
+    "grade": "Chấm điểm",
+    "quick": "Chấm sơ qua",
+    "careful": "Chấm cẩn thận",
+    "thorough": "Chấm kĩ càng",
+    "analyzing": "AI đang phân tích code...",
+    "codeQuality": "Chất lượng code",
+    "complexity": "Độ phức tạp",
+    "security": "Bảo mật",
+    "strengths": "Điểm mạnh",
+    "improvements": "Cần cải thiện",
+    "suggestions": "Gợi ý",
+    "overallFeedback": "Nhận xét tổng quan",
+    "noSubmissions": "Chưa có bài nộp nào",
+    "previous": "← Trước",
+    "next": "Sau →",
+    "pageOf": "Trang {{page}} / {{total}}",
+    "submissionCount": "{{count}} lần nộp"
+  },
+  "pvpQuestion": {
+    "selectAndSubmit": "Chọn đáp án rồi bấm Submit bên dưới"
   }
 }

@@ -3,7 +3,8 @@
     "home": "Home",
     "learn": "Learn",
     "playground": "Playground",
-    "docs": "Documentation",
+    "pvp": "PvP",
+    "docs": "Docs",
     "settings": "Settings",
     "admin": "Admin"
   },
@@ -39,7 +40,9 @@
     "noAccount": "Don't have an account?",
     "loginNow": "Login",
     "signupNow": "Sign Up Now",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "checkEmail": "Please check your email to confirm your account",
+    "devLoginOnly": "Only displayed in development environment"
   },
   "common": {
     "loading": "Loading...",
@@ -228,7 +231,15 @@
     "keyInsight": "Key Insight",
     "markDone": "Mark Done",
     "completed": "Completed",
-    "runCode": "Run Code"
+    "runCode": "Run Code",
+    "theory": "Theory",
+    "example": "Example",
+    "exercise": "Exercise",
+    "summary": "Summary",
+    "readMore": "Read More",
+    "noContent": "No theory content available for this lesson.",
+    "noExample": "No examples available for this lesson.",
+    "closeResults": "Close Results"
   },
   "docs": {
     "title": "Learning Resources",
@@ -279,7 +290,18 @@
   "footer": {
     "rights": "All rights reserved",
     "madeWith": "Made with",
-    "description": "Interactive multi-language programming learning platform. Learn by doing, code directly in browser."
+    "description": "A modern coding learning platform with AI support and competitive mode. Learn to code through practice and competition.",
+    "copyright": "© {{year}} Loopy. Interactive coding learning platform.",
+    "aboutLoopy": "About Loopy",
+    "about": "About",
+    "team": "Team",
+    "contact": "Contact",
+    "resources": "Resources",
+    "docs": "Docs",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "terms": "Terms",
+    "privacy": "Privacy"
   },
   "landing": {
     "whyChoose": "Why choose",
@@ -294,5 +316,101 @@
     "joinThousands": "Join thousands of students learning programming every day",
     "startLearningFree": "Start Learning Free",
     "lessonsCount": "{{count}} lessons"
+  },
+  "pvp": {
+    "title": "PvP Arena",
+    "subtitle": "Compete with other developers in real-time coding challenges",
+    "selectMode": "Select Game Mode",
+    "duel": "1v1 Duel",
+    "duelDesc": "Face off against one opponent in an intense coding battle",
+    "battleRoyale": "Battle Royale",
+    "battleRoyaleDesc": "Coming soon - Compete with multiple players",
+    "selectDifficulty": "Select Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "quickMatch": "Quick Match",
+    "searching": "Searching...",
+    "joinRoom": "Join Room",
+    "joinRoomDesc": "Join with a private room code",
+    "enterRoomCode": "Enter Room Code",
+    "joining": "Joining...",
+    "matchFound": "Match found!",
+    "invalidRoomCode": "Invalid room code or match not found",
+    "loginToPlay": "Please login to play",
+    "realtime": "Real-time",
+    "realtimeDesc": "Compete in real-time with instant feedback and live scoring",
+    "skillBased": "Skill-based",
+    "skillBasedDesc": "Matched with opponents of similar skill level for fair competition",
+    "ranked": "Ranked",
+    "rankedDesc": "Climb the leaderboard and prove your coding skills",
+    "match": {
+      "started": "Match started!",
+      "newQuestion": "New question!",
+      "completed": "Match completed!",
+      "playerJoined": "{{name}} joined!",
+      "playerLeft": "{{name}} left",
+      "playerReady": "{{name}} is ready!",
+      "paused": "⏸️ {{name}} disconnected. Waiting {{seconds}}s...",
+      "resumed": "🔄 {{name}} reconnected! Resuming match.",
+      "forfeit": "🏳️ {{name}} forfeited due to disconnection.",
+      "notFound": "Match not found",
+      "backToLobby": "Back to Lobby",
+      "preparingNext": "Preparing next question...",
+      "summarizing": "Summarizing final results...",
+      "pausedTitle": "Match Paused",
+      "waitingRecon": "Waiting for reconnection",
+      "reconHint": "If not reconnected in time, player will forfeit"
+    }
+  },
+  "grading": {
+    "title": "Grading",
+    "processing": "Grading ({{depth}})...",
+    "complete": "✅ Grading complete — {{score}}/100 ({{grade}})",
+    "failed": "❌ Grading failed: {{error}}",
+    "error": "❌ Error: {{message}}",
+    "history": "Submission History",
+    "attempts": "{{count}} attempts",
+    "bestScore": "Best Score",
+    "average": "Average",
+    "passed": "{{passed}}/{{total}} passed",
+    "selectLesson": "Select a lesson before grading"
+  },
+  "heatmap": {
+    "title": "Learning Activity",
+    "completedInYear": "{{count}} lessons completed in the past year",
+    "less": "Less",
+    "more": "More",
+    "countLessons": "{{count}} lessons"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "retry": "Try Again",
+    "details": "Error Details (Development Mode)"
+  },
+  "gradingUI": {
+    "result": "Grading Result",
+    "regrade": "Re-grade",
+    "grading": "Grading...",
+    "grade": "Grade",
+    "quick": "Quick Grade",
+    "careful": "Careful Grade",
+    "thorough": "Thorough Grade",
+    "analyzing": "AI is analyzing code...",
+    "codeQuality": "Code Quality",
+    "complexity": "Complexity",
+    "security": "Security",
+    "strengths": "Strengths",
+    "improvements": "Needs Improvement",
+    "suggestions": "Suggestions",
+    "overallFeedback": "Overall Feedback",
+    "noSubmissions": "No submissions yet",
+    "previous": "← Previous",
+    "next": "Next →",
+    "pageOf": "Page {{page}} / {{total}}",
+    "submissionCount": "{{count}} submissions"
+  },
+  "pvpQuestion": {
+    "selectAndSubmit": "Select your answer then press Submit below"
   }
 }

@@ -11,19 +11,46 @@ import Header from '../components/common/Header'
 import Footer from '../components/common/Footer'
 import { useAuth } from '../contexts/AuthContext'
 import { pvpService } from '../services/pvp.service'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 
 const PvPLobbyPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   const [isSearching, setIsSearching] = useState(false)
+  const [roomCodeInput, setRoomCodeInput] = useState('')
+  const [isJoining, setIsJoining] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'1v1' | 'battle_royale'>('1v1')
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
 
+  const handleJoinRoom = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!roomCodeInput.trim()) return
+
+    if (!user) {
+      toast.error(t('pvp.loginToPlay'))
+      navigate('/auth')
+      return
+    }
+
+    setIsJoining(true)
+    try {
+      // Validate room code exists
+      const match = await pvpService.joinMatch(roomCodeInput.trim().toUpperCase())
+      toast.success(t('pvp.joining'))
+      navigate(`/pvp/match/${match.room_code}`)
+    } catch (error: any) {
+      toast.error(t('pvp.invalidRoomCode'))
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
   const handleQuickMatch = async () => {
     if (!user) {
-      toast.error('Please login to play')
+      toast.error(t('pvp.loginToPlay'))
       navigate('/auth')
       return
     }
@@ -36,7 +63,7 @@ const PvPLobbyPage: React.FC = () => {
         difficulty: selectedDifficulty,
       })
 
-      toast.success('Match found!')
+      toast.success(t('pvp.matchFound'))
       navigate(`/pvp/match/${match.room_code}`)
     } catch (error: any) {
       const errorMessage =
@@ -74,10 +101,10 @@ const PvPLobbyPage: React.FC = () => {
           >
             <div className="inline-flex items-center gap-3 mb-6">
               <Swords className="w-12 h-12 text-brand-teal" />
-              <h1 className="text-5xl font-bold text-white">PvP Arena</h1>
+              <h1 className="text-5xl font-bold text-white">{t('pvp.title')}</h1>
             </div>
             <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-              Compete with other developers in real-time coding challenges
+              {t('pvp.subtitle')}
             </p>
           </motion.div>
 
@@ -88,7 +115,7 @@ const PvPLobbyPage: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">Select Game Mode</h2>
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">{t('pvp.selectMode')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {/* 1v1 Mode */}
               <button
@@ -100,9 +127,9 @@ const PvPLobbyPage: React.FC = () => {
                 }`}
               >
                 <Users className="w-12 h-12 text-brand-teal mb-4 mx-auto" />
-                <h3 className="text-xl font-bold text-white mb-2">1v1 Duel</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t('pvp.duel')}</h3>
                 <p className="text-slate-400 text-sm">
-                  Face off against one opponent in an intense coding battle
+                  {t('pvp.duelDesc')}
                 </p>
               </button>
 
@@ -113,9 +140,9 @@ const PvPLobbyPage: React.FC = () => {
                 className="p-8 rounded-2xl border-2 bg-white/5 border-white/10 opacity-50 cursor-not-allowed"
               >
                 <Trophy className="w-12 h-12 text-slate-500 mb-4 mx-auto" />
-                <h3 className="text-xl font-bold text-white mb-2">Battle Royale</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t('pvp.battleRoyale')}</h3>
                 <p className="text-slate-400 text-sm">
-                  Coming soon - Compete with multiple players
+                  {t('pvp.battleRoyaleDesc')}
                 </p>
               </button>
             </div>
@@ -128,7 +155,7 @@ const PvPLobbyPage: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">Select Difficulty</h2>
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">{t('pvp.selectDifficulty')}</h2>
             <div className="flex gap-4 justify-center">
               {(['easy', 'medium', 'hard'] as const).map(difficulty => (
                 <button
@@ -140,7 +167,7 @@ const PvPLobbyPage: React.FC = () => {
                       : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
                   }`}
                 >
-                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+                  {t(`pvp.${difficulty}`)}
                 </button>
               ))}
             </div>
@@ -151,28 +178,51 @@ const PvPLobbyPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-center mb-16"
+            className="flex flex-col md:flex-row gap-6 justify-center items-center mb-16"
           >
             <button
               onClick={handleQuickMatch}
-              disabled={isSearching}
-              className="group relative px-12 py-6 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] text-xl font-bold rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+              disabled={isSearching || isJoining}
+              className="group relative px-12 py-6 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] text-xl font-bold rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden w-full md:w-auto"
             >
               <span className="relative z-10 flex items-center gap-3">
                 {isSearching ? (
                   <>
                     <div className="w-6 h-6 border-2 border-[#0a0e1a] border-t-transparent rounded-full animate-spin" />
-                    Searching for opponent...
+                    {t('pvp.searching')}
                   </>
                 ) : (
                   <>
                     <Zap className="w-6 h-6" />
-                    Quick Match
+                    {t('pvp.quickMatch')}
                   </>
                 )}
               </span>
               <div className="absolute inset-0 bg-brand-cyan transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
             </button>
+
+            <div className="text-slate-500 font-bold hidden md:block">OR</div>
+
+            <form 
+              onSubmit={handleJoinRoom}
+              className="flex gap-2 w-full md:w-auto"
+            >
+              <input
+                type="text"
+                placeholder={t('pvp.enterRoomCode')}
+                value={roomCodeInput}
+                onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
+                maxLength={6}
+                className="px-6 py-6 bg-white/5 border border-white/10 rounded-2xl text-white text-xl font-mono focus:outline-none focus:border-brand-teal transition-all w-full md:w-64 text-center uppercase"
+              />
+              <button
+                type="submit"
+                disabled={isJoining || isSearching || !roomCodeInput}
+                className="px-8 py-6 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 transition-all disabled:opacity-50"
+              >
+                {isJoining ? t('pvp.joining') : t('pvp.joinRoom')}
+              </button>
+            </form>
           </motion.div>
 
           {/* Features */}
@@ -184,25 +234,25 @@ const PvPLobbyPage: React.FC = () => {
           >
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Clock className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">Real-time</h3>
+              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.realtime')}</h3>
               <p className="text-slate-400 text-sm">
-                Compete in real-time with instant feedback and live scoring
+                {t('pvp.realtimeDesc')}
               </p>
             </div>
 
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Target className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">Skill-based</h3>
+              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.skillBased')}</h3>
               <p className="text-slate-400 text-sm">
-                Matched with opponents of similar skill level for fair competition
+                {t('pvp.skillBasedDesc')}
               </p>
             </div>
 
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Trophy className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">Ranked</h3>
+              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.ranked')}</h3>
               <p className="text-slate-400 text-sm">
-                Climb the leaderboard and prove your coding skills
+                {t('pvp.rankedDesc')}
               </p>
             </div>
           </motion.div>

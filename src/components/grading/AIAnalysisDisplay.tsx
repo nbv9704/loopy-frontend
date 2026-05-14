@@ -9,23 +9,25 @@
 
 import React, { useState } from 'react'
 import { FiAward, FiChevronDown, FiCheckCircle, FiTool, FiZap } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import type { AIAnalysis } from '../../types/grading.types'
 
 interface AIAnalysisDisplayProps {
   analysis: AIAnalysis
 }
 
-const SCORE_CRITERIA = [
-  { key: 'codeQuality' as const, label: 'Chất lượng code', weight: '40%', color: '#10b981' },
-  { key: 'bestPractices' as const, label: 'Best Practices', weight: '30%', color: '#3b82f6' },
-  { key: 'complexity' as const, label: 'Độ phức tạp', weight: '20%', color: '#f59e0b' },
-  { key: 'security' as const, label: 'Bảo mật', weight: '10%', color: '#ef4444' },
-]
-
 const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
+  const { t } = useTranslation()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['strengths']) // Auto-expand strengths
   )
+
+  const SCORE_CRITERIA = [
+    { key: 'codeQuality' as const, label: t('gradingUI.codeQuality'), weight: '40%', color: '#10b981' },
+    { key: 'bestPractices' as const, label: 'Best Practices', weight: '30%', color: '#3b82f6' },
+    { key: 'complexity' as const, label: t('gradingUI.complexity'), weight: '20%', color: '#f59e0b' },
+    { key: 'security' as const, label: t('gradingUI.security'), weight: '10%', color: '#ef4444' },
+  ]
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -79,7 +81,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
       {/* Collapsible Sections */}
       <div className="space-y-2">
         <CollapsibleSection
-          title="Điểm mạnh"
+          title={t('gradingUI.strengths')}
           icon={<FiCheckCircle className="w-3.5 h-3.5" />}
           items={analysis.strengths}
           color="text-green-400"
@@ -87,7 +89,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
           onToggle={() => toggleSection('strengths')}
         />
         <CollapsibleSection
-          title="Cần cải thiện"
+          title={t('gradingUI.improvements')}
           icon={<FiTool className="w-3.5 h-3.5" />}
           items={analysis.improvements}
           color="text-yellow-400"
@@ -95,7 +97,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
           onToggle={() => toggleSection('improvements')}
         />
         <CollapsibleSection
-          title="Gợi ý"
+          title={t('gradingUI.suggestions')}
           icon={<FiZap className="w-3.5 h-3.5" />}
           items={analysis.suggestions}
           color="text-brand-cyan"
@@ -107,7 +109,7 @@ const AIAnalysisDisplay: React.FC<AIAnalysisDisplayProps> = ({ analysis }) => {
       {/* Overall Feedback */}
       {analysis.feedback && (
         <div className="mt-4 p-4 bg-bg-primary rounded-lg border border-white/5">
-          <p className="text-xs text-gray-500 mb-2">Nhận xét tổng quan</p>
+          <p className="text-xs text-gray-500 mb-2">{t('gradingUI.overallFeedback')}</p>
           <p className="text-sm text-gray-300 leading-relaxed">{analysis.feedback}</p>
         </div>
       )}
