@@ -86,7 +86,7 @@ const ProgressStats = () => {
 
       {/* Activity Heatmap */}
       <div className="mb-8">
-        <ActivityHeatmap activityDates={activityDates} />
+        <ActivityHeatmap activityDates={activityDates} totalActivities={activityDates.length} />
       </div>
 
       {/* Stats */}
