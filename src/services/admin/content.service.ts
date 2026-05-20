@@ -1,8 +1,4 @@
-import axios from 'axios'
-
-const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
+import apiClient from './apiClient'
 
 export interface BulkImportPayload {
   chapterId?: string
@@ -87,9 +83,7 @@ export const contentService = {
    * Bulk import lessons, exercises, and test cases
    */
   async bulkImport(payload: BulkImportPayload): Promise<BulkImportResult> {
-    const response = await axios.post(`${API_URL}/api/admin/import`, toApiPayload(payload), {
-      withCredentials: true,
-    })
+    const response = await apiClient.post('/api/admin/import', toApiPayload(payload))
     return response.data.data
   },
 
@@ -97,9 +91,7 @@ export const contentService = {
    * Get all chapters
    */
   async getChapters(): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/api/admin/chapters`, {
-      withCredentials: true,
-    })
+    const response = await apiClient.get('/api/admin/chapters')
     return response.data.data
   },
 
@@ -107,9 +99,7 @@ export const contentService = {
    * Get lessons by chapter
    */
   async getLessons(chapterId: string): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/api/admin/chapters/${chapterId}/lessons`, {
-      withCredentials: true,
-    })
+    const response = await apiClient.get(`/api/admin/chapters/${chapterId}/lessons`)
     return response.data.data
   },
 
@@ -117,9 +107,7 @@ export const contentService = {
    * Get a lesson by ID
    */
   async getLessonById(lessonId: string): Promise<any> {
-    const response = await axios.get(`${API_URL}/api/admin/lessons/${lessonId}`, {
-      withCredentials: true,
-    })
+    const response = await apiClient.get(`/api/admin/lessons/${lessonId}`)
     return response.data.data
   },
 
@@ -127,9 +115,7 @@ export const contentService = {
    * Create or update a lesson
    */
   async upsertLesson(lesson: any): Promise<any> {
-    const response = await axios.post(`${API_URL}/api/admin/lessons`, lesson, {
-      withCredentials: true,
-    })
+    const response = await apiClient.post('/api/admin/lessons', lesson)
     return response.data.data
   },
 
@@ -137,8 +123,6 @@ export const contentService = {
    * Delete a lesson
    */
   async deleteLesson(lessonId: string): Promise<void> {
-    await axios.delete(`${API_URL}/api/admin/lessons/${lessonId}`, {
-      withCredentials: true,
-    })
+    await apiClient.delete(`/api/admin/lessons/${lessonId}`)
   },
 }

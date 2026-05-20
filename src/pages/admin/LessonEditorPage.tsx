@@ -55,6 +55,8 @@ const LessonEditorPage: React.FC = () => {
           solutionCode: lessonData.solution_code || '',
           isAhaLesson: lessonData.is_aha_lesson || false,
           orderIndex: lessonData.order_index || 1,
+          difficulty: lessonData.difficulty || 'beginner',
+          gradingMode: lessonData.grading_mode || 'stdout',
         })
       }
     } catch (err: any) {
