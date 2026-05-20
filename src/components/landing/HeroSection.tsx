@@ -6,8 +6,6 @@ import {
   Zap,
   Terminal,
   CheckCircle2,
-  ArrowRight,
-  FileText,
 } from 'lucide-react'
 import { RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -35,7 +33,7 @@ const HeroSectionV2: React.FC<HeroSectionV2Props> = ({
         opacity,
         filter: useTransform(blur, value => `blur(${value}px)`),
       }}
-      className="relative px-6 md:px-12 pt-20 pb-32"
+      className="relative px-6 md:px-12 pt-32 pb-32"
     >
       <div className="max-w-[1600px] mx-auto">
         <div className="grid lg:grid-cols-[1.2fr,1fr] gap-16 items-center">
@@ -55,12 +53,12 @@ const HeroSectionV2: React.FC<HeroSectionV2Props> = ({
                           /images/hero/${i18n.language}/textbanner-w1024.png 1024w,
                           /images/hero/${i18n.language}/textbanner-w2048.png 2048w`}
                   sizes="(max-width: 768px) 55vw, (max-width: 1024px) 45vw, 500px"
-                  alt={t('hero.title')}
+                  alt={t('hero.titlePrefix')}
                   className="w-full max-w-xl h-auto"
                 />
               </h1>
               <p className="text-xl md:text-2xl text-slate-400 leading-relaxed max-w-2xl">
-                {t('hero.subtitle')}
+                Loopy giúp người mới bắt đầu vượt qua 20 giờ đầu tiên học lập trình bằng các bài học siêu nhỏ, thực hành thật và phản hồi hữu ích.
               </p>
             </motion.div>
 
@@ -73,48 +71,49 @@ const HeroSectionV2: React.FC<HeroSectionV2Props> = ({
             >
               <button
                 onClick={onStartCoding}
-                className="group relative inline-flex items-center gap-3 px-8 py-4 cursor-pointer overflow-hidden rounded-2xl border-2 border-brand-teal bg-[#0a0e1a]"
+                className="group relative inline-flex items-center gap-3 px-10 py-5 cursor-pointer overflow-hidden rounded-2xl bg-brand-teal text-[#0a0e1a] shadow-lg shadow-brand-teal/20"
               >
-                {/* Simple liquid fill from left to right */}
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-teal to-brand-cyan -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
-
-                {/* Button content */}
-                <span className="relative flex items-center gap-2 font-bold text-lg transition-colors duration-300 text-brand-teal group-hover:text-[#0a0e1a] z-10">
-                  <Play className="w-5 h-5" />
-                  {t('hero.startLearning')}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 bg-brand-cyan -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
+                <span className="relative flex items-center gap-2 font-bold text-xl transition-colors duration-300 z-10">
+                  <Code2 className="w-6 h-6" />
+                  Bắt đầu từ số 0
                 </span>
               </button>
 
               <button
                 onClick={onViewDocs}
-                className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-lg hover:bg-white/10 hover:border-brand-teal/50 transition-all cursor-pointer"
+                className="px-8 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-xl hover:bg-white/10 hover:border-brand-teal/50 transition-all cursor-pointer flex items-center gap-2 group"
               >
-                <span className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  {t('hero.viewDocs')}
-                </span>
+                <Play className="w-5 h-5 text-brand-teal group-hover:translate-x-1 transition-transform" />
+                Thử bài đầu tiên
               </button>
             </motion.div>
 
-            {/* Stats */}
+            {/* Core Values / Three Pillars */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex items-center gap-8 pt-4"
+              className="grid sm:grid-cols-3 gap-6 pt-8"
             >
               {[
-                { label: t('hero.stats.languages'), icon: Code2 },
-                { label: t('hero.stats.lessons'), icon: BookOpen },
-                { label: t('hero.stats.free'), icon: Zap },
-              ].map((stat, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <stat.icon className="w-5 h-5 text-brand-teal/60" />
-                  <span className="text-slate-500 text-sm font-medium">{stat.label}</span>
+                { icon: BookOpen, title: 'Lộ trình rõ ràng', desc: 'Biết chính xác cần học gì' },
+                { icon: Zap, title: 'Thực hành ngay', desc: 'Code thật từ phút đầu tiên' },
+                { icon: CheckCircle2, title: 'Học từ lỗi sai', desc: 'AI gợi ý cách sửa thông minh' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="mt-1 p-1.5 rounded-lg bg-brand-teal/10">
+                    <item.icon className="w-4 h-4 text-brand-teal" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">{item.title}</div>
+                    <div className="text-slate-500 text-xs mt-0.5">{item.desc}</div>
+                  </div>
                 </div>
               ))}
             </motion.div>
+
+            {/* Stats removed as per new direction */}
           </div>
 
           {/* Right: Visual */}

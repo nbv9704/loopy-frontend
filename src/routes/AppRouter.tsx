@@ -2,19 +2,28 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from '../pages/LandingPage'
 import AuthPage from '../pages/AuthPage'
-import DocsPage from '../pages/DocsPage'
-import LanguageSelectorPage from '../pages/LanguageSelectorPage'
-import LearnPage from '../pages/LearnPage'
-import PlaygroundPage from '../pages/PlaygroundPage'
-import SettingsPage from '../pages/SettingsPage'
-import PvPLobbyPage from '../pages/PvPLobbyPage'
-import PvPMatchPage from '../pages/PvPMatchPage'
 import ProtectedRoute from '../components/admin/ProtectedRoute'
+import UserProtectedRoute from '../components/UserProtectedRoute'
 import AdminLayout from '../components/admin/layout/AdminLayout'
+
+// Lazy load heavier product pages for code splitting
+const DocsPage = lazy(() => import('../pages/DocsPage'))
+const OnboardingPage = lazy(() => import('../pages/OnboardingPage'))
+const PublicLanguagesPage = lazy(() => import('../pages/PublicLanguagesPage'))
+const PublicLanguageDetailPage = lazy(() => import('../pages/PublicLanguageDetailPage'))
+const LearnPage = lazy(() => import('../pages/LearnPage'))
+const PlaygroundPage = lazy(() => import('../pages/PlaygroundPage'))
+const SettingsPage = lazy(() => import('../pages/SettingsPage'))
+const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
+const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
+const SampleLessonPage = lazy(() => import('../pages/SampleLessonPage'))
+const LibraryPage = lazy(() => import('../pages/LibraryPage'))
 
 // Lazy load admin pages for code splitting
 const AdminLoginPage = lazy(() => import('../pages/admin/LoginPage'))
 const AdminDashboardPage = lazy(() => import('../pages/admin/DashboardPage'))
+const AdminBulkImportPage = lazy(() => import('../pages/admin/BulkImportPage'))
+const AdminLessonEditorPage = lazy(() => import('../pages/admin/LessonEditorPage'))
 
 // Loading fallback component for lazy-loaded admin pages
 function AdminLoadingFallback() {
@@ -24,6 +33,14 @@ function AdminLoadingFallback() {
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-teal mb-4"></div>
         <p className="text-slate-400 text-lg">Loading admin panel...</p>
       </div>
+    </div>
+  )
+}
+
+function PageLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-[#0a0e1a] text-slate-400">
+      Loading...
     </div>
   )
 }
@@ -40,15 +57,28 @@ const AppRouter: React.FC = () => {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/docs" element={<DocsPage />} />
-        <Route path="/select-language" element={<LanguageSelectorPage />} />
-        <Route path="/learn/:language/*" element={<LearnPage />} />
-        <Route path="/playground" element={<PlaygroundPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/docs" element={<Suspense fallback={<PageLoadingFallback />}><DocsPage /></Suspense>} />
+        <Route path="/languages" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguagesPage /></Suspense>} />
+        <Route path="/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguageDetailPage /></Suspense>} />
+        <Route path="/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><OnboardingPage /></Suspense>} />
+        <Route path="/library/:language" element={<Suspense fallback={<PageLoadingFallback />}><LibraryPage /></Suspense>} />
+        <Route path="/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><LearnPage /></Suspense>} />
+        <Route path="/playground" element={<Suspense fallback={<PageLoadingFallback />}><PlaygroundPage /></Suspense>} />
+        <Route
+          path="/settings"
+          element={
+            <UserProtectedRoute>
+              <Suspense fallback={<PageLoadingFallback />}>
+                <SettingsPage />
+              </Suspense>
+            </UserProtectedRoute>
+          }
+        />
+        <Route path="/sample-lesson" element={<Suspense fallback={<PageLoadingFallback />}><SampleLessonPage /></Suspense>} />
 
         {/* PvP routes */}
-        <Route path="/pvp" element={<PvPLobbyPage />} />
-        <Route path="/pvp/match/:roomCode" element={<PvPMatchPage />} />
+        <Route path="/pvp" element={<Suspense fallback={<PageLoadingFallback />}><PvPLobbyPage /></Suspense>} />
+        <Route path="/pvp/match/:roomCode" element={<Suspense fallback={<PageLoadingFallback />}><PvPMatchPage /></Suspense>} />
 
         {/* Admin login route (not protected) */}
         <Route
@@ -70,6 +100,9 @@ const AppRouter: React.FC = () => {
                   <Routes>
                     <Route path="/" element={<AdminDashboardPage />} />
                     <Route path="dashboard" element={<AdminDashboardPage />} />
+                    <Route path="import" element={<AdminBulkImportPage />} />
+                    <Route path="lessons/new" element={<AdminLessonEditorPage />} />
+                    <Route path="lessons/:id" element={<AdminLessonEditorPage />} />
                   </Routes>
                 </Suspense>
               </AdminLayout>

@@ -28,7 +28,9 @@ import type {
   MatchForfeitPayload,
 } from '../types/pvp.types'
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const SOCKET_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
+  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
 
 export interface UsePvPSocketReturn {
   socket: Socket | null

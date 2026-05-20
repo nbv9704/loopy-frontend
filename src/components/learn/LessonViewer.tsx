@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiX } from 'react-icons/fi'
-import { executeCode, formatError } from '../../utils/codeExecution'
+import { FiX, FiInfo, FiAlertCircle, FiChevronRight, FiPlay, FiCheckCircle, FiArrowRight, FiExternalLink, FiArrowLeft, FiBookOpen } from 'react-icons/fi'
 import { useLessonData } from '../../hooks/useLessonData'
 import LessonSidebar from './LessonSidebar'
-import LessonToolbar, { type EditorTab } from './LessonToolbar'
 import CodeEditor from '../common/CodeEditor'
 import Terminal from '../common/Terminal'
 import GradingResults from '../grading/GradingResults'
@@ -13,7 +11,7 @@ import GradingSkeleton from '../grading/GradingSkeleton'
 import { api } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../common/LoadingSpinner'
-import type { GradingResult, GradingDepth } from '../../types/grading.types'
+import type { GradingResult } from '../../types/grading.types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -21,6 +19,8 @@ interface LessonViewerProps {
   language: string
   initialLessonId?: string
 }
+
+type LessonStep = 'see' | 'change' | 'run' | 'fix' | 'build'
 
 const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }) => {
   const { t } = useTranslation()
@@ -40,279 +40,402 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
   const [outputLogs, setOutputLogs] = useState<string[]>([])
   const [gradingResult, setGradingResult] = useState<GradingResult | null>(null)
   const [isGrading, setIsGrading] = useState(false)
-  const [editorTab, setEditorTab] = useState<EditorTab>('exercise')
+  const [currentStep, setCurrentStep] = useState<LessonStep>('see')
+  const [showHint, setShowHint] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [aiHint, setAiHint] = useState<string | null>(null)
+  const [isLoadingHint, setIsLoadingHint] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false)
 
-  const handleTabChange = (tab: EditorTab) => {
-    setEditorTab(tab)
-    if (tab === 'theory' || tab === 'example') {
-      setGradingResult(null)
-    }
-  }
   const isInitialMount = useRef(true)
   const gradingResultRef = useRef<HTMLDivElement>(null)
 
   const currentLesson = lessons.find(l => l.id === activeLessonId)
   const hasLessons = lessons.length > 0
 
-  /**
-   * Split lesson code into theory (sample code) and exercise (practice section).
-   *
-   * Code structure:
-   *   Sample code...          → theory tab
-   *   === BÀI TẬP ===         → separator (removed)
-   *   // Bài 1: ...           → exercise tab
-   *   === ĐÁP ÁN ===         → removed entirely
-   */
-  const splitLessonCode = (rawCode: string): { theory: string; exercise: string } => {
-    const lines = rawCode.split('\n')
-
-    // Find exercise separator (BÀI TẬP or BAI TAP)
-    const exerciseIndex = lines.findIndex(line => /BÀI TẬP|BAI T[AẬ]P/i.test(line))
-
-    // Find answer separator (ĐÁP ÁN or DAP AN)
-    const answerIndex = lines.findIndex(line => /ĐÁP ÁN|DAP AN/i.test(line))
-
-    // Determine end of relevant code (before answers)
-    let endIndex = answerIndex !== -1 ? answerIndex : lines.length
-    // Also remove separator line above ĐÁP ÁN if it's a divider (=====)
-    if (endIndex > 0 && lines[endIndex - 1]?.match(/^\/\/\s*=+/)) {
-      endIndex--
-    }
-
-    if (exerciseIndex === -1) {
-      // No exercise separator → everything is exercise (old format or exercise-only)
-      return {
-        theory: '',
-        exercise: lines.slice(0, endIndex).join('\n').trimEnd() + '\n',
-      }
-    }
-
-    // Theory = everything before the exercise separator
-    let theoryEnd = exerciseIndex
-    // Remove separator line above BÀI TẬP if it's a divider
-    if (theoryEnd > 0 && lines[theoryEnd - 1]?.match(/^(\/\/\s*)?=+|console\.log/)) {
-      // Also skip blank lines and console.log separators
-      while (
-        theoryEnd > 0 &&
-        (lines[theoryEnd - 1].trim() === '' ||
-          /console\.log\(\s*["']\s*["']\s*\)/.test(lines[theoryEnd - 1]) ||
-          /=== BA/.test(lines[theoryEnd - 1]))
-      ) {
-        theoryEnd--
-      }
-    }
-
-    // Exercise = everything after the exercise separator, before answers
-    let exerciseStart = exerciseIndex + 1
-    // Skip blank lines after separator
-    while (exerciseStart < endIndex && lines[exerciseStart].trim() === '') {
-      exerciseStart++
-    }
-
-    return {
-      theory: lines.slice(0, theoryEnd).join('\n').trimEnd() + '\n',
-      exercise: lines.slice(exerciseStart, endIndex).join('\n').trimEnd() + '\n',
-    }
-  }
+  // Find next lesson
+  const currentIndex = lessons.findIndex(l => l.id === activeLessonId)
+  const nextLesson = currentIndex >= 0 && currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null
 
   // Update code and URL when lesson changes
   useEffect(() => {
     if (currentLesson) {
-      const { exercise } = splitLessonCode(currentLesson.code || '')
-      setCode(exercise)
+      setCode(currentLesson.starterCode || '')
       setOutputLogs([t('learn.readyToRun')])
       setGradingResult(null)
+      setCurrentStep('see')
+      setShowHint(false)
+      setShowCelebration(false)
+      setAiHint(null)
+      setIsLoadingHint(false)
 
-      // Only update URL after the initial data load, not on first mount
       if (isInitialMount.current) {
         isInitialMount.current = false
       } else {
-        navigate(`/learn/${language}/${currentLesson.lesson_id}`, { replace: true })
+        navigate(`/learn/${language}/${currentLesson.lessonId}`, { replace: true })
       }
     }
   }, [activeLessonId, currentLesson, language, navigate, t])
 
-  // Auto-scroll to grading results when they appear
   useEffect(() => {
     if (gradingResult && gradingResultRef.current) {
       gradingResultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [gradingResult])
 
-  // Auto-complete lesson when grading score ≥ 85
-  useEffect(() => {
-    if (gradingResult && currentLesson && user && gradingResult.finalScore >= 85) {
-      const lessonId = currentLesson.id
-      if (!completedLessons.has(lessonId)) {
-        api
-          .completeLesson(lessonId)
-          .then(response => {
-            if (response.success) {
-              setCompletedLessons(prev => new Set(prev).add(lessonId))
-            }
-          })
-          .catch(() => {
-            // Silent fail — not critical
-          })
-      }
-    }
-  }, [gradingResult, currentLesson, user, completedLessons, setCompletedLessons])
-
-  const runCode = () => {
-    setOutputLogs([])
-    const result = executeCode(code, language)
-
-    if (result.error) {
-      setOutputLogs([...result.logs, formatError(result.error)])
-    } else {
-      setOutputLogs(result.logs)
-    }
-  }
-
-  const submitForGrading = useCallback(
-    async (depth: GradingDepth = 'quick') => {
-      if (!currentLesson) {
-        setOutputLogs([t('grading.selectLesson')])
-        return
-      }
-
-      // Debounce: prevent re-submission while grading
-      if (isGrading) return
-
-      setIsGrading(true)
-      setGradingResult(null)
-      const depthLabels = { quick: 'quick', careful: 'careful', thorough: 'thorough' }
-      setOutputLogs([t('grading.processing', { depth: depthLabels[depth] })])
-
-      try {
-        // Send the exercise template as starter code for accurate diff comparison
-        const { exercise: exerciseTemplate } = splitLessonCode(currentLesson.code || '')
-        const response = (await api.submitForGrading(currentLesson.id, code, language, 'both', {
-          starterCode: exerciseTemplate,
-          lessonTitle: currentLesson.title,
-          lessonDescription: currentLesson.description,
-          lessonInsight: currentLesson.insight,
-          gradingDepth: depth,
-        })) as { success: boolean; data?: GradingResult; error?: { message: string } }
-
-        if (response.success && response.data) {
-          setGradingResult(response.data as GradingResult)
-          setOutputLogs([
-            t('grading.complete', {
-              score: response.data.finalScore,
-              grade: response.data.gradeLevel,
-            }),
-          ])
+  const runCode = async () => {
+    setOutputLogs(['> ' + t('common.loading') + '...'])
+    
+    try {
+      const response = await api.executeCode(language, code)
+      if (response.success && response.data) {
+        const { output: executionOutput, error } = response.data
+        if (error) {
+          setOutputLogs([`❌ LỖI: ${error}`])
+          setCurrentStep('fix')
         } else {
-          setOutputLogs([t('grading.failed', { error: response.error?.message || 'Unknown error' })])
+          setOutputLogs(executionOutput ? executionOutput.split('\n') : [t('learn.readyToRun')])
+          if (currentStep === 'see' || currentStep === 'change' || currentStep === 'fix') {
+            setCurrentStep('run')
+          }
         }
-      } catch (error: any) {
-        setOutputLogs([t('grading.error', { message: error.message || 'Server error' })])
-      } finally {
-        setIsGrading(false)
+      } else {
+        setOutputLogs(['❌ LỖI: Không thể thực thi mã nguồn.'])
+        setCurrentStep('fix')
       }
-    },
-    [currentLesson, code, language, isGrading, t]
-  )
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-brand-teal text-sm font-medium">{t('learn.loadingLesson')}</p>
-        </div>
-      </div>
-    )
+    } catch (err: any) {
+      setOutputLogs([`❌ LỖI: ${err.message}`])
+      setCurrentStep('fix')
+    }
   }
+
+  const submitForGrading = useCallback(async () => {
+    if (!currentLesson || isGrading) return
+
+    setCurrentStep('build')
+    setIsGrading(true)
+    setGradingResult(null)
+    setShowCelebration(false)
+    setOutputLogs([t('grading.processing', { depth: 'quick' })])
+
+    try {
+      // Use deterministic validation engine
+      const response = await api.checkLesson(currentLesson.id, code, language)
+
+      if (response.success && response.data) {
+        const check = response.data
+
+        // Map LessonCheckResult to GradingResult to reuse premium UI display perfectly
+        const mappedResult: GradingResult = {
+          submissionId: 'deterministic',
+          testScore: check.score,
+          aiScore: null,
+          finalScore: check.score,
+          gradeLevel: check.passed ? 'excellent' : 'poor',
+          gradedAt: new Date().toISOString(),
+          executionTime: 0,
+          feedback: {
+            testResults: {
+              testScore: check.score,
+              totalExecutionTime: 0,
+              results: check.checks.map((c, idx) => ({
+                testCaseId: `check-${idx}`,
+                passed: c.passed,
+                actualOutput: check.output || '',
+                expectedOutput: '',
+                executionTime: 0,
+                error: c.message || null,
+                description: c.label,
+              })),
+            },
+            aiAnalysis: null,
+            overallFeedback: check.passed 
+              ? (check.output || '✓ Trả lời chính xác!') 
+              : (check.hint || 'Hãy kiểm tra kỹ yêu cầu bài học.'),
+          },
+        }
+
+        setGradingResult(mappedResult)
+
+        if (check.passed) {
+          setShowCelebration(true)
+          const lessonId = currentLesson.id
+          if (!completedLessons.has(lessonId)) {
+            await api.completeLesson(lessonId)
+            setCompletedLessons(prev => new Set(prev).add(lessonId))
+          }
+        }
+      }
+    } catch (error: any) {
+      setOutputLogs([t('grading.error', { message: error.message || 'Server error' })])
+    } finally {
+      setIsGrading(false)
+    }
+  }, [currentLesson, code, language, isGrading, completedLessons, setCompletedLessons, t])
+
+  const goToNextLesson = () => {
+    if (nextLesson) {
+      setActiveLessonId(nextLesson.id)
+    }
+  }
+
+  // Keyboard shortcuts (freeCodeCamp-inspired: Ctrl+Enter to run, Ctrl+Shift+Enter to submit)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          // Ctrl+Shift+Enter = Submit for grading
+          if (currentStep !== 'see') {
+            submitForGrading()
+          }
+        } else {
+          // Ctrl+Enter = Run code
+          runCode()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentStep, submitForGrading])
+
+  if (loading) return <div className="flex items-center justify-center h-full"><LoadingSpinner size="lg" /></div>
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
-      <LessonSidebar
-        lessons={lessons}
-        chapters={chapters}
-        activeLesson={activeLessonId}
-        language={language}
-        currentLesson={currentLesson}
-        onSelectLesson={setActiveLessonId}
-      />
-
-      <main className="flex-1 flex flex-col gap-4 min-w-0 h-full">
-        <div
-          className={`flex-1 flex flex-col bg-white/3 border border-brand-teal/10 rounded-card min-h-0 ${!hasLessons ? 'opacity-50 pointer-events-none' : ''}`}
-        >
-          {/* Toolbar with tab switcher */}
-          <div className="relative flex-shrink-0">
-            <LessonToolbar
-              hasLessons={hasLessons}
-              activeTab={editorTab}
-              isGrading={isGrading}
-              onTabChange={handleTabChange}
-              onRunCode={runCode}
-              onSubmitGrading={submitForGrading}
+      {showSidebar && (
+        <div className="fixed inset-0 z-50 lg:relative lg:inset-auto">
+          <div className="absolute inset-0 bg-[#0a0e1a]/80 backdrop-blur-sm lg:hidden" onClick={() => setShowSidebar(false)} />
+          <div className="relative h-full w-[300px] shrink-0">
+            <LessonSidebar
+              lessons={lessons}
+              chapters={chapters}
+              activeLesson={activeLessonId}
+              language={language}
+              currentLesson={currentLesson}
+              completedLessons={completedLessons}
+              onSelectLesson={(id) => {
+                setActiveLessonId(id)
+                setShowSidebar(false)
+              }}
             />
           </div>
+        </div>
+      )}
 
-          {/* Tab content */}
-          <div className="flex-1 overflow-auto min-h-0">
-            {editorTab === 'theory' ? (
-              (() => {
-                if (!currentLesson?.insight) {
-                  return (
-                    <div className="p-6">
-                      <p className="text-slate-500 italic">
-                        {t('learn.noContent')}
-                      </p>
-                    </div>
-                  )
-                }
+      <main className="flex-1 flex flex-col gap-4 min-w-0 h-full">
+        <div className="flex-1 flex flex-col bg-[#0f172a] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+          {/* Linear Progress Header */}
+          <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => navigate(`/library/${language}`)}
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium group cursor-pointer"
+              >
+                <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+                <span>{t('learn.backToLibrary')}</span>
+              </button>
 
-                return (
-                  <div className="flex-1 p-6 overflow-y-auto bg-slate-900/50">
-                    <div className="prose prose-invert prose-brand max-w-none text-slate-300 text-sm leading-relaxed font-sans">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {currentLesson.insight}
-                      </ReactMarkdown>
+              <div className="h-4 w-px bg-white/10" />
+
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className={`p-2 rounded-lg transition-all ${showSidebar ? 'bg-brand-teal text-[#0a0e1a]' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                title="Bật/Tắt danh sách bài học"
+              >
+                <FiBookOpen className="w-4 h-4" />
+              </button>
+
+              <div className="h-4 w-px bg-white/10" />
+
+              <div className="flex items-center gap-2 lg:gap-4 overflow-x-auto no-scrollbar">
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentStep === 'see' ? 'bg-brand-teal text-[#0a0e1a]' : 'bg-white/10 text-slate-400'}`}>
+                  <FiInfo className="w-3.5 h-3.5" /> Quan sát
+                </div>
+                <FiChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentStep === 'change' ? 'bg-brand-teal text-[#0a0e1a]' : 'bg-white/10 text-slate-400'}`}>
+                  <FiPlay className="w-3.5 h-3.5" /> Thay đổi
+                </div>
+                <FiChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentStep === 'run' ? 'bg-brand-teal text-[#0a0e1a]' : 'bg-white/10 text-slate-400'}`}>
+                  <FiPlay className="w-3.5 h-3.5" /> Chạy thử
+                </div>
+                <FiChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentStep === 'fix' ? 'bg-red-400 text-[#0a0e1a]' : 'bg-white/10 text-slate-400'}`}>
+                  <FiAlertCircle className="w-3.5 h-3.5" /> Sửa lỗi
+                </div>
+                <FiChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentStep === 'build' ? 'bg-brand-teal text-[#0a0e1a]' : 'bg-white/10 text-slate-400'}`}>
+                  <FiCheckCircle className="w-3.5 h-3.5" /> Hoàn thành
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={runCode}
+                className="px-4 py-2 bg-brand-teal/10 hover:bg-brand-teal/20 text-brand-teal rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <FiPlay className="w-4 h-4" /> Chạy thử
+                <span className="text-[10px] opacity-60 ml-1 hidden lg:inline">(Ctrl+Enter)</span>
+              </button>
+              <button
+                onClick={() => navigate('/playground', { state: { code, language, lessonTitle: currentLesson?.title } })}
+                className="px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/10"
+                title="Mở trong Playground để tự do thử nghiệm"
+              >
+                <FiExternalLink className="w-4 h-4" /> Playground
+              </button>
+              {currentStep !== 'see' && (
+                <button 
+                  onClick={submitForGrading}
+                  disabled={isGrading}
+                  className="px-4 py-2 bg-brand-teal text-[#0a0e1a] rounded-xl text-sm font-bold hover:scale-105 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGrading ? 'Đang chấm...' : <><span>Kiểm tra bài</span><span className="text-[10px] opacity-60 ml-1 hidden lg:inline">(Ctrl+Shift+Enter)</span></>}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Guide Section */}
+            <div className="p-6 bg-gradient-to-b from-white/5 to-transparent border-b border-white/5">
+              <h2 className="text-xl font-bold text-white mb-3">{currentLesson?.title}</h2>
+              <div className="prose prose-invert prose-brand max-w-none text-slate-300 text-sm leading-relaxed">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentStep === 'see' ? currentLesson?.description : currentLesson?.taskDescription}
+                </ReactMarkdown>
+              </div>
+              
+              {(showHint || currentStep === 'build') && (
+                <div className="mt-4 p-4 bg-brand-teal/5 border border-brand-teal/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 text-brand-teal font-bold text-sm mb-1">
+                    <FiAlertCircle className="w-4 h-4" /> Gợi ý cho bạn
+                  </div>
+                  <p className="text-slate-400 text-sm">{currentLesson?.hint}</p>
+                  {currentLesson?.commonMistakes && (
+                    <p className="text-slate-500 text-xs mt-2 italic">Lỗi thường gặp: {currentLesson?.commonMistakes}</p>
+                  )}
+
+                  {/* AI Hint */}
+                  {aiHint && (
+                    <div className="mt-3 pt-3 border-t border-brand-teal/10">
+                      <div className="flex items-center gap-2 text-brand-cyan font-bold text-xs mb-1">🤖 AI Mentor</div>
+                      <p className="text-slate-300 text-sm">{aiHint}</p>
                     </div>
-                  </div>
-                )
-              })()
-            ) : editorTab === 'example' ? (
-              (() => {
-                const { theory } = splitLessonCode(currentLesson?.code || '')
-                return theory ? (
-                  <CodeEditor value={theory} onChange={() => {}} editable={false} />
-                ) : (
-                  <div className="p-6">
-                    <p className="text-slate-500 italic">{t('learn.noExample')}</p>
-                  </div>
-                )
-              })()
-            ) : (
-              <CodeEditor value={code} onChange={setCode} editable={hasLessons} />
-            )}
+                  )}
+
+                  {!aiHint && (
+                    <button
+                      onClick={async () => {
+                        if (!currentLesson || isLoadingHint) return
+                        setIsLoadingHint(true)
+                        try {
+                          const res = await api.getAIHint(currentLesson.id, code, language, {
+                            starterCode: currentLesson.starterCode,
+                            lessonTitle: currentLesson.title,
+                            lessonDescription: currentLesson.description,
+                            outputLogs,
+                          })
+                          if (res.success && res.data?.hint) {
+                            setAiHint(res.data.hint)
+                          }
+                        } catch {
+                          setAiHint('Hiện tại AI Mentor đang bận. Hãy thử đọc lại gợi ý bên trên nhé!')
+                        } finally {
+                          setIsLoadingHint(false)
+                        }
+                      }}
+                      disabled={isLoadingHint}
+                      className="text-xs text-brand-cyan hover:text-brand-teal transition-colors underline cursor-pointer disabled:opacity-50"
+                    >
+                      {isLoadingHint ? '🤖 Đang suy nghĩ...' : '🤖 Hỏi AI Mentor gợi ý thêm'}
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {currentStep === 'change' && !showHint && (
+                <button 
+                  onClick={() => setShowHint(true)}
+                  className="mt-4 text-xs text-slate-500 hover:text-brand-teal transition-colors underline cursor-pointer"
+                >
+                  Tôi bị kẹt, hãy giúp tôi
+                </button>
+              )}
+            </div>
+
+            {/* Editor */}
+            <div className="flex-1 min-h-0">
+              <CodeEditor 
+                value={code} 
+                onChange={(newCode) => {
+                  setCode(newCode)
+                  if (currentStep === 'see') setCurrentStep('change')
+                }} 
+                editable={hasLessons} 
+              />
+            </div>
           </div>
         </div>
 
         <Terminal logs={outputLogs} onClear={() => setOutputLogs([])} isActive={hasLessons} />
 
-        {/* Grading Results Panel */}
+        {/* Celebration Banner */}
+        {showCelebration && (
+          <div className="bg-gradient-to-r from-green-500/10 via-brand-teal/10 to-green-500/10 border border-green-500/30 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-4xl">🎉</div>
+                <div>
+                  <h3 className="text-green-400 font-bold text-lg">Tuyệt vời! Bạn đã hoàn thành bài học!</h3>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {currentLesson?.isAhaLesson 
+                      ? 'Đây chính là khoảnh khắc "Aha!" đầu tiên của bạn. Hành trình vừa bắt đầu!' 
+                      : 'Tiếp tục phát huy nhé, bạn đang tiến bộ rất nhanh!'}
+                  </p>
+                </div>
+              </div>
+              {nextLesson && (
+                <button
+                  onClick={goToNextLesson}
+                  className="flex items-center gap-2 px-6 py-3 bg-brand-teal text-[#0a0e1a] rounded-xl font-bold hover:scale-105 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Bài tiếp theo <FiArrowRight className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* What you just learned */}
+            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <h4 className="text-brand-teal font-bold text-sm mb-2 flex items-center gap-2">
+                <FiCheckCircle className="w-4 h-4" /> Bạn vừa học được gì?
+              </h4>
+              <p className="text-slate-300 text-sm leading-relaxed">{currentLesson?.description}</p>
+              {currentLesson?.commonMistakes && (
+                <div className="mt-3 pt-3 border-t border-white/5">
+                  <p className="text-slate-500 text-xs">
+                    <span className="text-yellow-400/80 font-semibold">💡 Ghi nhớ: </span>
+                    {currentLesson.commonMistakes}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div ref={gradingResultRef}>
           {isGrading && <GradingSkeleton />}
           {gradingResult && (
             <div className="max-h-[500px] overflow-y-auto scrollbar-thin relative">
               <button
                 onClick={() => setGradingResult(null)}
-                className="sticky top-2 right-2 float-right z-10 w-8 h-8 flex items-center justify-center rounded-lg bg-bg-primary/80 backdrop-blur-sm border border-white/10 text-gray-400 hover:text-white hover:border-brand-teal/50 transition-colors cursor-pointer"
-                title={t('learn.closeResults')}
+                className="sticky top-2 right-2 float-right z-10 w-8 h-8 flex items-center justify-center rounded-lg bg-bg-primary/80 backdrop-blur-sm border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
               >
                 <FiX className="w-4 h-4" />
               </button>
-              <GradingResults
-                result={gradingResult}
-                onRetry={submitForGrading}
-                isGrading={isGrading}
-              />
+              <GradingResults result={gradingResult} onRetry={submitForGrading} isGrading={isGrading} />
             </div>
           )}
         </div>

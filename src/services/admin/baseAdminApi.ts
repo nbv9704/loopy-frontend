@@ -6,7 +6,9 @@
 
 import { ApiResponse } from '../../types/content.types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
+  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
 
 export class BaseAdminApiService {
   protected baseUrl: string

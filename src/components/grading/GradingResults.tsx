@@ -141,7 +141,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             <div className="bg-bg-primary rounded-lg p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <FiCheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-gray-400">Test Score</span>
+                <span className="text-sm text-gray-400">Đúng/Sai</span>
                 <span className="text-xs text-gray-500 ml-auto">
                   {showBothScores ? '70%' : '100%'}
                 </span>
@@ -164,7 +164,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             <div className="bg-bg-primary rounded-lg p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <FiCpu className="w-4 h-4 text-brand-cyan" />
-                <span className="text-sm text-gray-400">AI Score</span>
+                <span className="text-sm text-gray-400">AI đánh giá</span>
                 <span className="text-xs text-gray-500 ml-auto">
                   {showBothScores ? '30%' : '100%'}
                 </span>
@@ -182,6 +182,12 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             </div>
           )}
         </div>
+
+        {result.feedback.overallFeedback && (
+          <div className="mt-4 rounded-lg border border-brand-teal/15 bg-brand-teal/5 p-4 text-sm text-slate-200 leading-relaxed">
+            {result.feedback.overallFeedback}
+          </div>
+        )}
       </div>
 
       {/* Detailed Results */}

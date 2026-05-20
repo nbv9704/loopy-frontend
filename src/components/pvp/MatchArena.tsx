@@ -46,7 +46,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 }) => {
   const { t } = useTranslation()
   const [selectedAnswer, setSelectedAnswer] = useState<string>('')
-  const [code, setCode] = useState<string>(question.starter_code || '')
+  const [code, setCode] = useState<string>(question.starterCode || '')
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [reactions, setReactions] = useState<Array<{ emoji: string; userId: string }>>([])
@@ -79,7 +79,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   useEffect(() => {
     setHasSubmitted(false)
     setSelectedAnswer('')
-    setCode(question.starter_code || '')
+    setCode(question.starterCode || '')
     setSubmissionResult(null)
     // Clear shown ranks and submissions for new question
     shownRanks.current.clear()
@@ -90,10 +90,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   useEffect(() => {
     if (!socket.socket) return
 
-    console.log('Setting up submission listeners in MatchArena')
-
     const handleSubmissionReceived = (submission: any) => {
-      console.log('Submission received:', submission)
       if (submission.user_id === currentUserId) {
         // Create unique key for this submission
         const key = `${submission.user_id}-${submission.question_id}`
@@ -115,21 +112,15 @@ const MatchArena: React.FC<MatchArenaProps> = ({
           } else {
             toast.error('+0 points', { icon: '❌' })
           }
-
-          console.log('Showed submission toast:', key)
-        } else {
-          console.log('Skipped duplicate submission toast:', key)
         }
       }
     }
 
-    const handleSubmissionRanked = (payload: any) => {
-      console.log('Submission ranked:', payload)
+    const handleSubmissionRanked = (_payload: any) => {
       // No longer show rank toast, only points toast from submission received
     }
 
     const handleReactionReceived = (reaction: any) => {
-      console.log('Reaction received:', reaction)
       setReactions(prev => [...prev, { emoji: reaction.emoji, userId: reaction.user_id }])
       setTimeout(() => {
         setReactions(prev => prev.filter(r => r.userId !== reaction.user_id))
@@ -140,11 +131,8 @@ const MatchArena: React.FC<MatchArenaProps> = ({
     const cleanup2 = socket.onSubmissionRanked(handleSubmissionRanked)
     const cleanup3 = socket.onReactionReceived(handleReactionReceived)
 
-    console.log('Submission listeners set up')
-
     // Cleanup
     return () => {
-      console.log('Cleaning up submission listeners in MatchArena')
       cleanup1()
       cleanup2()
       cleanup3()

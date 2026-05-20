@@ -215,7 +215,7 @@ export default function LoginPage() {
             <div className="mt-8 pt-8 border-t border-white/20">
               <p className="text-sm text-white/90 text-center">
                 <a
-                  href="http://localhost:5173"
+                  href="/"
                   className="text-white no-underline font-medium hover:underline"
                 >
                   ← Back to Loopy

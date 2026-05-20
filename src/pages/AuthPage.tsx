@@ -20,7 +20,7 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/playground'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,22 +29,32 @@ const AuthPage: React.FC = () => {
 
     try {
       if (isLogin) {
-        await signIn(email, password)
-        navigate(from, { replace: true })
+        const res = await signIn(email, password)
+        const isCompleted = res.user?.onboardingCompleted
+        
+        if (isCompleted) {
+          navigate(from, { replace: true })
+        } else {
+          // Pass the intended language route to onboarding if available
+          navigate('/onboarding', { 
+            state: { intendedLanguage: (location.state as any)?.intendedLanguage } 
+          })
+        }
       } else {
         const result = await signUp(email, password, displayName)
 
         // Check if email confirmation is required (production mode)
         if (result.requiresEmailConfirmation) {
-          setError('') // Clear any errors
-          // Show success message
-          alert(result.message || t('auth.checkEmail'))
+          // Show confirmation message inline in the form
+          setError(result.message || t('auth.checkEmail'))
           // Switch to login form
           setIsLogin(true)
           setPassword('') // Clear password for security
         } else {
-          // Development mode: auto logged in
-          navigate(from, { replace: true })
+          // Development mode: auto logged in, go to onboarding
+          navigate('/onboarding', { 
+            state: { intendedLanguage: (location.state as any)?.intendedLanguage } 
+          })
         }
       }
     } catch (err: any) {
@@ -226,7 +236,9 @@ const AuthPage: React.FC = () => {
                     setLoading(true)
                     setError('')
                     try {
-                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+                      const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
+                        ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
+                        : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
                       const res = await fetch(`${API_URL}/api/auth/dev-login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

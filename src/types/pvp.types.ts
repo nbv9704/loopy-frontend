@@ -20,7 +20,7 @@ export interface PvPQuestion {
   // Code challenge fields
   problem_title?: string
   problem_description?: string
-  starter_code?: string
+  starterCode?: string
 
   // Metadata
   time_limit: number

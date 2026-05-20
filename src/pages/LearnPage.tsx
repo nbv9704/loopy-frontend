@@ -1,16 +1,49 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/common/Header'
 import SandboxLearningUI from '../components/learn/LessonViewer'
 import SEO from '../components/common/SEO'
 import { pageMetadata, getLanguageMetadata } from '../utils/seo'
+import { useAuth } from '../contexts/AuthContext'
+import LoadingSpinner from '../components/common/LoadingSpinner'
 
 const LearnPage: React.FC = () => {
   const { language = 'javascript', '*': splat } = useParams<{ language: string; '*': string }>()
   const lessonId = splat || undefined
+  const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
+
+  // Auth guard: redirect guests to auth, unboarded users to onboarding
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        navigate('/auth', { 
+          state: { 
+            from: { pathname: `/learn/${language}${lessonId ? '/' + lessonId : ''}` },
+            intendedLanguage: language
+          } 
+        })
+      } else if (!user.onboardingCompleted) {
+        navigate('/onboarding', { state: { intendedLanguage: language } })
+      }
+    }
+  }, [user, authLoading, navigate, language, lessonId])
 
   // Get metadata based on language
   const metadata = language ? getLanguageMetadata(language) : pageMetadata.learn
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0e1a] flex flex-col">
+        <Header />
+        <div className="flex-grow flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || !user.onboardingCompleted) return null
 
   return (
     <>

@@ -41,10 +41,6 @@ Create a `.env.local` file in the root directory:
 ```env
 # Backend API URL
 VITE_API_URL=http://localhost:3000
-
-# Supabase Configuration (if using authentication)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## 🏃 Running the Application

@@ -1,28 +1,32 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, ChevronDown, ChevronRight, Maximize2, X } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronRight, Maximize2, X, CheckCircle2, ArrowRight } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface Lesson {
   id: string
-  chapter_id: string
-  lesson_id: string
+  chapterId: string
+  lessonId: string
   title: string
   description: string
-  content: string
-  code: string
-  insight: string
-  order_index: number
+  starterCode: string
+  taskDescription: string
+  hint: string
+  commonMistakes: string
+  solutionCode: string
+  isAhaLesson: boolean
+  orderIndex: number
+  estimated_time?: number
 }
 
 interface Chapter {
   id: string
-  language_id: string
-  chapter_number: number
+  languageId: string
+  chapterNumber: number
   title: string
   description: string
-  order_index: number
+  orderIndex: number
 }
 
 interface LessonSidebarProps {
@@ -31,6 +35,7 @@ interface LessonSidebarProps {
   activeLesson: string
   language: string
   currentLesson: Lesson | undefined
+  completedLessons: Set<string>
   onSelectLesson: (lessonId: string) => void
 }
 
@@ -40,6 +45,7 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
   activeLesson,
   language,
   currentLesson,
+  completedLessons,
   onSelectLesson,
 }) => {
   const { t } = useTranslation()
@@ -68,19 +74,26 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
   // Group lessons by chapter
   const lessonsByChapter = lessons.reduce(
     (acc, lesson) => {
-      if (!acc[lesson.chapter_id]) {
-        acc[lesson.chapter_id] = []
+      if (!acc[lesson.chapterId]) {
+        acc[lesson.chapterId] = []
       }
-      acc[lesson.chapter_id].push(lesson)
+      acc[lesson.chapterId].push(lesson)
       return acc
     },
     {} as Record<string, Lesson[]>
   )
 
-  // Sort lessons by order_index within each chapter
+  // Sort lessons by orderIndex within each chapter
   Object.keys(lessonsByChapter).forEach(chapterId => {
-    lessonsByChapter[chapterId].sort((a, b) => a.order_index - b.order_index)
+    lessonsByChapter[chapterId].sort((a, b) => a.orderIndex - b.orderIndex)
   })
+
+  // Find Next Action (first uncompleted lesson)
+  const nextActionLesson = lessons.find(l => !completedLessons.has(l.id))
+
+  const totalLessons = lessons.length
+  const completedCount = completedLessons.size
+  const overallProgress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
 
   return (
     <aside className="w-full lg:w-80 flex flex-col bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden h-full shadow-xl">
@@ -92,12 +105,36 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
             <h2 className="text-white text-base font-bold">
               {language === 'javascript' ? 'JavaScript' : language === 'python' ? 'Python' : 'C++'}
             </h2>
-            <p className="text-slate-400 text-sm">
-              {t('learn.lessonsCount', { count: lessons.length })}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-slate-400 text-sm">
+                {completedCount} / {totalLessons}
+              </p>
+              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden w-24">
+                <div 
+                  className="h-full bg-brand-teal transition-all duration-500" 
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Next Action */}
+      {hasLessons && nextActionLesson && (
+        <div className="px-3 pt-3 flex-shrink-0">
+          <button
+            onClick={() => onSelectLesson(nextActionLesson.id)}
+            className="w-full py-3 px-4 rounded-xl bg-brand-teal/10 border border-brand-teal/30 hover:bg-brand-teal/20 transition-colors flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex flex-col items-start">
+              <span className="text-brand-teal text-xs font-bold uppercase tracking-wider mb-0.5">Tiếp tục học</span>
+              <span className="text-white text-sm font-medium text-left line-clamp-1">{nextActionLesson.title}</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-brand-teal group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      )}
 
       {/* Lesson Directory */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -124,38 +161,82 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                   )}
                   <div className="flex-1 text-left">
-                    <div className="flex items-center gap-2">
-                      <span className="text-brand-teal font-semibold text-xs">
-                        {t('learn.chapter')} {chapter.chapter_number}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-brand-teal font-semibold text-xs">
+                          {t('learn.chapter')} {chapter.chapterNumber}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {chapterLessons.filter(l => completedLessons.has(l.id)).length}/{chapterLessons.length}
                       </span>
-                      <span className="text-slate-500 text-[10px]">({chapterLessons.length})</span>
                     </div>
                     <p className="text-slate-400 text-xs mt-0.5">{chapter.title}</p>
+                    {/* Chapter progress bar */}
+                    <div className="mt-1.5 h-1 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-teal to-brand-cyan transition-all duration-500"
+                        style={{ width: `${Math.round((chapterLessons.filter(l => completedLessons.has(l.id)).length / (chapterLessons.length || 1)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </button>
 
                 {/* Chapter Lessons */}
                 {isOpen && (
                   <div className="ml-4 space-y-1">
-                    {chapterLessons.map(lesson => (
-                      <button
-                        key={lesson.id}
-                        onClick={() => onSelectLesson(lesson.id)}
-                        className={`w-full text-left px-3 py-2.5 rounded transition-all cursor-pointer flex items-center gap-3 border ${
-                          activeLesson === lesson.id
-                            ? 'bg-brand-teal/10 border-brand-teal/30'
-                            : 'border-transparent hover:bg-white/5 hover:border-white/10'
-                        }`}
-                      >
-                        <span
-                          className={`text-xs font-mono flex-1 leading-tight ${
-                            activeLesson === lesson.id ? 'text-white' : 'text-slate-400'
+                    {chapterLessons.map(lesson => {
+                      const isCompleted = completedLessons.has(lesson.id)
+                      const isActive = activeLesson === lesson.id
+                      const isNext = !isCompleted && !isActive && nextActionLesson?.id === lesson.id
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => onSelectLesson(lesson.id)}
+                          className={`w-full text-left px-3 py-2.5 rounded transition-all cursor-pointer flex items-center gap-3 border ${
+                            isActive
+                              ? 'bg-brand-teal/10 border-brand-teal/30'
+                              : isNext
+                                ? 'bg-brand-cyan/5 border-brand-cyan/20'
+                                : 'border-transparent hover:bg-white/5 hover:border-white/10'
                           }`}
                         >
-                          {lesson.title}
-                        </span>
-                      </button>
-                    ))}
+                          {/* State indicator */}
+                          <div className="flex-shrink-0">
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            ) : isActive ? (
+                              <div className="w-4 h-4 rounded-full border-2 border-brand-teal bg-brand-teal/20" />
+                            ) : isNext ? (
+                              <div className="w-4 h-4 rounded-full border-2 border-brand-cyan animate-pulse" />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full border border-slate-700" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className={`text-xs font-mono leading-tight block truncate ${
+                                isActive ? 'text-white' : isCompleted ? 'text-slate-500' : 'text-slate-400'
+                              }`}
+                            >
+                              {lesson.title}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {lesson.estimated_time && (
+                                <span className="text-[10px] text-slate-600">{lesson.estimated_time} phút</span>
+                              )}
+                              {lesson.isAhaLesson && (
+                                <span className="text-[10px] text-yellow-400/80 font-bold">⚡ Aha!</span>
+                              )}
+                              {isNext && (
+                                <span className="text-[10px] text-brand-cyan font-bold">→ Tiếp theo</span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>

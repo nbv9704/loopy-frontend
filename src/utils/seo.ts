@@ -84,6 +84,12 @@ export const pageMetadata = {
     keywords: 'admin, dashboard, content management',
     url: '/admin',
   },
+  challenges: {
+    title: 'Chế độ Thử thách - Rèn luyện code thời gian thực',
+    description: 'Tham gia các thử thách lập trình 1v1 thời gian thực để rèn luyện kỹ năng và phản xạ code.',
+    keywords: 'thử thách lập trình, coding challenges, 1v1 coding, thi đấu lập trình',
+    url: '/pvp',
+  },
 }
 
 /**

@@ -46,8 +46,8 @@ const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ sectionRef, opaci
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid md:grid-cols-3 gap-8">
-            {Array.from({ length: 3 }).map((_, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 4 }).map((_, index) => (
               <HowItWorksStepSkeleton key={index} />
             ))}
           </div>
@@ -55,7 +55,7 @@ const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ sectionRef, opaci
 
         {/* Steps Grid */}
         {!isLoading && steps && steps.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((item, i) => {
               const StepIcon = getIconComponent(item.icon)
               return (

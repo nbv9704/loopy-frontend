@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import FileExplorer from './FileExplorer'
 import CodeEditorPane from './CodeEditorPane'
 import TerminalOutput from './TerminalOutput'
 import NewFileModal from './NewFileModal'
 import { detectLanguage, getLanguageConfig, getLanguageExtension } from '../../utils/languageConfig'
-import { executeCode, formatError } from '../../utils/codeExecution'
+import { api } from '../../lib/api'
+import toast from 'react-hot-toast'
 import {
   CodeFile,
   loadFiles,
@@ -15,10 +18,28 @@ import {
   clearStorage,
 } from '../../utils/playgroundStorage'
 
-const PlaygroundMultiFileUI: React.FC = () => {
+interface MultiFileEditorProps {
+  initialCode?: string
+  initialLanguage?: string
+  initialTitle?: string
+}
+
+const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, initialLanguage, initialTitle }) => {
   const { t } = useTranslation()
-  const [files, setFiles] = useState<CodeFile[]>(() => loadFiles())
-  const [activeFileId, setActiveFileId] = useState(() => loadActiveFileId(loadFiles()))
+  const [files, setFiles] = useState<CodeFile[]>(() => {
+    if (initialCode && initialLanguage) {
+      const ext = initialLanguage === 'python' ? 'py' : initialLanguage === 'cpp' ? 'cpp' : 'js'
+      const name = initialTitle ? `${initialTitle.replace(/\s+/g, '_').substring(0, 20)}.${ext}` : `lesson.${ext}`
+      return [{ id: 'lesson-import', name, language: initialLanguage, code: initialCode }]
+    }
+    return loadFiles()
+  })
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [activeFileId, setActiveFileId] = useState(() => {
+    if (initialCode) return 'lesson-import'
+    return loadActiveFileId(loadFiles())
+  })
   const [outputLogs, setOutputLogs] = useState<string[]>([])
   const [showNewFileModal, setShowNewFileModal] = useState(false)
 
@@ -39,9 +60,24 @@ const PlaygroundMultiFileUI: React.FC = () => {
     setFiles(files.map(f => (f.id === activeFileId ? { ...f, code } : f)))
   }
 
+  const requireAuth = (actionName: string) => {
+    if (!user) {
+      toast.error(`Vui lòng đăng nhập để ${actionName}`)
+      navigate('/auth', { state: { from: { pathname: '/playground' } } })
+      return false
+    }
+    return true
+  }
+
+  const handleShowNewFileModal = () => {
+    if (requireAuth('tạo file mới')) {
+      setShowNewFileModal(true)
+    }
+  }
+
   const addNewFile = (name: string) => {
     if (files.length >= maxFiles) {
-      alert(t('playground.maxFilesReached', { max: maxFiles }))
+      toast.error(t('playground.maxFilesReached', { max: maxFiles }))
       return
     }
     const language = detectLanguage(name)
@@ -58,7 +94,7 @@ const PlaygroundMultiFileUI: React.FC = () => {
 
   const deleteFile = (id: string) => {
     if (files.length === 1) {
-      alert(t('playground.mustKeepOneFile'))
+      toast.error(t('playground.mustKeepOneFile'))
       return
     }
     const newFiles = files.filter(f => f.id !== id)
@@ -69,25 +105,56 @@ const PlaygroundMultiFileUI: React.FC = () => {
   }
 
   const clearAllFiles = () => {
-    if (confirm(t('playground.confirmDeleteAll'))) {
-      clearStorage()
-      const freshFiles = loadFiles()
-      setFiles(freshFiles)
-      setActiveFileId(freshFiles[0].id)
-      setOutputLogs([])
-    }
+    if (!requireAuth('xóa tất cả file')) return
+    toast(
+      (toastInstance) => (
+        <span className="flex flex-col gap-2">
+          <span>{t('playground.confirmDeleteAll')}</span>
+          <span className="flex gap-2">
+            <button
+              className="px-3 py-1 bg-red-500 text-white rounded text-xs font-semibold"
+              onClick={() => {
+                toast.dismiss(toastInstance.id)
+                clearStorage()
+                const freshFiles = loadFiles()
+                setFiles(freshFiles)
+                setActiveFileId(freshFiles[0].id)
+                setOutputLogs([])
+              }}
+            >
+              Xóa
+            </button>
+            <button
+              className="px-3 py-1 bg-slate-700 text-white rounded text-xs"
+              onClick={() => toast.dismiss(toastInstance.id)}
+            >
+              Hủy
+            </button>
+          </span>
+        </span>
+      ),
+      { duration: 6000, icon: '⚠️' }
+    )
   }
 
-  const runCode = () => {
-    setOutputLogs([])
-    const result = executeCode(activeFile.code, activeFile.language)
-
-    if (result.error) {
-      setOutputLogs([...result.logs, formatError(result.error)])
-    } else if (result.logs.length === 0) {
-      setOutputLogs([t('playground.runSuccessNoOutput')])
-    } else {
-      setOutputLogs(result.logs)
+  const runCode = async () => {
+    if (!requireAuth('chạy code')) return
+    setOutputLogs(['> ' + t('common.loading') + '...'])
+    
+    try {
+      const response = await api.executeCode(activeFile.language, activeFile.code)
+      if (response.success && response.data) {
+        const { output, error } = response.data
+        if (error) {
+          setOutputLogs([`❌ LỖI: ${error}`])
+        } else {
+          setOutputLogs(output ? output.split('\n') : [t('playground.runSuccessNoOutput')])
+        }
+      } else {
+        setOutputLogs(['❌ LỖI: Không thể thực thi mã nguồn.'])
+      }
+    } catch (err: any) {
+      setOutputLogs([`❌ LỖI: ${err.message}`])
     }
   }
 
@@ -99,7 +166,7 @@ const PlaygroundMultiFileUI: React.FC = () => {
         maxFiles={maxFiles}
         onFileSelect={setActiveFileId}
         onFileDelete={deleteFile}
-        onNewFile={() => setShowNewFileModal(true)}
+        onNewFile={handleShowNewFileModal}
         onClearAll={clearAllFiles}
         getLanguageConfig={lang => {
           const config = getLanguageConfig(lang)

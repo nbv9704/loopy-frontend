@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 
 interface NewFileModalProps {
   onSubmit: (name: string) => void
@@ -13,7 +14,7 @@ const NewFileModal: React.FC<NewFileModalProps> = ({ onSubmit, onCancel }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!fileName.trim()) {
-      alert(t('playground.enterFileName'))
+      toast.error(t('playground.enterFileName'))
       return
     }
     onSubmit(fileName)

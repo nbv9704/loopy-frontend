@@ -1,45 +1,28 @@
 /**
  * Admin Authentication Manager
  *
- * Manages TokenRefreshService lifecycle for admin authentication
- * Initializes service when admin is authenticated and cleans up on unmount
- *
- * **Validates: Requirements 4.4, 4.5**
+ * Manages periodic session validation for admin authentication
+ * Performs regular background checks to verify cookie session state is alive.
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAuthStore } from '../../../store/admin/authStore'
-import { TokenRefreshService } from '../../../services/TokenRefreshService'
 
 export default function AdminAuthManager() {
-  const { isAuthenticated } = useAuthStore()
-  const tokenRefreshServiceRef = useRef<TokenRefreshService | null>(null)
+  const { isAuthenticated, checkAuth } = useAuthStore()
 
   useEffect(() => {
-    // Initialize token refresh service when user is authenticated
-    if (isAuthenticated && !tokenRefreshServiceRef.current) {
-      tokenRefreshServiceRef.current = new TokenRefreshService()
-      console.info('TokenRefreshService initialized for admin session')
-    }
+    if (!isAuthenticated) return
 
-    // Cleanup token refresh service when user logs out
-    if (!isAuthenticated && tokenRefreshServiceRef.current) {
-      tokenRefreshServiceRef.current.destroy()
-      tokenRefreshServiceRef.current = null
-      console.info('TokenRefreshService destroyed - admin logged out')
-    }
-  }, [isAuthenticated])
+    // Run a background session health check every 2 minutes
+    const interval = setInterval(() => {
+      checkAuth().catch(err => {
+        console.warn('Admin session health check failed:', err)
+      })
+    }, 2 * 60 * 1000)
 
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      if (tokenRefreshServiceRef.current) {
-        tokenRefreshServiceRef.current.destroy()
-        tokenRefreshServiceRef.current = null
-        console.info('TokenRefreshService destroyed - component unmounted')
-      }
-    }
-  }, [])
+    return () => clearInterval(interval)
+  }, [isAuthenticated, checkAuth])
 
   // This component doesn't render anything
   return null

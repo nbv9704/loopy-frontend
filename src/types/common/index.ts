@@ -12,61 +12,74 @@ export interface User {
 export interface Language {
   id: string
   name: string
-  display_name: string
+  displayName: string
   icon: string
-  can_run_in_browser: boolean
-  created_at: string
+  canRunInBrowser: boolean
+  createdAt: string
 }
 
 export interface Chapter {
   id: string
-  language_id: string
-  chapter_number: number
+  languageId: string
+  chapterNumber: number
   title: string
   description: string
-  order_index: number
-  created_at: string
-  updated_at: string
+  orderIndex: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Lesson {
   id: string
-  chapter_id: string
-  lesson_id: string
+  chapterId: string
+  lessonId: string
   title: string
   description: string
-  content: string
-  code: string
-  insight: string
-  order_index: number
+  starterCode?: string
+  taskDescription?: string
+  hint?: string
+  commonMistakes?: string
+  solutionCode?: string
+  isAhaLesson?: boolean
+  orderIndex: number
   difficulty?: 'beginner' | 'intermediate' | 'advanced'
-  estimated_time?: number
-  created_at: string
-  updated_at: string
+  estimatedTime?: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Exercise {
   id: string
-  lesson_id: string
-  exercise_number: number
+  lessonId: string
+  exerciseNumber: number
   question: string
   hint?: string
   solution: string
-  test_cases?: any
+  testCases?: any
   difficulty?: 'easy' | 'medium' | 'hard'
-  order_index: number
-  created_at: string
+  orderIndex: number
+  createdAt: string
 }
 
 export interface UserProgress {
   id: string
-  user_id: string
-  lesson_id: string
+  userId: string
+  lessonId: string
   status: 'not_started' | 'in_progress' | 'completed'
-  completed_at?: string
-  time_spent: number
-  created_at: string
-  updated_at: string
+  completedAt?: string
+  timeSpent: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Badge {
+  id: string
+  name: string
+  description: string
+  icon: string
+  requirementType: string
+  requirementValue?: number
+  createdAt: string
 }
 
 export interface ProgressStats {
@@ -74,4 +87,7 @@ export interface ProgressStats {
   totalLessons: number
   currentStreak: number
   longestStreak: number
+  totalPoints: number
+  badges: Badge[]
 }
+

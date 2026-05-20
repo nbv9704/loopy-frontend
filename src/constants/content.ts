@@ -5,9 +5,6 @@
  * This approach is faster, simpler, and eliminates unnecessary database queries.
  *
  * To update content: Edit this file directly and redeploy.
- *
- * Note: Header navigation and footer are now hardcoded in their respective components.
- * This file only contains landing page and documentation content.
  */
 
 // ============================================================================
@@ -16,55 +13,55 @@
 
 export const LANDING = {
   hero: {
-    title: 'Học lập trình với AI',
-    subtitle: 'Nền tảng học lập trình hiện đại với AI hỗ trợ và chế độ đối kháng',
+    title: 'Học lập trình từ con số 0',
+    subtitle: 'Vượt qua 20 giờ đầu tiên học lập trình với lộ trình cá nhân hóa, thực hành thật và hỗ trợ bởi AI Mentor.',
     cta: {
-      primary: { label: 'Bắt đầu học', href: '/learn' },
-      secondary: { label: 'Xem demo', href: '#demo' },
+      primary: { label: 'Bắt đầu từ số 0', href: '/learn' },
+      secondary: { label: 'Thử bài đầu tiên', href: '#demo' },
     },
   },
 
   features: [
     {
-      id: 'ai-powered',
-      icon: 'cpu',
-      title: 'AI Grading',
-      description: 'Hệ thống chấm điểm tự động bằng AI, feedback chi tiết và chính xác',
-      color: 'cyan',
-    },
-    {
-      id: 'interactive',
+      id: 'practice-first',
       icon: 'code',
-      title: 'Interactive Coding',
-      description: 'Viết code trực tiếp trên trình duyệt, chạy và test ngay lập tức',
+      title: 'Thực hành là trên hết',
+      description: 'Không chỉ xem video, bạn sẽ viết code và thấy kết quả ngay từ phút đầu tiên.',
       color: 'blue',
     },
     {
-      id: 'pvp-mode',
-      icon: 'zap',
-      title: 'PvP Mode',
-      description: 'Thi đấu coding 1v1, thử thách bạn bè và leo rank',
-      color: 'yellow',
+      id: 'ai-mentor',
+      icon: 'cpu',
+      title: 'Mentor AI 24/7',
+      description: 'Hệ thống gợi ý thông minh giúp bạn vượt qua lỗi sai mà không cần chờ đợi.',
+      color: 'cyan',
     },
     {
-      id: 'multi-language',
-      icon: 'globe',
-      title: 'Multi-Language',
-      description: 'Hỗ trợ nhiều ngôn ngữ lập trình: JavaScript, Python, C++, Java',
-      color: 'green',
-    },
-    {
-      id: 'progress-tracking',
+      id: 'personalized',
       icon: 'trending-up',
-      title: 'Progress Tracking',
-      description: 'Theo dõi tiến độ học tập, xem thống kê và cải thiện kỹ năng',
+      title: 'Lộ trình cá nhân hóa',
+      description: 'Nội dung bài học điều chỉnh theo mục tiêu và trình độ của riêng bạn.',
       color: 'purple',
     },
     {
-      id: 'community',
-      icon: 'users',
-      title: 'Community',
-      description: 'Cộng đồng học viên năng động, chia sẻ kiến thức và kinh nghiệm',
+      id: 'tiny-lessons',
+      icon: 'zap',
+      title: 'Bài học siêu nhỏ',
+      description: 'Chỉ mất 2-5 phút cho mỗi khái niệm, phù hợp với người bận rộn.',
+      color: 'yellow',
+    },
+    {
+      id: 'real-feedback',
+      icon: 'check-circle',
+      title: 'Phản hồi tức thì',
+      description: 'Biết ngay code của bạn đúng hay sai và cách để sửa nó tốt hơn.',
+      color: 'green',
+    },
+    {
+      id: 'goal-oriented',
+      icon: 'globe',
+      title: 'Hướng tới mục tiêu',
+      description: 'Chọn mục tiêu của bạn: Làm web, làm app, hay chỉ là tò mò.',
       color: 'pink',
     },
   ],
@@ -74,7 +71,7 @@ export const LANDING = {
       id: 'javascript',
       name: 'JavaScript',
       icon: 'SiJavascript',
-      description: 'Ngôn ngữ phổ biến nhất cho web development',
+      description: 'Phù hợp để làm Website và ứng dụng tương tác.',
       color: '#F7DF1E',
       lessonCount: 50,
     },
@@ -82,7 +79,7 @@ export const LANDING = {
       id: 'python',
       name: 'Python',
       icon: 'SiPython',
-      description: 'Ngôn ngữ dễ học, mạnh mẽ cho AI và Data Science',
+      description: 'Ngôn ngữ dễ học nhất, mạnh mẽ cho AI và dữ liệu.',
       color: '#3776AB',
       lessonCount: 45,
     },
@@ -90,46 +87,46 @@ export const LANDING = {
       id: 'cpp',
       name: 'C++',
       icon: 'SiCplusplus',
-      description: 'Ngôn ngữ hiệu suất cao cho system programming',
+      description: 'Dành cho ai muốn hiểu sâu về cách máy tính vận hành.',
       color: '#00599C',
       lessonCount: 40,
     },
   ],
 
   stats: [
-    { id: 'users', label: 'Học viên', value: '10,000+', icon: 'users' },
-    { id: 'lessons', label: 'Bài học', value: '500+', icon: 'book' },
-    { id: 'submissions', label: 'Bài nộp', value: '50,000+', icon: 'code' },
-    { id: 'pvp-matches', label: 'Trận PvP', value: '5,000+', icon: 'zap' },
+    { id: 'zero-to-hero', label: 'Bắt đầu từ số 0', value: '100%', icon: 'users' },
+    { id: 'practice-rate', label: 'Thực hành', value: '90%', icon: 'code' },
+    { id: 'aha-moment', label: 'Bài học Aha!', value: '50+', icon: 'zap' },
+    { id: 'support', label: 'Hỗ trợ AI', value: '24/7', icon: 'cpu' },
   ],
 
   howItWorks: [
     {
-      id: 'choose-language',
+      id: 'choose-goal',
       step: 1,
-      title: 'Chọn ngôn ngữ',
-      description: 'Chọn ngôn ngữ lập trình bạn muốn học',
+      title: 'Chọn mục tiêu',
+      description: 'Xác định bạn muốn xây dựng gì hoặc học vì mục đích gì.',
       icon: 'globe',
     },
     {
-      id: 'learn-lessons',
+      id: 'real-coding',
       step: 2,
-      title: 'Học bài học',
-      description: 'Làm theo hướng dẫn, viết code và submit bài tập',
-      icon: 'book',
+      title: 'Viết code thực tế',
+      description: 'Bạn sẽ bắt tay vào viết dòng code đầu tiên ngay lập tức.',
+      icon: 'terminal',
     },
     {
-      id: 'get-feedback',
+      id: 'instant-results',
       step: 3,
-      title: 'Nhận feedback',
-      description: 'AI chấm điểm và đưa ra feedback chi tiết',
+      title: 'Nhận kết quả ngay',
+      description: 'Thấy code chạy và nhận gợi ý sửa lỗi thông minh từ AI.',
       icon: 'check-circle',
     },
     {
-      id: 'compete',
+      id: 'mastery',
       step: 4,
-      title: 'Thi đấu',
-      description: 'Thử sức với chế độ PvP, leo rank và nhận thưởng',
+      title: 'Chinh phục cột mốc',
+      description: 'Hoàn thành các thử thách và xây dựng sản phẩm của riêng bạn.',
       icon: 'trophy',
     },
   ],

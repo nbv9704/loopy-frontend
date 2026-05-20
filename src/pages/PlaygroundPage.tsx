@@ -1,9 +1,19 @@
+import { useLocation } from 'react-router-dom'
 import Header from '../components/common/Header'
 import PlaygroundMultiFileUI from '../components/playground/MultiFileEditor'
 import SEO from '../components/common/SEO'
 import { pageMetadata } from '../utils/seo'
 
+interface PlaygroundLocationState {
+  code?: string
+  language?: string
+  lessonTitle?: string
+}
+
 const PlaygroundPage: React.FC = () => {
+  const location = useLocation()
+  const state = location.state as PlaygroundLocationState | null
+
   return (
     <>
       <SEO {...pageMetadata.playground} />
@@ -17,7 +27,11 @@ const PlaygroundPage: React.FC = () => {
         <Header />
         <main className="flex-grow pt-20 pb-4 overflow-hidden relative z-10">
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 h-full">
-            <PlaygroundMultiFileUI />
+            <PlaygroundMultiFileUI
+              initialCode={state?.code}
+              initialLanguage={state?.language}
+              initialTitle={state?.lessonTitle}
+            />
           </div>
         </main>
       </div>

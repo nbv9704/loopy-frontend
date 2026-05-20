@@ -3,25 +3,30 @@ import { api } from '../lib/api'
 
 interface Lesson {
   id: string
-  chapter_id: string
-  lesson_id: string
+  chapterId: string
+  lessonId: string
   title: string
   description: string
-  content: string
-  code: string
-  insight: string
-  order_index: number
+  starterCode: string
+  taskDescription: string
+  hint: string
+  commonMistakes: string
+  solutionCode: string
+  isAhaLesson: boolean
+  orderIndex: number
+  difficulty: string
+  estimated_time: number
   created_at: string
   updated_at: string
 }
 
 interface Chapter {
   id: string
-  language_id: string
-  chapter_number: number
+  languageId: string
+  chapterNumber: number
   title: string
   description: string
-  order_index: number
+  orderIndex: number
 }
 
 export const useLessonData = (language: string, initialLessonId?: string, userId?: string) => {
@@ -73,7 +78,7 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
 
     let initialLesson = lessons[0]
     if (initialLessonId) {
-      const foundLesson = lessons.find(l => l.lesson_id === initialLessonId)
+      const foundLesson = lessons.find(l => l.lessonId === initialLessonId)
       if (foundLesson) {
         initialLesson = foundLesson
       }
@@ -94,10 +99,10 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
         const progressResponse = await api.getUserProgress()
         if (progressResponse.success && progressResponse.data) {
           const progress =
-            (progressResponse.data as { progress: { status: string; lesson_id: string }[] })
+            (progressResponse.data as { progress: { status: string; lessonId: string }[] })
               .progress || []
           const completed = new Set<string>(
-            progress.filter(p => p.status === 'completed').map(p => p.lesson_id)
+            progress.filter(p => p.status === 'completed').map(p => p.lessonId)
           )
           setCompletedLessons(completed)
         }

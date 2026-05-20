@@ -2,29 +2,15 @@ import { NavLink } from 'react-router-dom'
 import {
   FiHome,
   FiFileText,
-  FiGlobe,
-  FiHelpCircle,
-  FiClock,
   FiStar,
-  FiCode,
-  FiImage,
-  FiLayout,
-  FiTrendingUp,
 } from 'react-icons/fi'
 import { cn } from '../../../utils/admin/cn'
 import logoImg from '../../../assets/images/logos/logo-256x256.png'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: FiHome },
-  { name: 'Documentation', href: '/admin/documentation', icon: FiFileText, section: 'Content' },
-  { name: 'Header', href: '/admin/header', icon: FiImage },
-  { name: 'Footer', href: '/admin/footer', icon: FiLayout },
-  { name: 'Features', href: '/admin/landing/features', icon: FiStar, section: 'Landing Page' },
-  { name: 'Languages', href: '/admin/landing/languages', icon: FiCode },
-  { name: 'Statistics', href: '/admin/landing/stats', icon: FiTrendingUp },
-  { name: 'How It Works', href: '/admin/landing/how-it-works', icon: FiGlobe },
-  { name: 'Help', href: '/admin/help', icon: FiHelpCircle, section: 'System' },
-  { name: 'Audit Logs', href: '/admin/audit-logs', icon: FiClock },
+  { name: 'Bulk Import', href: '/admin/import', icon: FiFileText, section: 'Content' },
+  { name: 'New Lesson', href: '/admin/lessons/new', icon: FiStar },
 ]
 
 export default function Sidebar() {

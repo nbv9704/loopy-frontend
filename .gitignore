@@ -8,8 +8,8 @@ dist-ssr/
 *.tsbuildinfo
 
 # Environment files
-.env.local
-.env.*.local
+.env
+.env.*
 
 # Logs
 *.log

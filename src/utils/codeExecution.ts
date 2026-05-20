@@ -1,163 +1,51 @@
 // Code execution utilities
-import { errorLogger } from '../services/ErrorLogger'
-import type { ExecutionError } from '../types/logger.types'
 
 export interface ExecutionResult {
   logs: string[]
   error?: string
 }
 
-// ============================================================================
-// QUAN TRỌNG: Chỉ có JavaScript có thể chạy trực tiếp trong browser!
-// ============================================================================
-// - JavaScript: Chạy được vì browser có JavaScript engine (V8, SpiderMonkey, etc.)
-// - C++: KHÔNG chạy được - cần compiler (g++, clang++) để biên dịch thành machine code
-// - Python: KHÔNG chạy được - cần Python interpreter (có thể dùng Pyodide/WASM nhưng chưa implement)
-// ============================================================================
-
-// Execute code based on language
+// Deprecated in favor of secure backend code execution via /api/execute
 export const executeCode = (code: string, language: string): ExecutionResult => {
-  switch (language.toLowerCase()) {
-    case 'javascript':
-    case 'js':
-      // ✅ JavaScript CÓ THỂ chạy trong browser
-      return executeJavaScript(code)
-    case 'cpp':
-    case 'c++':
-      // ❌ C++ KHÔNG THỂ chạy trong browser - chỉ hiển thị hướng dẫn
-      return executeCpp(code)
-    case 'python':
-    case 'py':
-      // ❌ Python KHÔNG THỂ chạy trong browser - chỉ hiển thị hướng dẫn
-      return executePython(code)
-    default:
-      return {
-        logs: [],
-        error: `Ngôn ngữ "${language}" chưa được hỗ trợ`,
-      }
-  }
-}
-
-// ============================================================================
-// C++ EXECUTION - KHÔNG THỂ CHẠY TRONG BROWSER
-// ============================================================================
-// Lý do: C++ là compiled language, cần compiler để biên dịch thành machine code
-// Browser chỉ có JavaScript engine, không có C++ compiler
-// Giải pháp: Hiển thị hướng dẫn để user chạy code C++ trên máy local hoặc online compiler
-// ============================================================================
-
-const executeCpp = (codeParam: string): ExecutionResult => {
-  // Avoid unused parameter warning
-  void codeParam
+  void code
+  void language
   return {
-    logs: [
-      '⚠️  C++ KHÔNG THỂ CHẠY TRONG BROWSER',
-      '',
-      '📘 Lý do: C++ là ngôn ngữ biên dịch (compiled language)',
-      '   Browser chỉ có JavaScript engine, không có C++ compiler',
-      '',
-      '💡 Để chạy code C++:',
-      '1. Cài đặt compiler (g++, clang++, hoặc Visual Studio)',
-      '2. Lưu code vào file (ví dụ: main.cpp)',
-      '3. Biên dịch: g++ main.cpp -o main',
-      '4. Chạy: ./main (Linux/Mac) hoặc main.exe (Windows)',
-      '',
-      '🔗 Hoặc dùng online compiler:',
-      '- https://www.onlinegdb.com/online_c++_compiler',
-      '- https://www.programiz.com/cpp-programming/online-compiler/',
-      '- https://godbolt.org/ (xem assembly code)',
-    ],
+    logs: ['⚠️ Client-side browser execution is deprecated. Please use the secure backend runner.'],
+    error: 'Execution deprecated'
   }
 }
 
-// ============================================================================
-// PYTHON EXECUTION - KHÔNG THỂ CHẠY TRONG BROWSER
-// ============================================================================
-// Lý do: Python cần interpreter để chạy
-// Browser không có Python interpreter built-in
-// Giải pháp tương lai: Có thể dùng Pyodide (Python compiled to WebAssembly)
-// ============================================================================
-
-const executePython = (codeParam: string): ExecutionResult => {
-  // Avoid unused parameter warning
-  void codeParam
-  return {
-    logs: [
-      '⚠️  PYTHON KHÔNG THỂ CHẠY TRONG BROWSER',
-      '',
-      '🐍 Lý do: Python cần interpreter để chạy',
-      '   Browser không có Python interpreter built-in',
-      '',
-      '💡 Để chạy code Python:',
-      '1. Cài đặt Python từ python.org',
-      '2. Lưu code vào file (ví dụ: main.py)',
-      '3. Chạy: python main.py',
-      '',
-      '🔗 Hoặc dùng online interpreter:',
-      '- https://www.programiz.com/python-programming/online-compiler/',
-      '- https://repl.it/languages/python3',
-      '',
-      '📝 Ghi chú: Có thể implement Pyodide (Python WASM) trong tương lai',
-    ],
+/**
+ * Humanize technical error messages for beginners
+ */
+const humanizeError = (error: string): string => {
+  const err = error.toLowerCase();
+  
+  if (err.includes('unexpected token')) {
+    if (err.includes(')')) return 'Có vẻ bạn đang thiếu hoặc thừa một dấu ngoặc đơn `()`. Hãy kiểm tra lại nhé!';
+    if (err.includes('}')) return 'Có vẻ bạn đang thiếu hoặc thừa một dấu ngoặc nhọn `{}`. Hãy kiểm tra các khối lệnh nhé!';
+    return 'Cú pháp có chỗ chưa đúng. Hãy kiểm tra xem có thiếu dấu phẩy `,`, dấu chấm phẩy `;` hay dấu ngoặc nào không.';
   }
-}
-
-// ============================================================================
-// JAVASCRIPT EXECUTION - CHỈ CÓ JAVASCRIPT CHẠY ĐƯỢC TRONG BROWSER
-// ============================================================================
-// JavaScript có thể chạy vì browser có JavaScript engine built-in (V8, SpiderMonkey, etc.)
-// Sử dụng Function constructor để execute code trong isolated scope
-// ============================================================================
-export const executeJavaScript = (code: string): ExecutionResult => {
-  const logs: string[] = []
-  const originalConsoleLog = console.log
-
-  // Override console.log to capture output
-  console.log = function (...args) {
-    const stringifiedArgs = args
-      .map(arg => {
-        if (typeof arg === 'object') {
-          try {
-            return JSON.stringify(arg, null, 2)
-          } catch (e) {
-            return String(arg)
-          }
-        }
-        return String(arg)
-      })
-      .join(' ')
-
-    logs.push(stringifiedArgs)
-    originalConsoleLog.apply(console, args)
+  
+  if (err.includes('is not defined')) {
+    const varName = error.split(' ')[0];
+    return `Máy tính không biết \`${varName}\` là gì. Bạn đã khai báo biến này chưa? (Hãy dùng \`let\` hoặc \`const\`)`;
+  }
+  
+  if (err.includes('is not a function')) {
+    const name = error.split(' ')[0];
+    return `\`${name}\` không phải là một hàm. Bạn có nhầm lẫn khi gọi nó bằng dấu ngoặc \`()\` không?`;
   }
 
-  try {
-    const userCodeFunc = new Function(code)
-    userCodeFunc()
-
-    if (logs.length === 0) {
-      logs.push('(Chạy thành công nhưng không có lệnh in nào)')
-    }
-  } catch (e: any) {
-    // Log execution error
-    const execError = new Error(e.message) as ExecutionError
-    execError.name = e.name || 'JavaScriptError'
-    execError.language = 'javascript'
-
-    errorLogger.logExecutionError(execError, code)
-
-    return {
-      logs,
-      error: e.message,
-    }
-  } finally {
-    console.log = originalConsoleLog
+  if (err.includes('can\'t set properties of null') || err.includes('reading \'')) {
+    return 'Bạn đang cố gắng truy cập vào một thứ không tồn tại (null hoặc undefined).';
   }
 
-  return { logs }
-}
+  return error;
+};
 
 // Format error message for display
 export const formatError = (error: string): string => {
-  return `❌ LỖI: ${error}`
+  const friendlyMessage = humanizeError(error);
+  return `❌ LỖI: ${friendlyMessage}\n\n💡 Gợi ý: Kiểm tra kỹ các ký tự đặc biệt và tên biến của bạn.`;
 }

@@ -16,69 +16,69 @@ export interface LanguagesResponse {
   languages: Array<{
     id: string
     name: string
-    display_name: string
+    displayName: string
     icon: string
-    can_run_in_browser: boolean
-    created_at: string
+    canRunInBrowser: boolean
+    createdAt: string
   }>
 }
 
 export interface ChaptersResponse {
   chapters: Array<{
     id: string
-    language_id: string
-    chapter_number: number
+    languageId: string
+    chapterNumber: number
     title: string
     description: string
-    order_index: number
-    created_at: string
-    updated_at: string
+    orderIndex: number
+    createdAt: string
+    updatedAt: string
   }>
 }
 
 export interface LessonsResponse {
   lessons: Array<{
     id: string
-    chapter_id: string
-    lesson_id: string
+    chapterId: string
+    lessonId: string
     title: string
     description: string
     content: string
     code: string
     insight: string
-    order_index: number
-    created_at: string
-    updated_at: string
+    orderIndex: number
+    createdAt: string
+    updatedAt: string
   }>
 }
 
 export interface ProgressResponse {
   progress: Array<{
     id: string
-    user_id: string
-    lesson_id: string
+    userId: string
+    lessonId: string
     status: string
-    completed_at?: string
-    time_spent: number
-    created_at: string
-    updated_at: string
+    completedAt?: string
+    timeSpent: number
+    createdAt: string
+    updatedAt: string
   }>
   summary?: any
-  completed_lessons?: number
-  total_lessons?: number
-  current_streak?: number
-  longest_streak?: number
+  completedLessons?: number
+  totalLessons?: number
+  currentStreak?: number
+  longestStreak?: number
 }
 
 export interface ProfileResponse {
   profile: {
     id: string
-    display_name: string
-    avatar_url: string
+    displayName: string
+    avatarUrl: string
     bio: string
-    preferred_language: string
-    created_at: string
-    updated_at: string
+    preferredLanguage: string
+    createdAt: string
+    updatedAt: string
   }
 }
 
@@ -88,9 +88,10 @@ export interface AuthResponse {
     email: string
   }
   session: {
-    access_token: string
-    refresh_token: string
-    expires_at: number
+    accessToken: string
+    refreshToken: string
+    expiresAt: number
   }
   message?: string
 }
+

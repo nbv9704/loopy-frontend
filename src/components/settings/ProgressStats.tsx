@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Activity } from 'lucide-react'
+import { Activity, Trophy, Star, Award } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../lib/api'
 import type { ProgressStats as ProgressStatsType } from '../../types/common'
@@ -14,6 +14,8 @@ const ProgressStats = () => {
     totalLessons: 0,
     currentStreak: 0,
     longestStreak: 0,
+    totalPoints: 0,
+    badges: [],
   })
   const [activityDates, setActivityDates] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,6 +34,8 @@ const ProgressStats = () => {
           totalLessons: data.total_lessons || 99,
           currentStreak: data.current_streak || 0,
           longestStreak: data.longest_streak || 0,
+          totalPoints: data.total_points || 0,
+          badges: data.badges || [],
         })
 
         // Extract completion dates for heatmap
@@ -84,33 +88,71 @@ const ProgressStats = () => {
         </p>
       </div>
 
-      {/* Activity Heatmap */}
       <div className="mb-8">
         <ActivityHeatmap activityDates={activityDates} totalActivities={activityDates.length} />
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6 text-center">
-          <p className="text-brand-teal font-bold text-4xl">{progressStats.completedLessons}</p>
-          <p className="text-slate-500 text-xs font-medium mt-2">
-            {t('settings.completedLessons')}
-          </p>
-          <p className="text-slate-600 text-xs mt-1">
-            {t('settings.totalLessonsOf', { count: progressStats.totalLessons })}
+      {/* Points & Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-brand-teal/20 to-brand-cyan/20 border border-brand-teal/30 rounded-card p-6 text-center relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Star className="w-24 h-24 text-brand-teal" />
+          </div>
+          <p className="text-white font-bold text-4xl mb-1">{progressStats.totalPoints}</p>
+          <p className="text-brand-teal text-xs font-bold uppercase tracking-wider">
+            {t('settings.learningPoints')}
           </p>
         </div>
+
         <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6 text-center">
-          <p className="text-green-400 font-bold text-4xl">
+          <p className="text-white font-bold text-4xl mb-1">{progressStats.completedLessons}</p>
+          <div className="flex flex-col">
+            <p className="text-slate-500 text-xs font-medium">
+              {t('settings.completedLessons')}
+            </p>
+            <p className="text-slate-600 text-[10px] mt-1">
+              {t('settings.totalLessonsOf', { count: progressStats.totalLessons })}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6 text-center">
+          <p className="text-green-400 font-bold text-4xl mb-1">
             {progressStats.totalLessons > 0
               ? Math.round((progressStats.completedLessons / progressStats.totalLessons) * 100)
               : 0}
             %
           </p>
-          <p className="text-slate-500 text-xs font-medium mt-2">{t('settings.completionRate')}</p>
-          <p className="text-slate-600 text-xs mt-1">{t('settings.keepItUp')}</p>
+          <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">{t('settings.completionRate')}</p>
         </div>
       </div>
+
+      {/* Badges Section */}
+      {progressStats.badges && progressStats.badges.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Award className="w-5 h-5 text-yellow-500" />
+            <h3 className="text-white font-semibold">{t('settings.achievements')}</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {progressStats.badges.map((badge) => (
+              <div 
+                key={badge.id}
+                className="bg-white/3 border border-white/5 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/5 transition-colors cursor-help group relative"
+                title={badge.description}
+              >
+                <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <Trophy className="w-6 h-6 text-yellow-500" />
+                </div>
+                <p className="text-white text-xs font-bold leading-tight">{badge.name}</p>
+                <p className="text-slate-500 text-[10px] mt-1 leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
+                  {badge.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="bg-white/3 border border-brand-teal/10 rounded-card p-6">

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { User, LogOut, Settings } from 'lucide-react'
+import { User, LogOut, Settings, Flame, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -8,11 +8,18 @@ import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 
 // Static navigation items — labels resolved via i18n in render
 const NAV_ITEMS = [
-  { id: 'learn', labelKey: 'nav.learn', path: '/select-language' },
+  { id: 'learn', labelKey: 'nav.learn', path: '/languages' },
   { id: 'playground', labelKey: 'nav.playground', path: '/playground' },
   { id: 'pvp', labelKey: 'nav.pvp', path: '/pvp' },
   { id: 'docs', labelKey: 'nav.docs', path: '/docs' },
 ]
+
+const goalToLang: Record<string, string> = {
+  start_from_zero: 'python',
+  build_web: 'javascript',
+  school_work: 'cpp',
+  explore: 'python',
+}
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -42,8 +49,8 @@ const Header: React.FC = () => {
 
   const isActive = (path: string) => {
     // Special case for "Học tập" - highlight if on /select-language or /learn
-    if (path === '/select-language') {
-      return location.pathname === '/select-language' || location.pathname.startsWith('/learn')
+    if (path === '/languages') {
+      return location.pathname === '/languages' || location.pathname.startsWith('/learn') || location.pathname.startsWith('/library') || location.pathname.startsWith('/onboarding')
     }
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
@@ -68,10 +75,10 @@ const Header: React.FC = () => {
 
             {/* Navigation Links */}
             <nav className="hidden md:flex items-center gap-2">
-              {NAV_ITEMS.map(item => (
+              {NAV_ITEMS.filter(item => !(item.id === 'pvp' && !user)).map(item => (
                 <Link
                   key={item.id}
-                  to={item.path}
+                  to={item.id === 'learn' && user?.onboardingCompleted ? `/library/${user.preferredLanguage || goalToLang[user.learningGoal || ''] || 'javascript'}` : item.path}
                   className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
                     isActive(item.path)
                       ? 'text-brand-teal bg-brand-teal/10'
@@ -90,6 +97,20 @@ const Header: React.FC = () => {
           {/* Right: Language Switcher + User Avatar */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+
+            {/* Gamification badges (Mimo-inspired) */}
+            {user && (
+              <div className="hidden md:flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 text-sm font-bold">
+                  <Flame className="w-4 h-4" />
+                  <span>{user.currentStreak || 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-sm font-bold">
+                  <Star className="w-4 h-4" />
+                  <span>{user.points || 0}</span>
+                </div>
+              </div>
+            )}
 
             {user ? (
               <div className="relative" ref={dropdownRef}>

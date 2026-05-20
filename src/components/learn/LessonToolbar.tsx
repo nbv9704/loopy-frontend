@@ -5,7 +5,7 @@
  * Auto-completes lesson when grading score ≥ 85.
  */
 
-import { FileText, Play, Code2, BookOpen } from 'lucide-react'
+import { FileText, Play, Code2, BookOpen, Lightbulb, ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import GradingDepthDropdown from '../grading/GradingDepthDropdown'
 import type { GradingDepth } from '../../types/grading.types'
@@ -19,6 +19,8 @@ interface LessonToolbarProps {
   onTabChange: (tab: EditorTab) => void
   onRunCode: () => void
   onSubmitGrading?: (depth: GradingDepth) => void
+  onHint?: () => void
+  onOpenPlayground?: () => void
 }
 
 const LessonToolbar: React.FC<LessonToolbarProps> = ({
@@ -28,6 +30,8 @@ const LessonToolbar: React.FC<LessonToolbarProps> = ({
   onTabChange,
   onRunCode,
   onSubmitGrading,
+  onHint,
+  onOpenPlayground,
 }) => {
   const { t } = useTranslation()
 
@@ -59,6 +63,36 @@ const LessonToolbar: React.FC<LessonToolbarProps> = ({
       {/* Right: Action buttons (only visible in exercise tab) */}
       {activeTab === 'exercise' && (
         <div className="flex items-center gap-3 flex-shrink-0">
+          {onHint && (
+            <button
+              onClick={onHint}
+              disabled={!hasLessons}
+              className={`rounded-xl px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-sm font-bold flex items-center gap-2 transition-all duration-300 ${
+                hasLessons
+                  ? 'cursor-pointer hover:bg-yellow-500/20 hover:border-yellow-500/50 hover:shadow-lg hover:shadow-yellow-500/20'
+                  : 'cursor-not-allowed opacity-50'
+              }`}
+              title={t('learn.getHint')}
+            >
+              <Lightbulb className="w-5 h-5" />
+            </button>
+          )}
+
+          {onOpenPlayground && (
+            <button
+              onClick={onOpenPlayground}
+              disabled={!hasLessons}
+              className={`rounded-xl px-4 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-sm font-bold flex items-center gap-2 transition-all duration-300 ${
+                hasLessons
+                  ? 'cursor-pointer hover:bg-blue-500/20 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20'
+                  : 'cursor-not-allowed opacity-50'
+              }`}
+              title="Open in Playground"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </button>
+          )}
+
           <button
             onClick={onRunCode}
             disabled={!hasLessons}

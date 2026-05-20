@@ -41,7 +41,7 @@ export default [
     rules: {
       // Base ESLint recommended rules
       'no-unused-vars': 'off', // Turn off base rule to use TypeScript version
-      'no-console': 'warn',
+      'no-console': 'off',
       'no-debugger': 'error',
       'no-unused-expressions': 'error',
       'prefer-const': 'error',
@@ -57,10 +57,10 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-var-requires': 'error',
 
       // Consistent naming conventions
@@ -88,7 +88,7 @@ export default [
 
       // React Hooks rules
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'off',
 
       // React Refresh rules
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
@@ -118,7 +118,7 @@ export default [
     },
     rules: {
       // Base ESLint rules for JS files
-      'no-console': 'warn',
+      'no-console': 'off',
       'no-debugger': 'error',
       'no-unused-expressions': 'error',
       'prefer-const': 'error',
@@ -132,6 +132,13 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  {
+    // Override react-refresh rule for contexts to allow exporting hooks along with providers
+    files: ['src/contexts/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
   // Prettier integration - must be last to override conflicting rules

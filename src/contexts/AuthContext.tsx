@@ -19,6 +19,13 @@ interface User {
   email: string
   displayName?: string
   avatarUrl?: string
+  learningGoal?: string
+  onboardingCompleted?: boolean
+  experienceLevel?: string
+  currentPathId?: string
+  points?: number
+  currentStreak?: number
+  preferredLanguage?: string
 }
 
 interface AuthContextType {
@@ -100,14 +107,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (response.success && response.data) {
           const userData = (
             response.data as {
-              user: User & { profile?: { avatar_url?: string; display_name?: string } }
+              user: User & { profile?: { avatarUrl?: string; displayName?: string; learningGoal?: string; onboardingCompleted?: boolean; experienceLevel?: string; currentPathId?: string; points?: number; currentStreak?: number; preferredLanguage?: string; } }
             }
           ).user
           const newUser: User = {
             id: userData.id,
             email: userData.email,
-            displayName: userData.profile?.display_name || userData.email?.split('@')[0],
-            avatarUrl: userData.profile?.avatar_url,
+            displayName: userData.profile?.displayName || userData.email?.split('@')[0],
+            avatarUrl: userData.profile?.avatarUrl,
+            learningGoal: userData.profile?.learningGoal,
+            onboardingCompleted: userData.profile?.onboardingCompleted,
+            experienceLevel: userData.profile?.experienceLevel,
+            currentPathId: userData.profile?.currentPathId,
+            points: userData.profile?.points,
+            currentStreak: userData.profile?.currentStreak,
+            preferredLanguage: userData.profile?.preferredLanguage,
           }
           setUser(newUser)
           // Start auto-refresh when user is authenticated
@@ -127,7 +141,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       stopAutoRefresh()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const signUp = async (email: string, password: string, displayName?: string) => {
@@ -173,7 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const { user: userData } = response.data as { user: User }
 
-    // Tokens are now in httpOnly cookies (set by backend)
+    // Set basic user first (tokens are now in httpOnly cookies set by backend)
     const newUser: User = {
       id: userData.id,
       email: userData.email,
@@ -184,7 +197,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Start auto-refresh after successful login
     startAutoRefresh()
 
-    return response
+    // Immediately fetch full profile to get onboarding fields
+    try {
+      const profileRes = await api.getMyProfile()
+      if (profileRes.success && profileRes.data) {
+        const profileData = (profileRes.data as { profile: Record<string, any> }).profile
+        const updatedUser = {
+          id: profileData.id,
+          email: userData.email,
+          displayName: profileData.displayName || userData.email?.split('@')[0],
+          avatarUrl: profileData.avatarUrl,
+          learningGoal: profileData.learningGoal,
+          onboardingCompleted: profileData.onboardingCompleted,
+          experienceLevel: profileData.experienceLevel,
+          currentPathId: profileData.currentPathId,
+          points: profileData.points,
+          currentStreak: profileData.currentStreak,
+          preferredLanguage: profileData.preferredLanguage,
+        }
+        setUser(updatedUser)
+        return { ...response, user: updatedUser }
+      }
+    } catch {
+      // Profile fetch failed — user still logged in with basic info
+    }
+
+    return { ...response, user: newUser }
   }
 
   const signOut = async () => {
@@ -198,13 +236,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const response = await api.getMyProfile()
     if (response.success && response.data) {
       const profileData = (
-        response.data as { profile: { id: string; display_name?: string; avatar_url?: string } }
+        response.data as { profile: Record<string, any> }
       ).profile
       const newUser: User = {
         id: profileData.id,
         email: user?.email || '',
-        displayName: profileData.display_name,
-        avatarUrl: profileData.avatar_url,
+        displayName: profileData.displayName,
+        avatarUrl: profileData.avatarUrl,
+        learningGoal: profileData.learningGoal,
+        onboardingCompleted: profileData.onboardingCompleted,
+        experienceLevel: profileData.experienceLevel,
+        currentPathId: profileData.currentPathId,
+        points: profileData.points,
+        currentStreak: profileData.currentStreak,
+        preferredLanguage: profileData.preferredLanguage,
       }
       setUser(newUser)
     }

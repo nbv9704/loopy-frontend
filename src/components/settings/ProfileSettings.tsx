@@ -4,6 +4,7 @@ import { User, Upload, Save, CheckCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../lib/api'
+import toast from 'react-hot-toast'
 
 const ProfileSettings = () => {
   const { t } = useTranslation()
@@ -24,7 +25,7 @@ const ProfileSettings = () => {
     if (file) {
       // For now, using base64 for development (not recommended for production)
       if (file.size > 2 * 1024 * 1024) {
-        alert(t('common.fileTooLarge'))
+        toast.error(t('common.fileTooLarge'))
         return
       }
 

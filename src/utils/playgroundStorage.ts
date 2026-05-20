@@ -15,9 +15,19 @@ const ACTIVE_FILE_KEY = 'playground_active_file'
 const DEFAULT_FILES: CodeFile[] = [
   {
     id: '1',
-    name: 'main.js',
+    name: 'thu-nghiem.js',
     language: 'javascript',
-    code: '// Welcome to Loopy Playground!\nconsole.log("Hello, World!")\n',
+    code: `// 🎮 Chào mừng bạn đến Playground!
+// Đây là nơi bạn tự do thử nghiệm code.
+// Nhấn nút "Chạy" để xem kết quả.
+
+// Thử thay đổi tên bên dưới:
+const ten = "Loopy"
+console.log("Xin chào, " + ten + "! 🚀")
+
+// Thử tính toán:
+console.log("2 + 3 =", 2 + 3)
+`,
   },
 ]
 
@@ -55,4 +65,32 @@ export function saveActiveFileId(id: string): void {
 export function clearStorage(): void {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.removeItem(ACTIVE_FILE_KEY)
+}
+
+export function addFileToPlayground(code: string, language: string, title: string = 'Untitled'): void {
+  const files = loadFiles()
+  const newFile: CodeFile = {
+    id: Date.now().toString(),
+    name: `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${language === 'javascript' ? 'js' : language === 'python' ? 'py' : 'cpp'}`,
+    language,
+    code,
+  }
+  
+  // Prevent duplicate names roughly
+  let finalName = newFile.name
+  let counter = 1
+  while (files.some(f => f.name === finalName)) {
+    finalName = `${newFile.name.split('.')[0]}_${counter}.${newFile.name.split('.')[1]}`
+    counter++
+  }
+  newFile.name = finalName
+
+  // Remove oldest if limit reached
+  if (files.length >= 10) {
+    files.shift()
+  }
+
+  files.push(newFile)
+  saveFiles(files)
+  saveActiveFileId(newFile.id)
 }

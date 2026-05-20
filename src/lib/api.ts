@@ -5,8 +5,11 @@
  */
 
 import toast from 'react-hot-toast'
+import type { GradingResult } from '../types/grading.types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
+  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
 
 interface ApiResponse<T> {
   success: boolean
@@ -15,6 +18,32 @@ interface ApiResponse<T> {
     code: string
     message: string
     details?: any
+  }
+}
+
+export interface ExecutionResult {
+  output: string
+  executionTime: number
+  error: string | null
+}
+
+export interface LessonCheckResult {
+  passed: boolean
+  score: number
+  output: string
+  hint: string | null
+  checks: Array<{
+    label: string
+    passed: boolean
+    message?: string
+  }>
+}
+
+export interface CapabilitiesResult {
+  capabilities: {
+    javascript: boolean
+    python: boolean
+    cpp: boolean
   }
 }
 
@@ -45,11 +74,14 @@ class ApiClient {
       const data = await response.json()
       return data
     } catch (error: any) {
+      // Distinguish HTTP errors (thrown by handleHttpError) from true network failures
+      const isHttpError = error.message && error.message.startsWith('HTTP ')
       return {
         success: false,
         error: {
-          code: 'NETWORK_ERROR',
+          code: isHttpError ? error.message.split(' ')[0] + '_' + error.message.split(' ')[1] : 'NETWORK_ERROR',
           message: error.message || 'Network error occurred',
+          details: error.status ? { status: error.status } : undefined,
         },
       }
     }
@@ -162,6 +194,16 @@ class ApiClient {
     return this.request(`/api/lessons/${lessonId}/exercises`)
   }
 
+  // Public
+  async getSampleLesson() {
+    return this.request('/api/public/sample-lesson')
+  }
+
+  // Learning paths
+  async getPathsByGoal(goalId: string) {
+    return this.request(`/api/paths/goal/${goalId}`)
+  }
+
   // Progress (requires auth)
   async getUserProgress() {
     return this.request('/api/progress/me')
@@ -197,7 +239,7 @@ class ApiClient {
   }
 
   // Code Execution
-  async executeCode(language: string, code: string) {
+  async executeCode(language: string, code: string): Promise<ApiResponse<ExecutionResult>> {
     return this.request('/api/execute', {
       method: 'POST',
       body: JSON.stringify({ language, code }),
@@ -209,6 +251,17 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ exerciseId, code }),
     })
+  }
+
+  async checkLesson(lessonId: string, code: string, language: string): Promise<ApiResponse<LessonCheckResult>> {
+    return this.request(`/api/lessons/${lessonId}/check`, {
+      method: 'POST',
+      body: JSON.stringify({ code, language }),
+    })
+  }
+
+  async getCapabilities(): Promise<ApiResponse<CapabilitiesResult>> {
+    return this.request('/api/execute/capabilities')
   }
 
   // Grading System
@@ -224,13 +277,35 @@ class ApiClient {
       lessonInsight?: string
       gradingDepth?: string
     }
-  ) {
+  ): Promise<ApiResponse<GradingResult>> {
     return this.request('/api/grading/exercises/' + exerciseId + '/submit', {
       method: 'POST',
       body: JSON.stringify({
         code,
         language,
         gradingMethod,
+        ...(lessonContext || {}),
+      }),
+    })
+  }
+
+  async requestHint(
+    exerciseId: string,
+    code: string,
+    language: string = 'javascript',
+    lessonContext?: {
+      starterCode?: string
+      lessonTitle?: string
+      lessonDescription?: string
+      lessonInsight?: string
+      outputLogs?: string[]
+    }
+  ) {
+    return this.request('/api/grading/exercises/' + exerciseId + '/hint', {
+      method: 'POST',
+      body: JSON.stringify({
+        code,
+        language,
         ...(lessonContext || {}),
       }),
     })
@@ -246,6 +321,22 @@ class ApiClient {
     return this.request(`/api/grading/exercises/${exerciseId}/submissions/${submissionId}`)
   }
 
+  async getAIHint(exerciseId: string, code: string, language: string, context?: {
+    starterCode?: string
+    lessonTitle?: string
+    lessonDescription?: string
+    outputLogs?: string[]
+  }): Promise<ApiResponse<{ hint: string }>> {
+    return this.request(`/api/grading/exercises/${exerciseId}/hint`, {
+      method: 'POST',
+      body: JSON.stringify({
+        code,
+        language,
+        ...(context || {}),
+      }),
+    })
+  }
+
   // Profile (requires auth)
   async getMyProfile() {
     return this.request('/api/profile/me')
@@ -256,6 +347,10 @@ class ApiClient {
     avatarUrl?: string
     bio?: string
     preferredLanguage?: string
+    learningGoal?: string
+    onboardingCompleted?: boolean
+    experienceLevel?: string
+    currentPathId?: string
   }) {
     return this.request('/api/profile/me', {
       method: 'PUT',

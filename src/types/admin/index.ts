@@ -14,7 +14,6 @@ export interface LoginCredentials {
 export interface AuthResponse {
   success: boolean
   user?: User
-  token?: string
   message?: string
 }
 

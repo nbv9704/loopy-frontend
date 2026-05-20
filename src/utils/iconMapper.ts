@@ -59,6 +59,7 @@ const iconMap: Record<string, IconType> = {
   settings: FiSettings,
   target: FiTarget,
   feather: FiFeather,
+  trophy: FiAward,
 }
 
 /**

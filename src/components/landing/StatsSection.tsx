@@ -47,8 +47,8 @@ const StatsSection: React.FC<StatsSectionProps> = ({ sectionRef, opacity, blur }
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid md:grid-cols-3 gap-8">
-            {Array.from({ length: 3 }).map((_, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 4 }).map((_, index) => (
               <StatCardSkeleton key={index} />
             ))}
           </div>
@@ -56,7 +56,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({ sectionRef, opacity, blur }
 
         {/* Stats Grid */}
         {!isLoading && stats && stats.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => {
               const StatIcon = getIconComponent(stat.icon)
               return (

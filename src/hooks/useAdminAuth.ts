@@ -4,8 +4,7 @@
  * Provides authentication state management for admin users
  * Uses Zustand for state persistence
  *
- * Requirements: 4
- * - Manages authentication state (user, token, isAuthenticated)
+ * - Manages authentication state (user, isAuthenticated)
  * - Provides login function
  * - Provides logout function
  * - Uses Zustand for state persistence
@@ -20,7 +19,6 @@ import type { LoginCredentials } from '../types/admin'
  *
  * @returns Authentication state and functions
  * - user: Current authenticated user or null
- * - token: Authentication token or null
  * - isAuthenticated: Whether user is authenticated
  * - isAdmin: Whether user has admin role
  * - isLoading: Whether auth operation is in progress
@@ -30,7 +28,7 @@ import type { LoginCredentials } from '../types/admin'
  * - checkAuth: Function to verify current auth status
  */
 export const useAdminAuth = () => {
-  const { user, token, isAuthenticated, isLoading, error, login, logout, checkAuth } =
+  const { user, isAuthenticated, isLoading, error, login, logout, checkAuth } =
     useAuthStore()
 
   // Check if user has admin role - check both role field and is_admin flag
@@ -38,7 +36,6 @@ export const useAdminAuth = () => {
 
   return {
     user,
-    token,
     isAuthenticated,
     isAdmin,
     isLoading,

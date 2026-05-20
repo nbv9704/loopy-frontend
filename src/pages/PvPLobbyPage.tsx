@@ -3,21 +3,34 @@
  * Matchmaking and match creation
  */
 
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Swords, Trophy, Zap, Users, Clock, Target } from 'lucide-react'
+import { Trophy, Zap, Users, Clock, Target } from 'lucide-react'
 import Header from '../components/common/Header'
 import Footer from '../components/common/Footer'
 import { useAuth } from '../contexts/AuthContext'
 import { pvpService } from '../services/pvp.service'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
+import SEO from '../components/common/SEO'
+import { pageMetadata } from '../utils/seo'
 
 const PvPLobbyPage: React.FC = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const location = useLocation()
+  const { user, loading: authLoading } = useAuth()
   const { t } = useTranslation()
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        navigate('/auth', { state: { from: location } })
+      } else if (!user.onboardingCompleted) {
+        navigate('/onboarding')
+      }
+    }
+  }, [user, authLoading, navigate, location])
 
   const [isSearching, setIsSearching] = useState(false)
   const [roomCodeInput, setRoomCodeInput] = useState('')
@@ -31,7 +44,13 @@ const PvPLobbyPage: React.FC = () => {
 
     if (!user) {
       toast.error(t('pvp.loginToPlay'))
-      navigate('/auth')
+      navigate('/auth', { state: { from: location } })
+      return
+    }
+
+    if (!user.onboardingCompleted) {
+      toast.error(t('pvp.completeOnboardingFirst'))
+      navigate('/onboarding')
       return
     }
 
@@ -51,7 +70,13 @@ const PvPLobbyPage: React.FC = () => {
   const handleQuickMatch = async () => {
     if (!user) {
       toast.error(t('pvp.loginToPlay'))
-      navigate('/auth')
+      navigate('/auth', { state: { from: location } })
+      return
+    }
+
+    if (!user.onboardingCompleted) {
+      toast.error(t('pvp.completeOnboardingFirst'))
+      navigate('/onboarding')
       return
     }
 
@@ -79,7 +104,9 @@ const PvPLobbyPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] flex flex-col relative overflow-hidden">
+    <>
+      <SEO {...pageMetadata.challenges} />
+      <div className="min-h-screen bg-[#0a0e1a] flex flex-col relative overflow-hidden">
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none opacity-40">
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-teal/10 rounded-full blur-[120px] animate-pulse" />
@@ -93,6 +120,31 @@ const PvPLobbyPage: React.FC = () => {
 
       <main className="flex-grow pt-32 pb-16 relative z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* PvP Gate: encourage learning first (Roadmap Phase 6) */}
+          {user && (user.points === undefined || user.points === 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 bg-gradient-to-r from-brand-teal/10 via-brand-cyan/5 to-brand-teal/10 border border-brand-teal/30 rounded-2xl p-8 text-center"
+            >
+              <div className="text-4xl mb-4">🎓</div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Hoàn thành bài học đầu tiên để mở Thách Đấu!
+              </h3>
+              <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
+                Bạn cần nắm vững kiến thức cơ bản trước khi đấu trí với người chơi khác. Hãy hoàn thành ít nhất 1 bài học nhé!
+              </p>
+              <button
+                onClick={() => {
+                  const lang = user.learningGoal === 'build_web' ? 'javascript' : user.learningGoal === 'school_work' ? 'cpp' : 'python'
+                  navigate(`/library/${lang}`)
+                }}
+                className="px-6 py-3 bg-brand-teal text-[#0a0e1a] font-bold rounded-xl cursor-pointer hover:scale-105 transition-all"
+              >
+                Bắt đầu học ngay →
+              </button>
+            </motion.div>
+          )}
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -100,7 +152,7 @@ const PvPLobbyPage: React.FC = () => {
             className="text-center mb-16"
           >
             <div className="inline-flex items-center gap-3 mb-6">
-              <Swords className="w-12 h-12 text-brand-teal" />
+              <Zap className="w-12 h-12 text-brand-teal" />
               <h1 className="text-5xl font-bold text-white">{t('pvp.title')}</h1>
             </div>
             <p className="text-slate-400 text-xl max-w-2xl mx-auto">
@@ -255,12 +307,32 @@ const PvPLobbyPage: React.FC = () => {
                 {t('pvp.rankedDesc')}
               </p>
             </div>
+
+            {/* Prerequisites Info - Only shown to onboarded users */}
+            {user && user.onboardingCompleted && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="mt-12 p-6 rounded-2xl bg-white/5 border border-white/10 text-center col-span-1 md:col-span-3 max-w-2xl mx-auto"
+              >
+                <div className="flex items-center justify-center gap-2 text-brand-cyan mb-2">
+                  <Trophy className="w-5 h-5" />
+                  <span className="font-semibold uppercase tracking-wider text-xs">Học để mở khóa</span>
+                </div>
+                <p className="text-slate-400 text-sm">
+                  Càng hoàn thành nhiều chương học, bạn càng mở khóa được nhiều thử thách hóc búa hơn. 
+                  Hãy tiếp tục lộ trình học tập của mình nhé!
+                </p>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </>
   )
 }
 
