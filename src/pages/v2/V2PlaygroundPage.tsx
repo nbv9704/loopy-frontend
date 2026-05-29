@@ -183,7 +183,7 @@ const V2PlaygroundPage: React.FC = () => {
               Playground giúp thử nhanh. Journey Map giúp biết bài nào nên làm tiếp.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to="/v2/library">Vào Journey Map</V2PressedButton>
+              <V2PressedButton to="/library/javascript">Vào Journey Map</V2PressedButton>
               <V2PressedButton to="/sample-lesson" variant="secondary">Thử lesson mẫu</V2PressedButton>
             </div>
           </div>

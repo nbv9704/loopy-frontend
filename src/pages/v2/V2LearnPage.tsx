@@ -128,7 +128,7 @@ const V2LearnPage: React.FC = () => {
         <section className="relative overflow-hidden px-4 py-10 md:px-6 md:py-14">
           <div className="absolute left-1/2 top-10 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto max-w-7xl">
-            <Link to="/v2/library" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
+            <Link to="/library/javascript" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
               <FiArrowLeft /> Quay lại Journey Map
             </Link>
             <div className="mb-8 grid gap-6 lg:grid-cols-[1fr,360px] lg:items-end">
@@ -196,7 +196,7 @@ const V2LearnPage: React.FC = () => {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <V2PressedButton to="/sample-lesson">So với sample hiện tại</V2PressedButton>
-              <V2PressedButton to="/v2/library" variant="secondary">Xem Library v2</V2PressedButton>
+              <V2PressedButton to="/library/javascript" variant="secondary">Xem Library</V2PressedButton>
             </div>
           </div>
         </section>

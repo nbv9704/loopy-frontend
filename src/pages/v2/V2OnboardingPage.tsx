@@ -130,7 +130,7 @@ const V2OnboardingPage: React.FC = () => {
                     Tiếp tục <FiArrowRight />
                   </button>
                 ) : (
-                  <V2PressedButton to="/v2/library"><FiSave /> Preview Journey Map</V2PressedButton>
+                  <V2PressedButton to="/library/javascript"><FiSave /> Preview Journey Map</V2PressedButton>
                 )}
               </div>
             </section>

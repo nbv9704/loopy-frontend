@@ -18,7 +18,7 @@ export function V2PublicShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-[#f7fbff] text-slate-950">
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-[#f7fbff]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
-          <Link to="/v2/landing" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111827] text-lg font-black text-brand-teal shadow-[0_4px_0_#54d9c4]">L</div>
             <div>
               <div className="text-lg font-black leading-none">Loopy</div>

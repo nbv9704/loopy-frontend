@@ -96,7 +96,7 @@ const V2LandingPage: React.FC = () => {
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <V2PressedButton to="/sample-lesson"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
-                <V2PressedButton to="/v2/languages" variant="secondary">Xem lộ trình</V2PressedButton>
+                <V2PressedButton to="/languages" variant="secondary">Xem lộ trình</V2PressedButton>
               </div>
               <div className="mt-8 flex flex-wrap gap-2">
                 {languages.map(language => (

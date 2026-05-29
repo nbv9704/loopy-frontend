@@ -138,8 +138,8 @@ const V2DocsPage: React.FC = () => {
                 <h3 className="mt-3 text-2xl font-black">Đọc xong thì code thử.</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-400">Dùng Playground để thử khái niệm, hoặc vào Learn để được kiểm tra và lưu tiến độ.</p>
                 <div className="mt-5 grid gap-3">
-                  <V2PressedButton to="/v2/playground">Mở Playground</V2PressedButton>
-                  <V2PressedButton to="/v2/library" variant="secondary">Vào Journey Map</V2PressedButton>
+                  <V2PressedButton to="/playground">Mở Playground</V2PressedButton>
+                  <V2PressedButton to="/library/javascript" variant="secondary">Vào Journey Map</V2PressedButton>
                 </div>
               </div>
             </aside>
@@ -154,7 +154,7 @@ const V2DocsPage: React.FC = () => {
               Khi chưa biết học tiếp gì, hãy quay lại Library thay vì lạc trong tài liệu tham khảo.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to="/v2/library">Quay lại Journey Map</V2PressedButton>
+              <V2PressedButton to="/library/javascript">Quay lại Journey Map</V2PressedButton>
               <V2PressedButton to="/sample-lesson" variant="secondary">Thử lesson mẫu</V2PressedButton>
             </div>
           </div>
