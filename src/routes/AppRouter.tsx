@@ -56,8 +56,11 @@ function AdminLoadingFallback() {
 
 function PageLoadingFallback() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0a0e1a] text-slate-400">
-      Loading...
+    <div className="flex items-center justify-center min-h-screen bg-[#f7fbff] text-slate-600">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-teal mb-4"></div>
+        <p className="text-lg">Loading...</p>
+      </div>
     </div>
   )
 }
