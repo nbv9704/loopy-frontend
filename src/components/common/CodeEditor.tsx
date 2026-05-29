@@ -6,6 +6,39 @@ import { useState, useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
 import type { Extension } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+
+const loopyDarkEditorTheme = EditorView.theme({
+  '&': {
+    backgroundColor: '#020617',
+    color: '#e2e8f0',
+  },
+  '.cm-content': {
+    caretColor: '#54d9c4',
+    color: '#e2e8f0',
+  },
+  '.cm-line': {
+    color: 'inherit',
+  },
+  '.cm-gutters': {
+    backgroundColor: '#020617',
+    borderRight: '1px solid rgba(148, 163, 184, 0.16)',
+    color: '#64748b',
+  },
+  '.cm-activeLine': {
+    backgroundColor: 'rgba(84, 217, 196, 0.08)',
+  },
+  '.cm-activeLineGutter': {
+    backgroundColor: 'rgba(84, 217, 196, 0.08)',
+    color: '#54d9c4',
+  },
+  '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
+    backgroundColor: 'rgba(84, 217, 196, 0.25)',
+  },
+  '&.cm-focused': {
+    outline: 'none',
+  },
+}, { dark: true })
 
 interface CodeEditorProps {
   value: string
@@ -73,7 +106,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       value={value}
       height="100%"
       theme={oneDark}
-      extensions={extensions}
+      extensions={[loopyDarkEditorTheme, ...extensions]}
       onChange={onChange}
       editable={editable}
       readOnly={!editable}

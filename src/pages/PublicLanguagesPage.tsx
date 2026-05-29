@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Globe, Compass, Cpu, ArrowRight } from 'lucide-react'
+import { ArrowRight, Code2, Compass, Cpu, GraduationCap, Globe, HelpCircle, LayoutTemplate, PlayCircle } from 'lucide-react'
 import { api } from '../lib/api'
 import Header from '../components/common/Header'
 import SEO from '../components/common/SEO'
@@ -28,6 +28,13 @@ const colorStyles = {
   cyan: 'from-brand-cyan/20 to-brand-cyan/5 border-brand-cyan/30 hover:border-brand-cyan/60 text-brand-cyan shadow-brand-cyan/20',
   ocean: 'from-brand-ocean/20 to-brand-ocean/5 border-brand-ocean/30 hover:border-brand-ocean/60 text-brand-ocean shadow-brand-ocean/20',
 }
+
+const goalCards = [
+  { icon: HelpCircle, title: 'Mình chưa biết gì', desc: 'Bắt đầu nhẹ với Python và bài học đầu tiên trong 5 phút.', target: '/languages/python' },
+  { icon: LayoutTemplate, title: 'Mình muốn làm web', desc: 'Đi theo JavaScript để tạo tương tác trong trình duyệt.', target: '/languages/javascript' },
+  { icon: GraduationCap, title: 'Mình học ở trường', desc: 'Chọn C++ để luyện tư duy bài tập và thuật toán cơ bản.', target: '/languages/cpp' },
+  { icon: PlayCircle, title: 'Mình chỉ muốn thử', desc: 'Không cần chọn vội. Làm bài thử miễn phí trước.', target: '/sample-lesson' },
+]
 
 const PublicLanguagesPage: React.FC = () => {
   const navigate = useNavigate()
@@ -84,23 +91,51 @@ const PublicLanguagesPage: React.FC = () => {
         </div>
 
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight"
+              className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight"
             >
-              Bạn muốn học <span className="text-brand-teal">ngôn ngữ</span> nào?
+              Chọn cách bắt đầu phù hợp với bạn.
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-slate-400 text-lg max-w-2xl mx-auto"
+              className="text-slate-400 text-lg max-w-3xl mx-auto leading-8"
             >
-              Chọn một ngôn ngữ lập trình để bắt đầu hành trình của bạn. 
-              Mỗi ngôn ngữ đều được thiết kế với lộ trình phù hợp cho người mới bắt đầu.
+              Nếu chưa chắc nên học ngôn ngữ nào, hãy chọn theo mục tiêu. Loopy sẽ dẫn bạn tới bài đầu tiên đủ nhỏ để bắt đầu ngay.
             </motion.p>
+          </div>
+
+          <div className="mb-14 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {goalCards.map((goal, idx) => {
+              const Icon = goal.icon
+              return (
+                <motion.button
+                  key={goal.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08 }}
+                  onClick={() => navigate(goal.target)}
+                  className="group rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-left transition-all hover:-translate-y-1 hover:border-brand-teal/40 hover:bg-brand-teal/[0.06]"
+                >
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-lg font-black text-white">{goal.title}</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{goal.desc}</p>
+                  <div className="mt-5 flex items-center gap-2 text-sm font-bold text-brand-teal">
+                    Bắt đầu <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </motion.button>
+              )
+            })}
+          </div>
+
+          <div className="mb-6 flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-slate-500">
+            <Code2 className="h-4 w-4 text-brand-teal" /> Hoặc chọn trực tiếp ngôn ngữ
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

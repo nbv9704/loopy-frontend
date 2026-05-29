@@ -150,10 +150,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error(response.error?.message || 'Đăng ký thất bại')
     }
 
-    const { user: userData, message } = response.data as { user: User; message: string }
+    const { user: userData, message, requiresEmailConfirmation } = response.data as { user: User; message: string; requiresEmailConfirmation?: boolean }
 
     // Check if email confirmation is required
-    if (!userData) {
+    if (requiresEmailConfirmation || !userData) {
       return {
         success: true,
         requiresEmailConfirmation: true,

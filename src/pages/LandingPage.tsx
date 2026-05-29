@@ -65,7 +65,7 @@ const LandingPage: React.FC = () => {
   }
 
   const handleViewDocs = () => {
-    navigate('/sample-lesson')
+    navigate(user ? '/onboarding' : '/auth', { state: { from: '/onboarding' } })
   }
 
   return (

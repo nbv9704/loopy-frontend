@@ -1,9 +1,6 @@
 import { motion, useTransform, MotionValue } from 'framer-motion'
+import { AlertTriangle, CheckCircle2, Map, MonitorPlay, Puzzle, Wrench } from 'lucide-react'
 import { RefObject } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useLandingFeatures } from '../../hooks/useContent'
-import { getIconComponent } from '../../utils/iconMapper'
-import { FeatureCardSkeleton } from '../common/SkeletonLoader'
 
 interface FeaturesSectionV2Props {
   sectionRef: RefObject<HTMLDivElement>
@@ -12,9 +9,17 @@ interface FeaturesSectionV2Props {
 }
 
 const FeaturesSectionV2: React.FC<FeaturesSectionV2Props> = ({ sectionRef, opacity, blur }) => {
-  const { t } = useTranslation()
-  // Fetch features from API
-  const { data: features, isLoading } = useLandingFeatures()
+  const pains = [
+    { icon: Map, title: 'Không biết bắt đầu từ đâu', desc: 'Quá nhiều khóa học, video và thuật ngữ khiến bạn bị ngợp.' },
+    { icon: Wrench, title: 'Cài đặt rối ngay từ đầu', desc: 'Mất động lực trước khi viết được dòng code đầu tiên.' },
+    { icon: AlertTriangle, title: 'Gặp lỗi nhưng không hiểu lỗi', desc: 'Một thông báo đỏ có thể làm người mới bỏ cuộc.' },
+  ]
+
+  const solutions = [
+    { icon: Puzzle, title: 'Lộ trình theo mục tiêu', desc: 'Loopy gợi ý bước tiếp theo dựa trên mục tiêu học của bạn.' },
+    { icon: MonitorPlay, title: 'Code ngay trong trình duyệt', desc: 'Bài học, editor và output nằm cùng một nơi.' },
+    { icon: CheckCircle2, title: 'Phản hồi dễ hiểu', desc: 'Bạn biết vì sao sai và nên thử sửa theo hướng nào.' },
+  ]
 
   return (
     <motion.section
@@ -23,85 +28,75 @@ const FeaturesSectionV2: React.FC<FeaturesSectionV2Props> = ({ sectionRef, opaci
         opacity,
         filter: useTransform(blur, value => `blur(${value}px)`),
       }}
-      className="relative px-6 md:px-12 py-32"
+      className="relative px-6 py-20 md:px-12 md:py-28"
     >
-      <div className="max-w-[1600px] mx-auto">
-        <div className="text-center mb-20">
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-12 max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              {t('landing.whyChoose')}{' '}
-              <span className="bg-gradient-to-r from-brand-teal to-brand-cyan bg-clip-text text-transparent">
-                Loopy
-              </span>
+            <div className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-brand-teal">Vấn đề thật của người mới</div>
+            <h2 className="text-4xl font-black tracking-tight text-white md:text-6xl">
+              Loopy không bắt bạn tự mò đường.
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              {t('landing.modernPlatform')}
+            <p className="mt-5 text-lg leading-8 text-slate-400">
+              Hầu hết người mới không thiếu động lực. Họ thiếu một bước tiếp theo đủ nhỏ, đủ rõ và có phản hồi ngay khi sai.
             </p>
           </motion.div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <FeatureCardSkeleton key={index} />
-            ))}
-          </div>
-        )}
-
-        {/* Features Grid */}
-        {!isLoading && features && features.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, i) => {
-              const FeatureIcon = getIconComponent(feature.icon)
-              const isPillar = i < 3
-              
-              return (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[2rem] border border-red-400/15 bg-red-500/[0.04] p-6 md:p-8">
+            <div className="mb-6 text-sm font-bold uppercase tracking-[0.2em] text-red-200/80">Trước Loopy</div>
+            <div className="space-y-4">
+              {pains.map((item, index) => (
                 <motion.div
-                  key={feature.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  key={item.title}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="group relative"
+                  transition={{ duration: 0.45, delay: index * 0.08 }}
+                  className="flex gap-4 rounded-2xl border border-white/10 bg-black/20 p-4"
                 >
-                  <div
-                    className={`absolute -inset-1 bg-gradient-to-br ${
-                      isPillar ? 'from-brand-teal/30 to-brand-cyan/30 blur-2xl' : 'from-white/10 to-transparent blur-xl'
-                    } rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-                  />
-                  <div className={`relative h-full bg-gradient-to-br ${
-                    isPillar ? 'from-white/[0.08] to-white/[0.03]' : 'from-white/[0.04] to-white/[0.01]'
-                  } backdrop-blur-xl rounded-3xl border ${
-                    isPillar ? 'border-brand-teal/30 group-hover:border-brand-teal/50' : 'border-white/10 group-hover:border-white/20'
-                  } p-8 transition-all duration-300`}>
-                    <div className={`p-3 rounded-2xl w-fit mb-6 ${
-                      isPillar ? 'bg-brand-teal/10 text-brand-teal' : 'bg-white/5 text-slate-400'
-                    } group-hover:scale-110 transition-transform`}>
-                      <FeatureIcon className="w-8 h-8" />
-                    </div>
-                    <h3 className={`text-xl font-bold mb-3 ${isPillar ? 'text-white' : 'text-slate-200'}`}>
-                      {feature.title}
-                    </h3>
-                    <p className="text-slate-400 leading-relaxed text-sm">{feature.description}</p>
-                    
-                    {isPillar && (
-                      <div className="mt-6 flex items-center gap-2 text-brand-teal text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span>Tìm hiểu thêm</span>
-                        <div className="w-8 h-px bg-brand-teal" />
-                      </div>
-                    )}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-400/10 text-red-200">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">{item.desc}</p>
                   </div>
                 </motion.div>
-              )
-            })}
+              ))}
+            </div>
           </div>
-        )}
+
+          <div className="rounded-[2rem] border border-brand-teal/25 bg-brand-teal/[0.06] p-6 md:p-8">
+            <div className="mb-6 text-sm font-bold uppercase tracking-[0.2em] text-brand-teal">Với Loopy</div>
+            <div className="space-y-4">
+              {solutions.map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: index * 0.08 }}
+                  className="flex gap-4 rounded-2xl border border-brand-teal/20 bg-black/20 p-4"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </motion.section>
   )

@@ -299,9 +299,8 @@ const PvPMatchPage: React.FC = () => {
   if (!match) {
     return (
       <div className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
-        <p className="text-slate-400">{t('pvp.match.notFound')}</p>
-        <p className="text-slate-500 text-sm">Room Code: {roomCode}</p>
-        <p className="text-slate-500 text-sm">Loading: {isLoading ? 'Yes' : 'No'}</p>
+        <p className="text-white text-2xl font-black">Không tìm thấy phòng đấu</p>
+        <p className="text-slate-400 text-sm max-w-md text-center">Phòng có thể đã kết thúc hoặc mã phòng không đúng. Hãy quay lại Challenge Hub để tạo trận mới.</p>
         <button
           onClick={() => navigate('/pvp')}
           className="px-4 py-2 bg-brand-teal text-[#0a0e1a] rounded-lg hover:bg-brand-cyan transition-colors"

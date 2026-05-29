@@ -1,7 +1,6 @@
 import { motion, useTransform, MotionValue } from 'framer-motion'
-import { Play, ArrowRight } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Play } from 'lucide-react'
 import { RefObject } from 'react'
-import { useTranslation } from 'react-i18next'
 
 interface CTASectionProps {
   sectionRef: RefObject<HTMLDivElement>
@@ -11,8 +10,6 @@ interface CTASectionProps {
 }
 
 const CTASection: React.FC<CTASectionProps> = ({ sectionRef, opacity, blur, onStartCoding }) => {
-  const { t } = useTranslation()
-
   return (
     <motion.section
       ref={sectionRef}
@@ -20,9 +17,9 @@ const CTASection: React.FC<CTASectionProps> = ({ sectionRef, opacity, blur, onSt
         opacity,
         filter: useTransform(blur, value => `blur(${value}px)`),
       }}
-      className="relative px-6 md:px-12 py-32"
+      className="relative px-6 py-20 md:px-12 md:py-28"
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -30,25 +27,29 @@ const CTASection: React.FC<CTASectionProps> = ({ sectionRef, opacity, blur, onSt
           transition={{ duration: 0.8 }}
           className="relative text-center"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-teal/20 via-brand-cyan/20 to-brand-ocean/20 rounded-[3rem] blur-3xl" />
-          <div className="relative bg-gradient-to-br from-white/[0.08] to-white/[0.03] backdrop-blur-2xl rounded-[3rem] border border-white/10 p-16">
-            <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              {t('landing.readyToStart')}
+          <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-r from-brand-teal/20 via-brand-cyan/20 to-brand-ocean/20 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.1] to-white/[0.03] p-8 backdrop-blur-2xl md:rounded-[3rem] md:p-14">
+            <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-sm font-bold text-brand-teal">
+              <CheckCircle2 className="h-4 w-4" />
+              Miễn phí để bắt đầu
+            </div>
+            <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-tight text-white md:text-6xl">
+              Bắt đầu bằng một bài học nhỏ hôm nay.
             </h2>
-            <p className="text-xl text-slate-400 mb-10">{t('landing.joinThousands')}</p>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">
+              Không cần cài đặt. Không cần chọn đúng ngay từ đầu. Bạn chỉ cần thử chạy bài học đầu tiên và Loopy sẽ dẫn bước tiếp theo.
+            </p>
 
             <button
               onClick={onStartCoding}
-              className="group relative inline-flex items-center gap-3 px-10 py-5 cursor-pointer overflow-hidden rounded-2xl border-2 border-brand-teal bg-[#0a0e1a]"
+              className="group relative mt-9 inline-flex cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border-2 border-brand-teal bg-[#0a0e1a] px-9 py-4"
             >
-              {/* Simple liquid fill from left to right */}
-              <div className="absolute inset-0 bg-gradient-to-r from-brand-teal to-brand-cyan -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-brand-teal to-brand-cyan transition-transform duration-500 ease-out group-hover:translate-x-0" />
 
-              {/* Button content */}
-              <span className="relative flex items-center gap-3 font-bold text-xl transition-colors duration-300 text-brand-teal group-hover:text-[#0a0e1a] z-10">
-                <Play className="w-6 h-6" />
-                {t('landing.startLearningFree')}
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10 flex items-center gap-3 text-lg font-black text-brand-teal transition-colors duration-300 group-hover:text-[#0a0e1a]">
+                <Play className="h-5 w-5" />
+                Thử bài đầu tiên miễn phí
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </span>
             </button>
           </div>

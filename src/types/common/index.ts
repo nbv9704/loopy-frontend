@@ -44,6 +44,15 @@ export interface Lesson {
   orderIndex: number
   difficulty?: 'beginner' | 'intermediate' | 'advanced'
   estimatedTime?: number
+  // Data-driven debug schema
+  debug_starter_code?: string
+  debug_task_description?: string
+  debug_validation_rules?: Array<{
+    type: 'rule' | 'exact' | 'regex' | 'stdout'
+    value: string
+    description?: string
+  }>
+  debug_hint?: string
   createdAt: string
   updatedAt: string
 }

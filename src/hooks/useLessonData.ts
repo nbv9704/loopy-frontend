@@ -16,6 +16,15 @@ interface Lesson {
   orderIndex: number
   difficulty: string
   estimated_time: number
+  // Data-driven debug schema
+  debug_starter_code?: string
+  debug_task_description?: string
+  debug_validation_rules?: Array<{
+    type: 'rule' | 'exact' | 'regex' | 'stdout'
+    value: string
+    description?: string
+  }>
+  debug_hint?: string
   created_at: string
   updated_at: string
 }
@@ -90,7 +99,7 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
     }
   }, [lessons, initialLessonId])
 
-  // Effect 3: Load user progress silently — does NOT reset loading spinner
+  // Effect 3: Load user progress silently after curriculum is ready.
   useEffect(() => {
     if (!userId || !curriculumLoaded.current) return
 
@@ -112,7 +121,7 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
     }
 
     loadProgress()
-  }, [userId])
+  }, [userId, language, lessons.length])
 
   return {
     lessons,

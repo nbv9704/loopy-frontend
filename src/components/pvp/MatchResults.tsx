@@ -118,21 +118,19 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
             )}
           </motion.div>
 
-          <h1 className="text-5xl font-bold text-white mb-4">
+          <h1 className="text-5xl font-black text-white mb-4">
             {isWinner && !isDraw
-              ? 'Victory!'
+              ? 'Bạn thắng vòng này!'
               : isWinner && isDraw
-                ? "It's a Draw!"
-                : 'Match Complete'}
+                ? 'Hòa ở hạng nhất!'
+                : 'Trận đấu hoàn thành'}
           </h1>
           <p className="text-slate-400 text-xl">
             {isWinner && !isDraw
-              ? 'Congratulations! You won the match!'
+              ? 'Tốt lắm. Hãy xem lại câu nào giúp bạn ghi điểm nhanh nhất.'
               : isWinner && isDraw
-                ? 'Great effort! You tied for first place!'
-                : `You finished in ${currentUserScore?.rank}${
-                    currentUserScore?.rank === 2 ? 'nd' : currentUserScore?.rank === 3 ? 'rd' : 'th'
-                  } place`}
+                ? 'Bạn giữ được nhịp rất tốt. Lần sau thử tăng độ khó.'
+                : `Bạn kết thúc ở hạng #${currentUserScore?.rank || '-'}. Đây là tín hiệu tốt để biết phần nào cần ôn lại.`}
           </p>
         </motion.div>
 
@@ -165,23 +163,23 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
                     <h3 className="text-xl font-bold text-white mb-1">
                       {score.displayName}
                       {score.userId === currentUserId && (
-                        <span className="ml-2 text-sm text-brand-teal">(You)</span>
+                        <span className="ml-2 text-sm text-brand-teal">(Bạn)</span>
                       )}
                     </h3>
-                    <p className="text-slate-400 text-sm">Rank #{score.rank}</p>
+                    <p className="text-slate-400 text-sm">Hạng #{score.rank}</p>
                   </div>
 
                   {/* Score */}
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{score.score}</p>
-                    <p className="text-slate-400 text-sm">points</p>
+                    <p className="text-slate-400 text-sm">điểm</p>
                   </div>
                 </div>
               </motion.div>
             ))
           ) : (
             <div className="text-center text-slate-400 py-8">
-              <p>Loading results...</p>
+              <p>Đang tải kết quả...</p>
             </div>
           )}
         </motion.div>
@@ -198,15 +196,15 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all"
           >
             <RotateCcw className="w-5 h-5" />
-            Play Again
+            Đấu lại
           </button>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/languages')}
             className="flex items-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
           >
             <Home className="w-5 h-5" />
-            Home
+            Về lộ trình
           </button>
         </motion.div>
       </div>

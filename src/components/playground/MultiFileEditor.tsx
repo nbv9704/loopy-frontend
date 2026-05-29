@@ -9,6 +9,7 @@ import NewFileModal from './NewFileModal'
 import { detectLanguage, getLanguageConfig, getLanguageExtension } from '../../utils/languageConfig'
 import { api } from '../../lib/api'
 import toast from 'react-hot-toast'
+import { Beaker, Lightbulb, PlayCircle, RotateCcw, Sparkles } from 'lucide-react'
 import {
   CodeFile,
   loadFiles,
@@ -45,6 +46,11 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
 
   const activeFile = files.find(f => f.id === activeFileId) || files[0]
   const maxFiles = 10
+  const experiments = [
+    'Đổi một giá trị và dự đoán output trước khi chạy.',
+    'Thêm một dòng print/log để kiểm tra suy nghĩ của bạn.',
+    'Cố tình tạo một lỗi nhỏ rồi đọc terminal để sửa.',
+  ]
 
   // Save files to localStorage whenever they change
   useEffect(() => {
@@ -175,20 +181,62 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
       />
 
       <main className="flex-1 flex flex-col gap-4 min-w-0 h-full">
-        <div className="bg-white/3 border border-brand-teal/10 rounded-card p-5 flex-shrink-0">
-          <div className="flex items-start gap-3">
-            <div className="w-1 h-full bg-gradient-to-b from-brand-teal to-transparent rounded"></div>
-            <div className="flex-1">
-              <h1 className="text-white text-xl font-bold mb-2">{activeFile.name}</h1>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                {t('playground.freePlayground')}
-              </p>
-              <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                {t('playground.autoSaved')}
-              </p>
+        <div className="bg-white/[0.04] border border-brand-teal/10 rounded-[1.5rem] p-5 flex-shrink-0">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-teal/10 text-brand-teal">
+                <Beaker className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <h1 className="text-white text-2xl font-black">Loopy Lab</h1>
+                  {initialTitle && (
+                    <span className="rounded-full border border-brand-teal/30 bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
+                      Từ bài học: {initialTitle}
+                    </span>
+                  )}
+                </div>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Thử nghiệm tự do với code. Loopy chỉ chạy file đang mở: <span className="font-bold text-white">{activeFile.name}</span>.
+                </p>
+                <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                  {t('playground.autoSaved')}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-3 xl:w-[560px]">
+              {experiments.map((experiment, index) => (
+                <div key={experiment} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-teal">
+                    {index === 0 && <Lightbulb className="h-3.5 w-3.5" />}
+                    {index === 1 && <PlayCircle className="h-3.5 w-3.5" />}
+                    {index === 2 && <RotateCcw className="h-3.5 w-3.5" />}
+                    Thử {index + 1}
+                  </div>
+                  <p className="text-xs leading-5 text-slate-400">{experiment}</p>
+                </div>
+              ))}
             </div>
           </div>
+
+          {!user && (
+            <div className="mt-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 text-sm text-yellow-100">
+              <div className="flex items-start gap-3">
+                <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
+                <div>
+                  <div className="font-bold">Bạn có thể xem và sửa code. Đăng nhập để chạy và lưu Lab.</div>
+                  <button
+                    onClick={() => navigate('/auth', { state: { from: { pathname: '/playground' } } })}
+                    className="mt-2 text-xs font-black uppercase tracking-widest text-yellow-300 underline"
+                  >
+                    Đăng nhập để chạy code
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <CodeEditorPane

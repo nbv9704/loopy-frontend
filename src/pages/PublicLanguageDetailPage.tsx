@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, ArrowRight, Zap, Code2, Sparkles, TrendingUp } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Code2, Play, Sparkles, TrendingUp, Zap } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import Header from '../components/common/Header'
@@ -11,40 +11,73 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 const langInfo: Record<string, any> = {
   javascript: {
     title: 'JavaScript',
-    subtitle: 'Ngôn ngữ của Web',
-    desc: 'JavaScript là ngôn ngữ phổ biến nhất thế giới, cho phép bạn xây dựng các trang web tương tác, ứng dụng di động và backend mạnh mẽ.',
+    subtitle: 'Đường vào web tương tác',
+    desc: 'Phù hợp nếu bạn muốn thấy code thay đổi giao diện và hành vi ngay trong trình duyệt.',
+    fit: 'Bạn muốn làm web, thích nhìn thấy kết quả trực quan và muốn bắt đầu bằng tương tác nhỏ.',
+    firstWin: 'Đổi nội dung trên trang và chạy JavaScript đầu tiên.',
     benefits: [
-      { title: 'Tương tác tức thì', desc: 'Chạy ngay trên trình duyệt mà không cần cài đặt phức tạp.', icon: Zap },
-      { title: 'Vô vàn cơ hội', desc: 'Cộng đồng lớn nhất thế giới, hàng nghìn thư viện hỗ trợ.', icon: Sparkles },
-      { title: 'Nhu cầu cao', desc: 'Hầu hết các công ty công nghệ đều cần lập trình viên JavaScript.', icon: TrendingUp }
+      { title: 'Thấy kết quả nhanh', desc: 'Thay đổi một dòng code và thấy trang phản hồi ngay.', icon: Zap },
+      { title: 'Browser-first', desc: 'Không cần cài môi trường phức tạp trong những bài đầu.', icon: Sparkles },
+      { title: 'Đi từng bước', desc: 'Bắt đầu từ biến, hàm, sự kiện rồi tới mini project.', icon: TrendingUp }
     ],
     color: 'teal',
     badge: 'Beginners welcome'
   },
   python: {
     title: 'Python',
-    subtitle: 'Dễ học, Mạnh mẽ',
-    desc: 'Python có cú pháp thân thiện như tiếng Anh. Đây là lựa chọn số 1 cho AI, Data Science và tự động hóa.',
+    subtitle: 'Bắt đầu nhẹ nhất cho người mới',
+    desc: 'Python có cú pháp dễ đọc, phù hợp nếu bạn muốn hiểu tư duy lập trình trước khi lo cú pháp phức tạp.',
+    fit: 'Bạn chưa biết gì, muốn học logic cơ bản và có chiến thắng đầu tiên thật nhanh.',
+    firstWin: 'In dòng chữ đầu tiên, sửa biến và hiểu output.',
     benefits: [
-      { title: 'Dễ đọc, Dễ viết', desc: 'Cú pháp cực kỳ trực quan, phù hợp tuyệt đối cho người mới.', icon: Code2 },
-      { title: 'Vua của AI & Data', desc: 'Sở hữu hệ sinh thái thư viện khổng lồ cho Machine Learning.', icon: Sparkles },
-      { title: 'Phát triển siêu tốc', desc: 'Viết ít code hơn, làm được nhiều việc hơn.', icon: Zap }
+      { title: 'Dễ đọc, dễ sửa', desc: 'Cú pháp gần với tiếng Anh và ít ký hiệu gây nhiễu.', icon: Code2 },
+      { title: 'Hợp để học nền tảng', desc: 'Tập trung vào biến, điều kiện, vòng lặp và tư duy.', icon: Sparkles },
+      { title: 'Có output ngay', desc: 'Chạy code trong trình duyệt và thấy kết quả tức thì.', icon: Zap }
     ],
     color: 'cyan',
     badge: 'High demand'
   },
   cpp: {
     title: 'C++',
-    subtitle: 'Tối ưu và Chuyên sâu',
-    desc: 'C++ là nền tảng của ngành khoa học máy tính, cung cấp sức mạnh tối đa để kiểm soát phần cứng và bộ nhớ.',
+    subtitle: 'Nền tảng cho trường học và thuật toán',
+    desc: 'Phù hợp nếu bạn học ở trường, luyện bài tập hoặc muốn xây nền tư duy giải bài chắc hơn.',
+    fit: 'Bạn cần input/output, điều kiện, vòng lặp và tư duy giải thuật cơ bản.',
+    firstWin: 'Chạy chương trình C++ đầu tiên và đọc output.',
     benefits: [
-      { title: 'Hiệu năng đỉnh cao', desc: 'Ngôn ngữ nhanh nhất để làm game, hệ điều hành.', icon: Zap },
-      { title: 'Nền tảng vững chắc', desc: 'Học C++ giúp bạn dễ dàng nắm bắt mọi ngôn ngữ khác.', icon: Code2 },
-      { title: 'Thách thức thú vị', desc: 'Dành cho những người thích đào sâu vào cốt lõi máy tính.', icon: TrendingUp }
+      { title: 'Hợp bài tập ở trường', desc: 'Tập trung vào input/output và cách chia nhỏ bài toán.', icon: Zap },
+      { title: 'Nền tư duy chắc', desc: 'Hiểu rõ biến, kiểu dữ liệu và dòng chạy chương trình.', icon: Code2 },
+      { title: 'Luyện thuật toán sớm', desc: 'Đi từ bài nhỏ tới checkpoint có cấu trúc.', icon: TrendingUp }
     ],
     color: 'ocean',
     badge: 'For engineers'
   }
+}
+
+const colorClasses: Record<string, { bg: string; bgSoft: string; text: string; border: string; shadow: string; gradient: string }> = {
+  teal: {
+    bg: 'bg-brand-teal',
+    bgSoft: 'bg-brand-teal/10',
+    text: 'text-brand-teal',
+    border: 'border-brand-teal/30',
+    shadow: 'shadow-brand-teal/20',
+    gradient: 'via-brand-teal/50',
+  },
+  cyan: {
+    bg: 'bg-brand-cyan',
+    bgSoft: 'bg-brand-cyan/10',
+    text: 'text-brand-cyan',
+    border: 'border-brand-cyan/30',
+    shadow: 'shadow-brand-cyan/20',
+    gradient: 'via-brand-cyan/50',
+  },
+  ocean: {
+    bg: 'bg-brand-ocean',
+    bgSoft: 'bg-brand-ocean/10',
+    text: 'text-brand-ocean',
+    border: 'border-brand-ocean/30',
+    shadow: 'shadow-brand-ocean/20',
+    gradient: 'via-brand-ocean/50',
+  },
 }
 
 const PublicLanguageDetailPage: React.FC = () => {
@@ -56,6 +89,7 @@ const PublicLanguageDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
 
   const info = langInfo[language || 'javascript'] || langInfo.javascript
+  const colors = colorClasses[info.color] || colorClasses.teal
 
   useEffect(() => {
     const fetchCurriculum = async () => {
@@ -108,20 +142,22 @@ const PublicLanguageDetailPage: React.FC = () => {
         
         {/* Hero Section */}
         <div className="pt-40 pb-24 px-4 relative overflow-hidden">
-          {/* Ambient blur */}
-          <div className={`absolute top-0 right-0 w-[800px] h-[800px] bg-brand-${info.color}/5 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3`} />
+          <div className={`absolute top-0 right-0 w-[800px] h-[800px] ${colors.bgSoft} rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3`} />
           
           <div className="max-w-6xl mx-auto relative z-10">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               
               {/* Left Column: Content */}
               <div className="text-center md:text-left">
+                <div className={`mb-5 inline-flex items-center gap-2 rounded-full border ${colors.border} ${colors.bgSoft} px-4 py-2 text-sm font-bold ${colors.text}`}>
+                  <CheckCircle2 className="h-4 w-4" /> {info.subtitle}
+                </div>
                 <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-6xl md:text-7xl font-extrabold text-white mb-6 tracking-tight"
                 >
-                  Học {info.title}
+                  Lộ trình {info.title} cho người mới
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0, y: 20 }}
@@ -131,6 +167,16 @@ const PublicLanguageDetailPage: React.FC = () => {
                 >
                   {info.desc}
                 </motion.p>
+                <div className="mb-8 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500">Phù hợp nếu</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{info.fit}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500">First win</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{info.firstWin}</p>
+                  </div>
+                </div>
                 
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
@@ -139,15 +185,15 @@ const PublicLanguageDetailPage: React.FC = () => {
                 >
                   <button 
                     onClick={handleStart}
-                    className={`px-8 py-4 rounded-xl bg-brand-${info.color} text-[#0a0e1a] font-bold text-lg flex items-center gap-3 hover:scale-105 transition-all shadow-lg shadow-brand-${info.color}/20 cursor-pointer mx-auto md:mx-0`}
+                    className={`px-8 py-4 rounded-xl ${colors.bg} text-[#0a0e1a] font-bold text-lg flex items-center gap-3 hover:scale-105 transition-all shadow-lg ${colors.shadow} cursor-pointer mx-auto md:mx-0`}
                   >
-                    Bắt đầu học ngay
+                    Bắt đầu lộ trình này <ArrowRight className="h-5 w-5" />
                   </button>
                   
                   <div className="mt-8 flex items-center justify-center md:justify-start gap-4 text-slate-500 font-semibold tracking-widest text-sm uppercase">
                     CÔNG NGHỆ LÕI
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-white/5 border border-white/10 text-white">
-                      <Code2 className={`w-4 h-4 text-brand-${info.color}`} /> {info.title}
+                      <Code2 className={`w-4 h-4 ${colors.text}`} /> {info.title}
                     </div>
                   </div>
                 </motion.div>
@@ -163,7 +209,7 @@ const PublicLanguageDetailPage: React.FC = () => {
                 <div className="relative w-80 h-80 flex items-center justify-center">
                   {/* Decorative starburst behind */}
                   <div 
-                    className={`absolute inset-0 bg-brand-${info.color} opacity-40`} 
+                    className={`absolute inset-0 ${colors.bg} opacity-40`} 
                     style={{ 
                       clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', 
                       transform: 'scale(1.3) rotate(15deg)' 
@@ -172,7 +218,7 @@ const PublicLanguageDetailPage: React.FC = () => {
                   
                   {/* Inner dark circle */}
                   <div className="absolute w-56 h-56 bg-[#0a0e1a] rounded-full flex items-center justify-center shadow-2xl border border-white/10 overflow-hidden">
-                    <div className={`absolute inset-0 bg-brand-${info.color}/10 animate-pulse`} />
+                    <div className={`absolute inset-0 ${colors.bgSoft} animate-pulse`} />
                     <Code2 className="w-24 h-24 text-white/80" />
                   </div>
 
@@ -195,8 +241,8 @@ const PublicLanguageDetailPage: React.FC = () => {
         <div className="bg-[#121826] border-y border-white/5 py-24 px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Vì sao nên chọn?</h2>
-              <p className="text-3xl font-extrabold text-white">Những lợi ích nổi bật của {info.title}</p>
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Cách Loopy dạy</h2>
+              <p className="text-3xl font-extrabold text-white">Bắt đầu bằng bài nhỏ, không bị ngợp.</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-6">
@@ -212,7 +258,7 @@ const PublicLanguageDetailPage: React.FC = () => {
                     className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-colors"
                   >
                     <div className="flex justify-end mb-6">
-                      <Icon className={`w-8 h-8 text-brand-${info.color}`} />
+                      <Icon className={`w-8 h-8 ${colors.text}`} />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4">{benefit.title}</h3>
                     <p className="text-slate-400 leading-relaxed">{benefit.desc}</p>
@@ -226,7 +272,7 @@ const PublicLanguageDetailPage: React.FC = () => {
         {/* Curriculum Preview Section */}
         <div id="curriculum" className="flex-grow max-w-6xl mx-auto px-4 py-24 w-full">
           <div className="text-center mb-20">
-            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Curriculum</h2>
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Roadmap Preview</h2>
             <h3 className="text-4xl font-extrabold text-white mb-4">
               Học {info.title} theo từng bước dễ hiểu
             </h3>
@@ -244,10 +290,10 @@ const PublicLanguageDetailPage: React.FC = () => {
                   className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col relative overflow-hidden group hover:border-white/20 transition-colors"
                 >
                   {/* Subtle top border highlight */}
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-${info.color}/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${colors.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
                   
                   {/* Chapter Number Badge */}
-                  <div className={`w-12 h-12 rounded-2xl bg-brand-${info.color}/10 text-brand-${info.color} font-bold text-xl flex items-center justify-center mb-6`}>
+                  <div className={`w-12 h-12 rounded-2xl ${colors.bgSoft} ${colors.text} font-bold text-xl flex items-center justify-center mb-6`}>
                     {chapter.chapterNumber}
                   </div>
 
@@ -282,7 +328,7 @@ const PublicLanguageDetailPage: React.FC = () => {
           <div className="mt-20 text-center">
             <button 
               onClick={handleStart}
-              className={`px-8 py-4 rounded-xl bg-brand-${info.color}/10 border border-brand-${info.color}/30 text-brand-${info.color} font-bold text-lg flex items-center gap-3 hover:bg-brand-${info.color}/20 transition-all mx-auto cursor-pointer`}
+              className={`px-8 py-4 rounded-xl ${colors.bgSoft} border ${colors.border} ${colors.text} font-bold text-lg flex items-center gap-3 hover:bg-white/10 transition-all mx-auto cursor-pointer`}
             >
               Bắt đầu hành trình của bạn <ArrowRight className="w-5 h-5" />
             </button>

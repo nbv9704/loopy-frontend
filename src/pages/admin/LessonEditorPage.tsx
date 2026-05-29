@@ -1,76 +1,268 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Save, ArrowLeft, Eye, Code, FileText, Zap, AlertCircle } from 'lucide-react'
-import { contentService } from '../../services/admin/content.service'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  Code,
+  FileText,
+  PlusCircle,
+  Save,
+  Trash2,
+} from 'lucide-react'
 import FullscreenLoader from '../../components/common/FullscreenLoader'
+import { contentService, LessonTestCase } from '../../services/admin/content.service'
+
+interface ChapterOption {
+  id: string
+  language_id?: string
+  title?: string
+}
+
+const emptyLesson = {
+  id: '',
+  chapterId: '',
+  lessonId: '',
+  title: '',
+  description: '',
+  starterCode: '',
+  taskDescription: '',
+  hint: '',
+  commonMistakes: '',
+  solutionCode: '',
+  isAhaLesson: false,
+  orderIndex: 1,
+  difficulty: 'beginner',
+  gradingMode: 'stdout',
+  status: 'draft',
+  qaChecklist: [] as Array<{ id: string; label: string; checked: boolean; order: number }>,
+  debugStarterCode: '',
+  debugTaskDescription: '',
+  debugValidationRules: [] as Array<{ type: 'rule' | 'exact' | 'regex' | 'stdout'; value: string; description?: string }>,
+  debugHint: '',
+}
+
+const emptyTestCase: LessonTestCase = {
+  description: '',
+  input: [],
+  expected_output: '',
+  weight: 10,
+  timeout: 1000,
+  is_hidden: false,
+  order_index: 1,
+}
+
+const stringifyJson = (value: unknown) => {
+  if (typeof value === 'string') return value
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return ''
+  }
+}
+
+const parseJsonField = (value: string, fallback: unknown) => {
+  if (!value.trim()) return fallback
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
 
 const LessonEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isNew = !id || id === 'new'
 
-  const [loading, setLoading] = useState(!isNew)
+  const [chapters, setChapters] = useState<ChapterOption[]>([])
+  const [lesson, setLesson] = useState<any>(emptyLesson)
+  const [testCases, setTestCases] = useState<LessonTestCase[]>([])
+  const [editingTestCase, setEditingTestCase] = useState<LessonTestCase>(emptyTestCase)
+  const [testInputText, setTestInputText] = useState('[]')
+  const [expectedOutputText, setExpectedOutputText] = useState('""')
+  const [newChecklistItem, setNewChecklistItem] = useState('')
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingTestCase, setSavingTestCase] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  const [chapters, setChapters] = useState<any[]>([])
-  const [lesson, setLesson] = useState<any>({
-    chapterId: '',
-    lessonId: '',
-    title: '',
-    description: '',
-    starterCode: '',
-    taskDescription: '',
-    hint: '',
-    commonMistakes: '',
-    solutionCode: '',
-    isAhaLesson: false,
-    orderIndex: 1,
-  })
+  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    loadData()
-  }, [id])
+    const loadData = async () => {
+      setLoading(true)
+      setError(null)
 
-  const loadData = async () => {
-    try {
-      const chaptersData = await contentService.getChapters()
-      setChapters(chaptersData)
+      try {
+        const chaptersData = await contentService.getChapters()
+        setChapters(chaptersData)
 
-      if (!isNew && id) {
-        const lessonData = await contentService.getLessonById(id)
-        
-        // Convert snake_case from DB to camelCase if needed, or map directly
-        setLesson({
-          ...lesson,
-          id: lessonData.id,
-          chapterId: lessonData.chapter_id || '',
-          lessonId: lessonData.lesson_id || '',
-          title: lessonData.title || '',
-          description: lessonData.description || '',
-          starterCode: lessonData.starter_code || '',
-          taskDescription: lessonData.task_description || '',
-          hint: lessonData.hint || '',
-          commonMistakes: lessonData.common_mistakes || '',
-          solutionCode: lessonData.solution_code || '',
-          isAhaLesson: lessonData.is_aha_lesson || false,
-          orderIndex: lessonData.order_index || 1,
-          difficulty: lessonData.difficulty || 'beginner',
-          gradingMode: lessonData.grading_mode || 'stdout',
-        })
+        if (!isNew && id) {
+          const [lessonData, testCaseData] = await Promise.all([
+            contentService.getLessonById(id),
+            contentService.getLessonTestCases(id),
+          ])
+
+          setLesson({
+            id: lessonData.id,
+            chapterId: lessonData.chapter_id || '',
+            lessonId: lessonData.lesson_id || '',
+            title: lessonData.title || '',
+            description: lessonData.description || '',
+            starterCode: lessonData.starter_code || '',
+            taskDescription: lessonData.task_description || '',
+            hint: lessonData.hint || '',
+            commonMistakes: lessonData.common_mistakes || '',
+            solutionCode: lessonData.solution_code || '',
+            isAhaLesson: lessonData.is_aha_lesson || false,
+            orderIndex: lessonData.order_index || 1,
+            difficulty: lessonData.difficulty || 'beginner',
+            gradingMode: lessonData.grading_mode || 'stdout',
+            status: lessonData.status || 'draft',
+            qaChecklist: lessonData.qa_checklist || [],
+            debugStarterCode: lessonData.debug_starter_code || '',
+            debugTaskDescription: lessonData.debug_task_description || '',
+            debugValidationRules: lessonData.debug_validation_rules || [],
+            debugHint: lessonData.debug_hint || '',
+          })
+          setTestCases(testCaseData)
+          setEditingTestCase({ ...emptyTestCase, order_index: testCaseData.length + 1 })
+        } else {
+          setLesson({ ...emptyLesson, chapterId: chaptersData[0]?.id || '' })
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu lesson')
+      } finally {
+        setLoading(false)
       }
-    } catch (err: any) {
-      setError('Lỗi tải dữ liệu: ' + err.message)
+    }
+
+    loadData()
+  }, [id, isNew])
+
+  const qualityIssues = useMemo(() => {
+    const issues = []
+    if (!lesson.title.trim()) issues.push('Thiếu title')
+    if (!lesson.chapterId) issues.push('Thiếu chapter')
+    if (!lesson.lessonId.trim()) issues.push('Thiếu slug')
+    if (!lesson.starterCode.trim()) issues.push('Thiếu starter code')
+    if (!lesson.taskDescription.trim()) issues.push('Thiếu task description')
+    if (!lesson.solutionCode.trim()) issues.push('Thiếu solution code')
+    if (!isNew && testCases.length === 0) issues.push('Chưa có test case')
+    return issues
+  }, [isNew, lesson, testCases.length])
+
+  const updateLesson = (patch: Partial<typeof emptyLesson>) => {
+    setLesson((current: any) => ({ ...current, ...patch }))
+  }
+
+  const resetTestCaseForm = (nextOrder = testCases.length + 1) => {
+    setEditingTestCase({ ...emptyTestCase, order_index: nextOrder })
+    setTestInputText('[]')
+    setExpectedOutputText('""')
+  }
+
+  const handleSaveLesson = async () => {
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const saved = await contentService.upsertLesson({
+        id: lesson.id || undefined,
+        chapter_id: lesson.chapterId,
+        lesson_id: lesson.lessonId,
+        title: lesson.title,
+        description: lesson.description,
+        starter_code: lesson.starterCode,
+        task_description: lesson.taskDescription,
+        hint: lesson.hint,
+        common_mistakes: lesson.commonMistakes,
+        solution_code: lesson.solutionCode,
+        is_aha_lesson: lesson.isAhaLesson,
+        order_index: Number(lesson.orderIndex) || 0,
+        difficulty: lesson.difficulty || 'beginner',
+        grading_mode: lesson.gradingMode || 'stdout',
+        status: lesson.status || 'draft',
+        qa_checklist: lesson.qaChecklist || [],
+        debug_starter_code: lesson.debugStarterCode || '',
+        debug_task_description: lesson.debugTaskDescription || '',
+        debug_validation_rules: lesson.debugValidationRules || [],
+        debug_hint: lesson.debugHint || '',
+      })
+
+      setLesson((current: any) => ({ ...current, id: saved.id }))
+      setMessage('Đã lưu lesson.')
+
+      if (isNew) {
+        navigate(`/admin/lessons/${saved.id}`, { replace: true })
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu lesson')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
+  const handleEditTestCase = (testCase: LessonTestCase) => {
+    setEditingTestCase(testCase)
+    setTestInputText(stringifyJson(testCase.input ?? []))
+    setExpectedOutputText(stringifyJson(testCase.expected_output ?? ''))
+  }
+
+  const handleSaveTestCase = async () => {
+    const lessonId = lesson.id || id
+    if (!lessonId) {
+      setError('Lưu lesson trước khi thêm test case.')
+      return
+    }
+
+    setSavingTestCase(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const saved = await contentService.upsertLessonTestCase(lessonId, {
+        ...editingTestCase,
+        input: parseJsonField(testInputText, []),
+        expected_output: parseJsonField(expectedOutputText, ''),
+        weight: Number(editingTestCase.weight) || 10,
+        timeout: Number(editingTestCase.timeout) || 1000,
+        order_index: Number(editingTestCase.order_index) || testCases.length + 1,
+      })
+
+      setTestCases(current => {
+        const exists = current.some(item => item.id === saved.id)
+        const next = exists ? current.map(item => (item.id === saved.id ? saved : item)) : [...current, saved]
+        return next.sort((a, b) => a.order_index - b.order_index)
+      })
+      resetTestCaseForm(testCases.length + 2)
+      setMessage('Đã lưu test case.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu test case')
+    } finally {
+      setSavingTestCase(false)
+    }
+  }
+
+  const handleDeleteTestCase = async (testCase: LessonTestCase) => {
+    if (!testCase.id) return
+    if (!window.confirm(`Xóa test case "${testCase.description}"?`)) return
+
     setError(null)
     try {
-      const apiPayload = {
+      await contentService.deleteLessonTestCase(testCase.id)
+      setTestCases(current => current.filter(item => item.id !== testCase.id))
+      setMessage('Đã xóa test case.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xóa test case')
+    }
+  }
+
+  const autoSaveChecklist = async (newChecklist: any) => {
+    if (!lesson.id) return // Chỉ auto-save nếu lesson đã có ID
+    try {
+      await contentService.upsertLesson({
         id: lesson.id,
         chapter_id: lesson.chapterId,
         lesson_id: lesson.lessonId,
@@ -82,270 +274,603 @@ const LessonEditorPage: React.FC = () => {
         common_mistakes: lesson.commonMistakes,
         solution_code: lesson.solutionCode,
         is_aha_lesson: lesson.isAhaLesson,
-        order_index: lesson.orderIndex,
+        order_index: Number(lesson.orderIndex) || 0,
         difficulty: lesson.difficulty || 'beginner',
-        grading_mode: lesson.gradingMode || 'stdout'
-      }
-      
-      await contentService.upsertLesson(apiPayload)
-      navigate('/admin/dashboard') // Or to lesson list
-    } catch (err: any) {
-      setError('Lỗi lưu bài học: ' + err.message)
-    } finally {
-      setSaving(false)
+        grading_mode: lesson.gradingMode || 'stdout',
+        status: lesson.status || 'draft',
+        qa_checklist: newChecklist,
+      })
+    } catch (err) {
+      console.error('Auto-save checklist failed:', err)
     }
   }
 
-  const [isPreview, setIsPreview] = useState(false)
+  const handleAddChecklistItem = () => {
+    if (!newChecklistItem.trim()) return
+    const item = {
+      id: `checklist-${Date.now()}`,
+      label: newChecklistItem.trim(),
+      checked: false,
+      order: (lesson.qaChecklist || []).length + 1,
+    }
+    const newChecklist = [...(lesson.qaChecklist || []), item]
+    updateLesson({ qaChecklist: newChecklist as any })
+    setNewChecklistItem('')
+    autoSaveChecklist(newChecklist)
+  }
+
+  const handleToggleChecklistItem = (itemId: string) => {
+    const newChecklist = (lesson.qaChecklist || []).map((item: any) =>
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    )
+    updateLesson({
+      qaChecklist: newChecklist as any,
+    })
+    autoSaveChecklist(newChecklist)
+  }
+
+  const handleDeleteChecklistItem = (itemId: string) => {
+    const newChecklist = (lesson.qaChecklist || []).filter((item: any) => item.id !== itemId)
+    updateLesson({
+      qaChecklist: newChecklist as any,
+    })
+    autoSaveChecklist(newChecklist)
+  }
+
+  const handleMoveChecklistItem = (itemId: string, direction: 'up' | 'down') => {
+    const items = lesson.qaChecklist || []
+    const index = items.findIndex((item: any) => item.id === itemId)
+    if (index === -1) return
+    if (direction === 'up' && index === 0) return
+    if (direction === 'down' && index === items.length - 1) return
+
+    const newItems = [...items]
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    ;[newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]]
+
+    // Update order numbers
+    newItems.forEach((item: any, i: number) => {
+      item.order = i + 1
+    })
+
+    updateLesson({ qaChecklist: newItems as any })
+    autoSaveChecklist(newItems)
+  }
 
   if (loading) return <FullscreenLoader message="Đang tải bài học..." />
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/5 rounded-full text-slate-400 transition-colors"
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate('/admin/lessons')}
+            className="mt-1 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50"
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-white">
-              {isNew ? 'Thêm bài học mới' : 'Chỉnh sửa bài học'}
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-teal-700">
+              <FileText className="h-3.5 w-3.5" />
+              Lesson editor
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+              {isNew ? 'Tạo lesson' : 'Chỉnh lesson'}
             </h1>
-            <p className="text-slate-400">Thiết kế trải nghiệm See-Change-Build</p>
+            <p className="mt-2 max-w-2xl text-base font-medium text-slate-600">
+              Author nội dung theo flow See-Change-Run-Fix-Build. Test case quản lý trực tiếp ở cuối trang.
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsPreview(!isPreview)}
-            className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-all font-medium border ${
-              isPreview 
-                ? 'bg-white/10 border-white/20 text-white' 
-                : 'bg-transparent border-white/10 text-slate-400 hover:text-white'
-            }`}
-          >
-            <Eye className="w-5 h-5" />
-            {isPreview ? 'Sửa nội dung' : 'Xem trước (Preview)'}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-2 bg-brand-teal text-slate-900 font-bold rounded-xl flex items-center gap-2 hover:bg-brand-teal/80 transition-all disabled:opacity-50"
-          >
-            {saving ? 'Đang lưu...' : <><Save className="w-5 h-5" /> Lưu bài học</>}
-          </button>
-        </div>
+
+        <button
+          onClick={handleSaveLesson}
+          disabled={saving}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-teal-800 disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? 'Đang lưu...' : 'Lưu lesson'}
+        </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-500">
-          <AlertCircle className="w-5 h-5" />
-          <p className="text-sm">{error}</p>
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      {isPreview ? (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* Mock Preview of the LearnPage UI */}
-          <div className="bg-slate-900 border border-brand-teal/20 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-8 border-b border-white/5">
-              <h2 className="text-2xl font-bold text-white mb-4">{lesson.title}</h2>
-              <p className="text-slate-300 leading-relaxed">{lesson.description}</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="p-6 bg-slate-950 border-r border-white/5">
-                <div className="flex items-center gap-2 text-brand-cyan mb-3">
-                  <Code className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Editor</span>
-                </div>
-                <pre className="text-brand-cyan font-mono text-sm leading-relaxed whitespace-pre-wrap">
-                  {lesson.starterCode}
-                </pre>
-              </div>
-              <div className="p-8 bg-slate-900">
-                <div className="flex items-center gap-2 text-yellow-500 mb-4">
-                  <Zap className="w-5 h-5" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Nhiệm vụ</span>
-                </div>
-                <p className="text-white text-lg font-medium leading-snug mb-6">
-                  {lesson.taskDescription}
-                </p>
-                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                  <p className="text-slate-400 text-xs mb-1">Gợi ý:</p>
-                  <p className="text-slate-300 text-sm italic">{lesson.hint}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="text-center text-slate-500 text-xs italic">
-            -- Đây là bản xem trước của giao diện phía người dùng --
-          </div>
+      {message && (
+        <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-700">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>{message}</span>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Basic Info */}
-          <div className="md:col-span-2 space-y-6">
-            <section className="bg-slate-900 border border-white/10 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2 text-brand-teal mb-2">
-                <FileText className="w-5 h-5" />
-                <h2 className="font-bold uppercase tracking-wider text-sm">Thông tin cơ bản</h2>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-500 font-bold ml-1">Chương</label>
-                  <select 
-                    value={lesson.chapterId}
-                    onChange={(e) => setLesson({...lesson, chapterId: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-brand-teal transition-colors"
-                  >
-                    <option value="">Chọn chương...</option>
-                    {chapters.map(c => (
-                      <option key={c.id} value={c.id}>{c.languageId} - {c.title}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-500 font-bold ml-1">Slug (URL)</label>
-                  <input 
-                    type="text"
-                    value={lesson.lessonId}
-                    onChange={(e) => setLesson({...lesson, lessonId: e.target.value})}
-                    placeholder="vi-du: loi-chao-dau-tien"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-brand-teal transition-colors"
-                  />
-                </div>
-              </div>
+      )}
 
-              <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold ml-1">Tiêu đề bài học</label>
-                <input 
-                  type="text"
+      <div className="grid gap-6 xl:grid-cols-[1fr,340px]">
+        <div className="space-y-5">
+          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-5 text-xl font-black text-slate-950">Thông tin cơ bản</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Chapter</span>
+                <select
+                  value={lesson.chapterId}
+                  onChange={event => updateLesson({ chapterId: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                >
+                  <option value="">Chọn chapter...</option>
+                  {chapters.map(chapter => (
+                    <option key={chapter.id} value={chapter.id}>
+                      {chapter.language_id || 'unknown'} - {chapter.title || chapter.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Slug</span>
+                <input
+                  value={lesson.lessonId}
+                  onChange={event => updateLesson({ lessonId: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  placeholder="loi-chao-dau-tien"
+                />
+              </label>
+              <label className="block md:col-span-2">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Title</span>
+                <input
                   value={lesson.title}
-                  onChange={(e) => setLesson({...lesson, title: e.target.value})}
-                  placeholder="Nhập tiêu đề bài học..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-brand-teal transition-colors"
+                  onChange={event => updateLesson({ title: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                 />
-              </div>
-            </section>
-
-            {/* STEP 1: SEE */}
-            <section className="bg-slate-900 border border-white/10 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2 text-brand-cyan mb-2">
-                <Eye className="w-5 h-5" />
-                <h2 className="font-bold uppercase tracking-wider text-sm">Bước 1: See (Quan sát)</h2>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold ml-1">Giải thích khái niệm</label>
-                <textarea 
-                  value={lesson.description}
-                  onChange={(e) => setLesson({...lesson, description: e.target.value})}
-                  placeholder="Giải thích ngắn gọn khái niệm cho người mới..."
-                  className="w-full h-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-cyan transition-colors resize-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold ml-1">Mã nguồn mẫu (Starter Code)</label>
-                <textarea 
-                  value={lesson.starterCode}
-                  onChange={(e) => setLesson({...lesson, starterCode: e.target.value})}
-                  placeholder="Code mẫu để người dùng quan sát..."
-                  className="w-full h-48 bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-brand-cyan font-mono text-sm focus:outline-none focus:border-brand-cyan transition-colors resize-none"
-                />
-              </div>
-            </section>
-
-            {/* STEP 2: CHANGE */}
-            <section className="bg-slate-900 border border-white/10 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2 text-yellow-500 mb-2">
-                <Zap className="w-5 h-5" />
-                <h2 className="font-bold uppercase tracking-wider text-sm">Bước 2: Change & Run (Thay đổi & Chạy)</h2>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold ml-1">Hướng dẫn nhiệm vụ</label>
-                <textarea 
-                  value={lesson.taskDescription}
-                  onChange={(e) => setLesson({...lesson, taskDescription: e.target.value})}
-                  placeholder="Yêu cầu người dùng thay đổi một phần nhỏ trong code mẫu..."
-                  className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-500 font-bold ml-1">Gợi ý (Hint)</label>
-                  <textarea 
-                    value={lesson.hint}
-                    onChange={(e) => setLesson({...lesson, hint: e.target.value})}
-                    className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none resize-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-500 font-bold ml-1">Lỗi thường gặp</label>
-                  <textarea 
-                    value={lesson.commonMistakes}
-                    onChange={(e) => setLesson({...lesson, commonMistakes: e.target.value})}
-                    className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none resize-none"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* STEP 3: BUILD */}
-            <section className="bg-slate-900 border border-white/10 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2 text-green-500 mb-2">
-                <Code className="w-5 h-5" />
-                <h2 className="font-bold uppercase tracking-wider text-sm">Bước 3: Build (Xây dựng)</h2>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-bold ml-1">Kết quả mong đợi (Solution Code)</label>
-                <textarea 
-                  value={lesson.solutionCode}
-                  onChange={(e) => setLesson({...lesson, solutionCode: e.target.value})}
-                  placeholder="Mã nguồn sau khi đã hoàn thành nhiệm vụ..."
-                  className="w-full h-48 bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-green-400 font-mono text-sm focus:outline-none focus:border-green-500 transition-colors resize-none"
-                />
-              </div>
-            </section>
-          </div>
-
-          {/* Sidebar Info */}
-          <div className="space-y-6">
-            <section className="bg-slate-900 border border-white/10 rounded-2xl p-6">
-              <h3 className="text-white font-bold mb-4">Cài đặt nâng cao</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">Aha! Moment?</span>
-                  <input 
-                    type="checkbox"
-                    checked={lesson.isAhaLesson}
-                    onChange={(e) => setLesson({...lesson, isAhaLesson: e.target.checked})}
-                    className="w-5 h-5 rounded border-white/10 bg-white/5 text-brand-teal focus:ring-brand-teal"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-500 font-bold">Thứ tự hiển thị</label>
-                  <input 
-                    type="number"
-                    value={lesson.orderIndex}
-                    onChange={(e) => setLesson({...lesson, orderIndex: parseInt(e.target.value)})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-            </section>
-
-            <div className="p-6 bg-brand-teal/5 border border-brand-teal/10 rounded-2xl">
-              <h3 className="text-brand-teal font-bold text-sm mb-2">Lời khuyên</h3>
-              <p className="text-slate-400 text-xs leading-relaxed">
-                Tránh viết giải thích quá dài. Hãy để người dùng học thông qua việc "thấy" và "thử". 
-                Nhiệm vụ ở bước Change nên cực kỳ đơn giản để tạo cảm giác thành công nhanh chóng.
-              </p>
+              </label>
             </div>
-          </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-5 text-xl font-black text-slate-950">Flow học</h2>
+            <div className="space-y-5">
+              <label className="block">
+                <span className="mb-2 block text-sm font-black text-slate-700">1. See - giải thích</span>
+                <textarea
+                  value={lesson.description}
+                  onChange={event => updateLesson({ description: event.target.value })}
+                  className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black text-slate-700">Starter code</span>
+                <textarea
+                  value={lesson.starterCode}
+                  onChange={event => updateLesson({ starterCode: event.target.value })}
+                  className="h-44 w-full resize-none rounded-lg border border-slate-200 bg-slate-950 px-3 py-3 font-mono text-sm text-slate-100 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black text-slate-700">2. Change - task description</span>
+                <textarea
+                  value={lesson.taskDescription}
+                  onChange={event => updateLesson({ taskDescription: event.target.value })}
+                  className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-black text-slate-700">Fix - hint</span>
+                  <textarea
+                    value={lesson.hint}
+                    onChange={event => updateLesson({ hint: event.target.value })}
+                    className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-black text-slate-700">Common mistakes</span>
+                  <textarea
+                    value={lesson.commonMistakes}
+                    onChange={event => updateLesson({ commonMistakes: event.target.value })}
+                    className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  />
+                </label>
+              </div>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black text-slate-700">Build - solution code</span>
+                <textarea
+                  value={lesson.solutionCode}
+                  onChange={event => updateLesson({ solutionCode: event.target.value })}
+                  className="h-44 w-full resize-none rounded-lg border border-slate-200 bg-slate-950 px-3 py-3 font-mono text-sm text-slate-100 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+
+              <div className="border-t border-slate-200 pt-5">
+                <h3 className="mb-4 text-lg font-black text-slate-950">Fix - Debug Challenge (Data-driven)</h3>
+                <div className="space-y-5">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-slate-700">Debug starter code (code với bug)</span>
+                    <textarea
+                      value={lesson.debugStarterCode}
+                      onChange={event => updateLesson({ debugStarterCode: event.target.value })}
+                      className="h-40 w-full resize-none rounded-lg border border-slate-200 bg-slate-950 px-3 py-3 font-mono text-sm text-slate-100 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Code với bug(s) để user sửa"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-slate-700">Debug task description</span>
+                    <textarea
+                      value={lesson.debugTaskDescription}
+                      onChange={event => updateLesson({ debugTaskDescription: event.target.value })}
+                      className="h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Mô tả user cần sửa gì"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-slate-700">Debug hint</span>
+                    <textarea
+                      value={lesson.debugHint}
+                      onChange={event => updateLesson({ debugHint: event.target.value })}
+                      className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Gợi ý giúp user tìm bug"
+                    />
+                  </label>
+                  <div>
+                    <label className="mb-3 block text-sm font-black text-slate-700">Debug validation rules</label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      {(lesson.debugValidationRules || []).length === 0 ? (
+                        <div className="text-xs font-bold text-slate-500">Chưa có rule</div>
+                      ) : (
+                        (lesson.debugValidationRules || []).map((rule: any, index: number) => (
+                          <div key={index} className="flex items-start gap-2 rounded bg-white p-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-bold text-slate-700">{rule.type}: {rule.value}</div>
+                              {rule.description && <div className="text-xs text-slate-500">{rule.description}</div>}
+                            </div>
+                            <button
+                              onClick={() => {
+                                const newRules = (lesson.debugValidationRules || []).filter((_: any, i: number) => i !== index)
+                                updateLesson({ debugValidationRules: newRules as any })
+                              }}
+                              className="rounded px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <select
+                        id="ruleType"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold outline-none"
+                        defaultValue="rule"
+                      >
+                        <option value="rule">rule</option>
+                        <option value="exact">exact</option>
+                        <option value="regex">regex</option>
+                        <option value="stdout">stdout</option>
+                      </select>
+                      <input
+                        id="ruleValue"
+                        type="text"
+                        placeholder="Rule value"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      />
+                      <input
+                        id="ruleDesc"
+                        type="text"
+                        placeholder="Description (optional)"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      />
+                      <button
+                        onClick={() => {
+                          const type = (document.getElementById('ruleType') as HTMLSelectElement)?.value || 'rule'
+                          const value = (document.getElementById('ruleValue') as HTMLInputElement)?.value || ''
+                          const description = (document.getElementById('ruleDesc') as HTMLInputElement)?.value || ''
+                          if (!value.trim()) return
+                          const newRules = [...(lesson.debugValidationRules || []), { type, value, description }]
+                          updateLesson({ debugValidationRules: newRules as any })
+                          ;(document.getElementById('ruleValue') as HTMLInputElement).value = ''
+                          ;(document.getElementById('ruleDesc') as HTMLInputElement).value = ''
+                        }}
+                        className="w-full rounded-lg bg-teal-700 px-3 py-2 text-sm font-black text-white hover:bg-teal-800"
+                      >
+                        + Thêm rule
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-950">Test cases</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  Dùng cho bước Kiểm tra deterministic. Chạy thử vẫn chỉ execute code.
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">
+                {testCases.length}
+              </span>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[1fr,360px]">
+              <div className="space-y-3">
+                {testCases.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-bold text-slate-500">
+                    Chưa có test case.
+                  </div>
+                )}
+                {testCases.map(testCase => (
+                  <div key={testCase.id || testCase.order_index} className="rounded-lg border border-slate-200 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-black text-slate-950">
+                          #{testCase.order_index} {testCase.description}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-slate-500">
+                          weight {testCase.weight ?? 10} / timeout {testCase.timeout ?? 1000}ms
+                          {testCase.is_hidden ? ' / hidden' : ''}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditTestCase(testCase)}
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTestCase(testCase)}
+                          className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="mb-4 text-sm font-black uppercase tracking-widest text-slate-500">
+                  {editingTestCase.id ? 'Sửa test case' : 'Thêm test case'}
+                </h3>
+                <div className="space-y-3">
+                  <input
+                    value={editingTestCase.description}
+                    onChange={event => setEditingTestCase(current => ({ ...current, description: event.target.value }))}
+                    placeholder="Mô tả test case"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  />
+                  <textarea
+                    value={testInputText}
+                    onChange={event => setTestInputText(event.target.value)}
+                    className="h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                    placeholder="input JSON"
+                  />
+                  <textarea
+                    value={expectedOutputText}
+                    onChange={event => setExpectedOutputText(event.target.value)}
+                    className="h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                    placeholder="expected_output JSON/string"
+                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      type="number"
+                      value={editingTestCase.order_index}
+                      onChange={event => setEditingTestCase(current => ({ ...current, order_index: Number(event.target.value) }))}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Order"
+                    />
+                    <input
+                      type="number"
+                      value={editingTestCase.weight ?? 10}
+                      onChange={event => setEditingTestCase(current => ({ ...current, weight: Number(event.target.value) }))}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Weight"
+                    />
+                    <input
+                      type="number"
+                      value={editingTestCase.timeout ?? 1000}
+                      onChange={event => setEditingTestCase(current => ({ ...current, timeout: Number(event.target.value) }))}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Timeout"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={editingTestCase.is_hidden || false}
+                      onChange={event => setEditingTestCase(current => ({ ...current, is_hidden: event.target.checked }))}
+                      className="h-4 w-4 accent-teal-700"
+                    />
+                    Hidden test case
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveTestCase}
+                      disabled={savingTestCase || !lesson.id}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      {savingTestCase ? 'Đang lưu...' : 'Lưu test case'}
+                    </button>
+                    <button
+                      onClick={() => resetTestCaseForm()}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-black text-slate-700 hover:bg-white"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      )}
+
+        <aside className="space-y-5">
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-black text-slate-950">Settings</h2>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Status</span>
+                <select
+                  value={lesson.status}
+                  onChange={event => updateLesson({ status: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                >
+                  <option value="draft">Draft (Bản nháp)</option>
+                  <option value="published">Published (Công khai)</option>
+                  <option value="archived">Archived (Đã lưu trữ)</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Difficulty</span>
+                <select
+                  value={lesson.difficulty}
+                  onChange={event => updateLesson({ difficulty: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                >
+                  <option value="beginner">beginner</option>
+                  <option value="intermediate">intermediate</option>
+                  <option value="advanced">advanced</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Grading mode</span>
+                <select
+                  value={lesson.gradingMode}
+                  onChange={event => updateLesson({ gradingMode: event.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                >
+                  <option value="stdout">stdout</option>
+                  <option value="function">function</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Order</span>
+                <input
+                  type="number"
+                  value={lesson.orderIndex}
+                  onChange={event => updateLesson({ orderIndex: Number(event.target.value) })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={lesson.isAhaLesson}
+                  onChange={event => updateLesson({ isAhaLesson: event.target.checked })}
+                  className="h-4 w-4 accent-teal-700"
+                />
+                Aha lesson
+              </label>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-black text-slate-950">Quality</h2>
+            <div className="space-y-2">
+              {qualityIssues.length === 0 ? (
+                <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm font-black text-green-700">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Ready
+                </div>
+              ) : (
+                qualityIssues.map(issue => (
+                  <div key={issue} className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-700">
+                    <AlertTriangle className="h-4 w-4" />
+                    {issue}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-black text-slate-950">QA Checklist</h2>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {(lesson.qaChecklist || []).length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-200 p-3 text-center text-xs font-bold text-slate-500">
+                  Chưa có mục check
+                </div>
+              ) : (
+                (lesson.qaChecklist || []).map((item: any, index: number) => (
+                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <input
+                      type="checkbox"
+                      checked={item.checked || false}
+                      onChange={() => handleToggleChecklistItem(item.id)}
+                      className="mt-1 h-4 w-4 accent-teal-700"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-xs font-bold ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                        {item.label}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {index > 0 && (
+                        <button
+                          onClick={() => handleMoveChecklistItem(item.id, 'up')}
+                          className="rounded px-1.5 py-1 text-xs font-bold text-slate-500 hover:bg-white"
+                          title="Lên"
+                        >
+                          ↑
+                        </button>
+                      )}
+                      {index < (lesson.qaChecklist || []).length - 1 && (
+                        <button
+                          onClick={() => handleMoveChecklistItem(item.id, 'down')}
+                          className="rounded px-1.5 py-1 text-xs font-bold text-slate-500 hover:bg-white"
+                          title="Xuống"
+                        >
+                          ↓
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteChecklistItem(item.id)}
+                        className="rounded px-1.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={newChecklistItem}
+                onChange={event => setNewChecklistItem(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    handleAddChecklistItem()
+                  }
+                }}
+                placeholder="Thêm mục check..."
+                className="flex-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+              />
+              <button
+                onClick={handleAddChecklistItem}
+                className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white hover:bg-teal-800"
+              >
+                +
+              </button>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-2 flex items-center gap-2 text-lg font-black text-slate-950">
+              <Code className="h-5 w-5 text-teal-700" />
+              Rule nhắc lại
+            </h2>
+            <p className="text-sm font-medium leading-6 text-slate-600">
+              `Chạy thử` chỉ execute code. `Kiểm tra` mới validate bằng test case/rule. Lesson chỉ hoàn thành sau khi backend lưu progress thành công.
+            </p>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

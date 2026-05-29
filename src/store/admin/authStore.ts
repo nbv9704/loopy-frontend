@@ -14,7 +14,7 @@ interface AuthState {
   checkAuth: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>()(set => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
@@ -83,7 +83,12 @@ export const useAuthStore = create<AuthState>()(set => ({
   },
 
   checkAuth: async () => {
-    set({ isLoading: true, error: null })
+    // Only show loading state if we are not already authenticated
+    // This prevents background polling from unmounting the UI (e.g. LessonEditor)
+    if (!get().isAuthenticated) {
+      set({ isLoading: true, error: null })
+    }
+    
     try {
       const response = await authApi.checkAuth()
 

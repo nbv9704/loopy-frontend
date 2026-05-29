@@ -10,13 +10,31 @@ import SEO from '../components/common/SEO'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { getLanguageMetadata } from '../utils/seo'
 
+const pathLabels: Record<string, { title: string; subtitle: string; destination: string }> = {
+  javascript: {
+    title: 'JavaScript Web Starter',
+    subtitle: 'Học từng bước để tạo tương tác đầu tiên trên web.',
+    destination: 'Xây dựng một ứng dụng web nhỏ có tương tác thật.',
+  },
+  python: {
+    title: 'Python Foundations',
+    subtitle: 'Bắt đầu nhẹ với logic, biến và output dễ hiểu.',
+    destination: 'Viết chương trình Python giải quyết vấn đề nhỏ trong đời thực.',
+  },
+  cpp: {
+    title: 'C++ School Foundations',
+    subtitle: 'Xây nền tư duy lập trình và giải bài theo từng bước.',
+    destination: 'Nắm input/output, điều kiện, vòng lặp và tư duy thuật toán cơ bản.',
+  },
+}
+
 const LibraryPage: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
   const { language = 'javascript' } = useParams<{ language: string }>()
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set())
-  
+
   // Auth guard: redirect guests to auth, unboarded users to onboarding
   useEffect(() => {
     if (!authLoading) {
@@ -31,7 +49,12 @@ const LibraryPage: React.FC = () => {
   const { lessons, chapters, loading, completedLessons } = useLessonData(language, undefined, user?.id)
 
   const metadata = getLanguageMetadata(language)
-  
+  const pathLabel = pathLabels[language] || {
+    title: `${language.toUpperCase()} Journey`,
+    subtitle: 'Học theo từng bước nhỏ và thực hành ngay trong trình duyệt.',
+    destination: 'Hoàn thành các bài học nền tảng đầu tiên.',
+  }
+
   const totalLessons = lessons.length
   const completedCount = completedLessons.size
   const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
@@ -97,7 +120,7 @@ const LibraryPage: React.FC = () => {
       <SEO {...metadata} title={`${t('learn.curriculum')} - ${language.toUpperCase()}`} />
       <div className="min-h-screen bg-[#0a0e1a] flex flex-col pb-20">
         <Header />
-        
+
         <div className="relative pt-28 px-4 sm:px-6 lg:px-8 overflow-hidden flex-1">
           {/* Ambient background */}
           <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -107,13 +130,44 @@ const LibraryPage: React.FC = () => {
 
           <div className="max-w-7xl mx-auto relative z-10">
             {/* Back button */}
-            <button 
+            <button
               onClick={() => navigate('/languages')}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 cursor-pointer group text-sm"
             >
               <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
               <span>Đổi ngôn ngữ</span>
             </button>
+
+            <div className="mb-8 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 md:p-8">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-brand-teal">
+                    <FiTarget className="h-3.5 w-3.5" /> Journey Map
+                  </div>
+                  <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+                    Bạn đang học: {pathLabel.title}
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+                    {pathLabel.subtitle}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 rounded-3xl border border-white/10 bg-black/20 p-4 text-center">
+                  <div>
+                    <div className="text-2xl font-black text-white">{progressPercent}%</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tiến độ</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-white">{user.currentStreak || 0}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Streak</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-white">{user.points || completedCount * 10}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Điểm</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* ============ 2-COLUMN LAYOUT (Mimo-inspired) ============ */}
             <div className="flex flex-col lg:flex-row gap-8">
@@ -129,8 +183,8 @@ const LibraryPage: React.FC = () => {
                       <div className="relative w-24 h-24 shrink-0">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                           <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                          <motion.circle 
-                            cx="50" cy="50" r="42" fill="none" 
+                          <motion.circle
+                            cx="50" cy="50" r="42" fill="none"
                             stroke="url(#progressGradient)" strokeWidth="8" strokeLinecap="round"
                             strokeDasharray={`${2 * Math.PI * 42}`}
                             initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
@@ -150,8 +204,8 @@ const LibraryPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <h1 className="text-2xl font-extrabold text-white tracking-tight capitalize mb-1">
-                          {language}
+                        <h1 className="text-2xl font-extrabold text-white tracking-tight mb-1">
+                          {pathLabel.title}
                         </h1>
                         <p className="text-slate-500 text-sm">
                           {completedCount}/{totalLessons} bài hoàn thành
@@ -184,15 +238,18 @@ const LibraryPage: React.FC = () => {
                       <div className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-teal opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       <div className="relative z-10">
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">
-                          <FiPlay className="w-3 h-3" /> Tiếp tục học
+                          <FiPlay className="w-3 h-3" /> Bước tiếp theo
                         </div>
                         <h3 className="text-xl font-extrabold mb-1">{nextLesson.title}</h3>
                         <p className="text-sm opacity-70 line-clamp-1">
                           {nextLessonChapter?.title && `${nextLessonChapter.title} · `}
                           {nextLesson.estimated_time || 5} phút
                         </p>
+                        <div className="mt-4 rounded-2xl bg-[#0a0e1a]/15 px-4 py-3 text-sm font-bold">
+                          Học 5 phút, chạy code thật, mở khóa bài tiếp theo.
+                        </div>
                       </div>
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10">
+                      <div className="absolute right-6 top-8 z-10">
                         <div className="w-12 h-12 rounded-full bg-[#0a0e1a]/20 flex items-center justify-center group-hover:bg-[#0a0e1a]/30 transition-all">
                           <FiPlay className="w-6 h-6 ml-0.5" />
                         </div>
@@ -214,10 +271,15 @@ const LibraryPage: React.FC = () => {
                     <div className="flex items-center gap-2 text-brand-teal font-bold text-sm mb-3">
                       <FiTarget className="w-4 h-4" /> Đích đến của bạn
                     </div>
+                    <p className="text-slate-400 text-sm leading-relaxed">{pathLabel.destination}</p>
+                  </div>
+
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 text-brand-teal font-bold text-sm mb-3">
+                      <FiLock className="w-4 h-4" /> Vì sao có bài bị khóa?
+                    </div>
                     <p className="text-slate-400 text-sm leading-relaxed">
-                      {language === 'javascript' && 'Xây dựng một ứng dụng web tương tác hoàn chỉnh với JavaScript ES6+.'}
-                      {language === 'python' && 'Viết các chương trình Python giải quyết vấn đề thực tế và phân tích dữ liệu.'}
-                      {language === 'cpp' && 'Nắm vững tư duy giải thuật và cấu trúc dữ liệu với C++ chuẩn.'}
+                      Loopy mở từng bài theo thứ tự để bạn không bị nhảy cóc. Hoàn thành bài trước để mở khóa bài tiếp theo.
                     </p>
                   </div>
                 </div>
@@ -226,6 +288,21 @@ const LibraryPage: React.FC = () => {
               {/* ─── RIGHT COLUMN: Chapters & Lessons (Progressive Disclosure) ─── */}
               <div className="flex-1 min-w-0">
                 <div className="space-y-4">
+                  {sortedChapters.length === 0 && (
+                    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center">
+                      <FiBookOpen className="mx-auto mb-4 h-12 w-12 text-brand-teal" />
+                      <h2 className="text-2xl font-black text-white">Lộ trình này chưa có bài học</h2>
+                      <p className="mx-auto mt-3 max-w-md text-slate-400">
+                        Nội dung đang được chuẩn bị. Bạn có thể đổi ngôn ngữ hoặc quay lại sau.
+                      </p>
+                      <button
+                        onClick={() => navigate('/languages')}
+                        className="mt-6 rounded-2xl bg-brand-teal px-6 py-3 font-black text-[#0a0e1a]"
+                      >
+                        Chọn lộ trình khác
+                      </button>
+                    </div>
+                  )}
                   {sortedChapters.map((chapter, chapterIdx) => {
                     const chapterLessons = sortedLessons.filter(l => l.chapterId === chapter.id)
                     const chapterCompleted = chapterLessons.filter(l => completedLessons.has(l.id)).length
@@ -238,18 +315,16 @@ const LibraryPage: React.FC = () => {
                         {/* Chapter Header (Clickable - Progressive Disclosure) */}
                         <button
                           onClick={() => toggleChapter(chapter.id)}
-                          className={`w-full flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group text-left ${
-                            isChapterDone 
-                              ? 'bg-green-500/5 border-green-500/20 hover:border-green-500/40' 
-                              : 'bg-white/5 border-white/10 hover:border-brand-teal/30 hover:bg-white/[0.07]'
-                          }`}
+                          className={`w-full flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group text-left ${isChapterDone
+                            ? 'bg-green-500/5 border-green-500/20 hover:border-green-500/40'
+                            : 'bg-white/5 border-white/10 hover:border-brand-teal/30 hover:bg-white/[0.07]'
+                            }`}
                         >
                           {/* Chapter number badge */}
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${
-                            isChapterDone
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-brand-teal/10 border border-brand-teal/20 text-brand-teal'
-                          }`}>
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${isChapterDone
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-brand-teal/10 border border-brand-teal/20 text-brand-teal'
+                            }`}>
                             {isChapterDone ? <FiCheckCircle className="w-5 h-5" /> : chapterIdx + 1}
                           </div>
 
@@ -261,7 +336,7 @@ const LibraryPage: React.FC = () => {
                               <span className="text-xs text-slate-500">{chapterCompleted}/{chapterTotal} bài</span>
                               {/* Mini progress bar */}
                               <div className="flex-1 max-w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                   className={`h-full rounded-full transition-all ${isChapterDone ? 'bg-green-500' : 'bg-brand-teal'}`}
                                   style={{ width: `${chapterTotal > 0 ? (chapterCompleted / chapterTotal) * 100 : 0}%` }}
                                 />
@@ -299,13 +374,12 @@ const LibraryPage: React.FC = () => {
                                       whileHover={isLocked ? {} : { x: 4 }}
                                       disabled={isLocked}
                                       onClick={() => !isLocked && navigate(`/learn/${language}/${lesson.lessonId}`)}
-                                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
-                                        isLocked
-                                          ? 'opacity-40 cursor-not-allowed'
-                                          : isCurrent
-                                            ? 'bg-brand-teal/10 border border-brand-teal/30 cursor-pointer'
-                                            : 'hover:bg-white/5 cursor-pointer'
-                                      }`}
+                                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${isLocked
+                                        ? 'opacity-40 cursor-not-allowed'
+                                        : isCurrent
+                                          ? 'bg-brand-teal/10 border border-brand-teal/30 cursor-pointer'
+                                          : 'hover:bg-white/5 cursor-pointer'
+                                        }`}
                                     >
                                       {/* Status icon */}
                                       <div className="shrink-0">
@@ -331,9 +405,8 @@ const LibraryPage: React.FC = () => {
                                       {/* Content */}
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                          <span className={`font-semibold text-sm truncate ${
-                                            isCompleted ? 'text-slate-400' : isCurrent ? 'text-brand-teal' : 'text-white'
-                                          }`}>
+                                          <span className={`font-semibold text-sm truncate ${isCompleted ? 'text-slate-400' : isCurrent ? 'text-brand-teal' : 'text-white'
+                                            }`}>
                                             {lesson.title}
                                           </span>
                                           {isAha && (
@@ -346,12 +419,14 @@ const LibraryPage: React.FC = () => {
                                           <span className="text-[11px] text-slate-600 flex items-center gap-1">
                                             <FiClock className="w-3 h-3" /> {lesson.estimated_time || 5}m
                                           </span>
-                                          <span className={`text-[11px] font-bold uppercase ${
-                                            lesson.difficulty === 'beginner' ? 'text-green-500/60' : 
+                                          <span className={`text-[11px] font-bold uppercase ${lesson.difficulty === 'beginner' ? 'text-green-500/60' :
                                             lesson.difficulty === 'intermediate' ? 'text-yellow-500/60' : 'text-red-500/60'
-                                          }`}>
+                                            }`}>
                                             {lesson.difficulty}
                                           </span>
+                                          {isLocked && (
+                                            <span className="text-[11px] text-slate-600">Hoàn thành bài trước để mở khóa</span>
+                                          )}
                                         </div>
                                       </div>
 

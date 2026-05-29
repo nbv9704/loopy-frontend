@@ -8,8 +8,10 @@ import {
   Video,
   BookOpen as BookIcon,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import Header from '../components/common/Header'
 import Footer from '../components/common/Footer'
 import SEO from '../components/common/SEO'
@@ -21,20 +23,17 @@ import { DocCardSkeleton } from '../components/common/SkeletonLoader'
 
 const DocsPage: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   // Fetch documentation technologies from API
   const { data: technologies, isLoading, isError, refetch } = useDocumentationTechnologies()
 
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedDoc, setSelectedDoc] = useState<DocumentationTechnology | null>(null)
   const itemsPerPage = 6
 
   // Fetch links for selected technology
   const { data: links, isLoading: linksLoading } = useDocumentationLinks(selectedDoc?.id || '')
-
-  // All technologies are shown without category filtering in static mode
-  const categories = ['all']
 
   const filteredDocs = (technologies || []).filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(search.toLowerCase())
@@ -50,7 +49,7 @@ const DocsPage: React.FC = () => {
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1)
-  }, [search, selectedCategory])
+  }, [search])
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -96,9 +95,20 @@ const DocsPage: React.FC = () => {
         <main className="flex-grow pt-32 pb-8 relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-white mb-4">{t('docs.title')}</h1>
-              <p className="text-slate-400 text-lg">{t('docs.description')}</p>
+            <div className="mb-12 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 text-center md:p-10">
+              <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-sm font-bold text-brand-teal">
+                <BookIcon className="h-4 w-4" /> Resource Shelf
+              </div>
+              <h1 className="text-4xl font-black text-white mb-4 md:text-6xl">Tài nguyên khi bạn bị kẹt.</h1>
+              <p className="mx-auto max-w-3xl text-slate-400 text-lg leading-8">
+                Docs là kệ tham khảo, không phải lộ trình chính. Khi chưa biết bắt đầu từ đâu, hãy quay lại Journey Map để học từng bước.
+              </p>
+              <button
+                onClick={() => navigate('/languages')}
+                className="mx-auto mt-6 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-bold text-white transition-colors hover:border-brand-teal/40 hover:text-brand-teal"
+              >
+                Quay lại lộ trình <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Loading State */}
@@ -143,21 +153,8 @@ const DocsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Category Filter */}
-                <div className="mb-8 flex flex-wrap justify-center gap-3">
-                  {categories.map(category => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        selectedCategory === category
-                          ? 'bg-brand-teal text-[#0a0e1a]'
-                          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
-                      }`}
-                    >
-                      {category === 'all' ? t('docs.allCategories') : category}
-                    </button>
-                  ))}
+                <div className="mb-8 text-center text-sm text-slate-500">
+                  Gợi ý: ưu tiên tài liệu chính thức và bài beginner-friendly trước khi đào sâu.
                 </div>
 
                 {/* Documentation Grid */}
@@ -192,8 +189,14 @@ const DocsPage: React.FC = () => {
                 </div>
 
                 {filteredDocs.length === 0 && (
-                  <div className="text-center py-12">
+                  <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-12 text-center">
                     <p className="text-slate-400">{t('docs.noResults')}</p>
+                    <button
+                      onClick={() => setSearch('')}
+                      className="mt-4 rounded-xl bg-brand-teal px-5 py-2 font-bold text-[#0a0e1a]"
+                    >
+                      Xóa tìm kiếm
+                    </button>
                   </div>
                 )}
 

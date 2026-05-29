@@ -7,12 +7,37 @@ const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL
 export interface DashboardStats {
   totalUsers: number
   totalLessons: number
+  totalLessonsAll?: number
+  draftLessons?: number
+  archivedLessons?: number
   totalSubmissions: number
   submissionsToday: number
   submissionsThisWeek: number
   completionRate: number
   totalPvPMatches: number
+  averageExecutionTime: number
   averageAIScore: number
+  contentQuality: {
+    lessonsMissingRequiredFields: number
+    lessonsWithoutHint: number
+    lessonsWithoutTestCases: number
+  }
+  recentLessons: Array<{
+    id: string
+    title: string
+    lesson_id: string
+    chapter_id: string
+    updated_at: string
+  }>
+  recentFailedSubmissions: Array<{
+    id: string
+    user_id: string
+    lesson_id: string
+    submitted_at: string
+    lessons?: {
+      title: string
+    }
+  }>
 }
 
 export const dashboardService = {

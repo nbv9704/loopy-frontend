@@ -22,6 +22,7 @@ export interface BulkImportPayload {
     difficulty?: 'beginner' | 'intermediate' | 'advanced' | 'easy' | 'medium' | 'hard'
     gradingMode?: 'stdout' | 'function'
     grading_mode?: 'stdout' | 'function'
+    status?: 'draft' | 'published' | 'archived'
     orderIndex?: number
     order_index?: number
     testCases?: Array<{
@@ -48,7 +49,44 @@ export interface BulkImportPayload {
 export interface BulkImportResult {
   lessonsCreated: number
   testCasesCreated: number
+  testCasesReplaced?: number
   errors: string[]
+}
+
+export interface LessonTestCase {
+  id?: string
+  lesson_id?: string
+  description: string
+  input?: any
+  expected_output: any
+  weight?: number
+  timeout?: number
+  is_hidden?: boolean
+  order_index: number
+}
+
+export interface AdminSubmission {
+  id: string
+  user_id?: string | null
+  lesson_id: string
+  code: string
+  is_correct: boolean
+  test_score?: number | null
+  final_score?: number | null
+  grade_level?: string | null
+  feedback?: string | null
+  execution_time?: number | null
+  submitted_at?: string
+  lessons?: {
+    id: string
+    lesson_id?: string
+    title?: string
+    chapters?: {
+      id: string
+      language_id?: string
+      title?: string
+    } | null
+  } | null
 }
 
 const toApiPayload = (payload: BulkImportPayload) => ({
@@ -64,6 +102,7 @@ const toApiPayload = (payload: BulkImportPayload) => ({
     solutionCode: lesson.solutionCode || lesson.solution_code,
     isAhaLesson: lesson.isAhaLesson || lesson.is_aha_lesson,
     difficulty: lesson.difficulty,
+    status: lesson.status,
     gradingMode: lesson.gradingMode || lesson.grading_mode,
     orderIndex: lesson.orderIndex ?? lesson.order_index,
     testCases: lesson.testCases?.map(tc => ({
@@ -96,10 +135,11 @@ export const contentService = {
   },
 
   /**
-   * Get lessons by chapter
+   * Get lessons by chapter (or all if chapterId is 'all')
    */
-  async getLessons(chapterId: string): Promise<any[]> {
-    const response = await apiClient.get(`/api/admin/chapters/${chapterId}/lessons`)
+  async getLessons(chapterId?: string): Promise<any[]> {
+    const params = chapterId ? { chapter_id: chapterId } : undefined
+    const response = await apiClient.get(`/api/admin/lessons`, { params })
     return response.data.data
   },
 
@@ -108,6 +148,25 @@ export const contentService = {
    */
   async getLessonById(lessonId: string): Promise<any> {
     const response = await apiClient.get(`/api/admin/lessons/${lessonId}`)
+    return response.data.data
+  },
+
+  async getLessonTestCases(lessonId: string): Promise<LessonTestCase[]> {
+    const response = await apiClient.get(`/api/admin/lessons/${lessonId}/test-cases`)
+    return response.data.data
+  },
+
+  async upsertLessonTestCase(lessonId: string, testCase: LessonTestCase): Promise<LessonTestCase> {
+    const response = await apiClient.post(`/api/admin/lessons/${lessonId}/test-cases`, testCase)
+    return response.data.data
+  },
+
+  async deleteLessonTestCase(testCaseId: string): Promise<void> {
+    await apiClient.delete(`/api/admin/test-cases/${testCaseId}`)
+  },
+
+  async getSubmissions(params?: { status?: 'all' | 'pass' | 'fail'; limit?: number }): Promise<AdminSubmission[]> {
+    const response = await apiClient.get('/api/admin/submissions', { params })
     return response.data.data
   },
 

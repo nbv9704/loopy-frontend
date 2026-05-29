@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiMail, FiLock, FiFileText, FiGlobe, FiShield, FiAlertCircle } from 'react-icons/fi'
+import { FiMail, FiLock, FiFileText, FiBookOpen, FiShield, FiAlertCircle } from 'react-icons/fi'
 import { useAdminAuth } from '../../hooks/useAdminAuth'
 import logoImg from '../../assets/images/logos/logo-256x256.png'
 
@@ -61,14 +61,14 @@ export default function LoginPage() {
           {/* Logo & Title */}
           <div>
             <div className="mb-10">
-              <img src={logoImg} alt="Interloop" className="h-10 w-auto" />
+              <img src={logoImg} alt="Loopy" className="h-10 w-auto" />
             </div>
 
             <h1 className="text-[32px] font-bold gradient-text leading-tight mb-4">
-              Content Management System
+              Loopy Admin
             </h1>
             <p className="text-base text-gray-600 leading-relaxed mb-10">
-              Powerful tools to manage your documentation, landing pages, and navigation.
+              Công cụ nội bộ để quản lý bài học, import nội dung và theo dõi vận hành học tập.
             </p>
 
             {/* Features List */}
@@ -79,24 +79,24 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <h3 className="text-[15px] font-semibold text-gray-900 mb-1">
-                    Content Management
+                    Lesson Operations
                   </h3>
                   <p className="text-[13px] text-gray-600 leading-relaxed">
-                    Create and organize documentation
+                    Tạo và chỉnh nội dung bài học theo flow See-Change-Build
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3.5">
                 <div className="w-9 h-9 bg-gradient-to-br from-primary/15 to-accent/15 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FiGlobe className="w-[18px] h-[18px] text-secondary" />
+                  <FiBookOpen className="w-[18px] h-[18px] text-secondary" />
                 </div>
                 <div>
                   <h3 className="text-[15px] font-semibold text-gray-900 mb-1">
-                    Multilingual Support
+                    Curriculum Control
                   </h3>
                   <p className="text-[13px] text-gray-600 leading-relaxed">
-                    Manage content in multiple languages
+                    Quản lý chapter, lesson, starter code và test cases
                   </p>
                 </div>
               </div>
@@ -106,9 +106,9 @@ export default function LoginPage() {
                   <FiShield className="w-[18px] h-[18px] text-secondary" />
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-semibold text-gray-900 mb-1">Audit & Security</h3>
+                  <h3 className="text-[15px] font-semibold text-gray-900 mb-1">Admin-only Access</h3>
                   <p className="text-[13px] text-gray-600 leading-relaxed">
-                    Track changes with audit logging
+                    Chỉ tài khoản được cấp quyền mới vào được console
                   </p>
                 </div>
               </div>
@@ -118,7 +118,7 @@ export default function LoginPage() {
           {/* Footer Info */}
           <div className="pt-6 border-t border-gray-200">
             <p className="text-[13px] text-gray-600">
-              &copy; {new Date().getFullYear()} Interloop. All rights reserved.
+              &copy; {new Date().getFullYear()} Loopy. Internal console.
             </p>
           </div>
         </div>
@@ -130,9 +130,9 @@ export default function LoginPage() {
           >
             {/* Header */}
             <div className="mb-8">
-              <h2 className="text-[26px] font-bold text-white mb-2">Sign in</h2>
+              <h2 className="text-[26px] font-bold text-white mb-2">Đăng nhập admin</h2>
               <p className="text-sm text-white/90">
-                Enter your credentials to access the admin panel
+                Nhập tài khoản đã được cấp quyền quản trị.
               </p>
             </div>
 
@@ -151,7 +151,7 @@ export default function LoginPage() {
               {/* Email Field */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                  Email address
+                  Email
                 </label>
                 <div className="relative">
                   <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -171,7 +171,7 @@ export default function LoginPage() {
               {/* Password Field */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                  Password
+                  Mật khẩu
                 </label>
                 <div className="relative">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -182,7 +182,7 @@ export default function LoginPage() {
                     onChange={e => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    placeholder="Enter your password"
+                    placeholder="Nhập mật khẩu"
                     className="w-full pl-10 pr-3.5 py-2.5 bg-white/95 border border-white/30 rounded-lg text-sm text-gray-900 outline-none transition-all focus:border-white/60 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.1)] focus:bg-white"
                   />
                 </div>
@@ -197,7 +197,7 @@ export default function LoginPage() {
                     onChange={e => setRemember(e.target.checked)}
                     className="w-4 h-4 mr-2 accent-primary cursor-pointer"
                   />
-                  <span className="text-sm text-white/90">Remember me for 30 days</span>
+                  <span className="text-sm text-white/90">Ghi nhớ đăng nhập trên thiết bị này</span>
                 </label>
               </div>
 
@@ -207,7 +207,7 @@ export default function LoginPage() {
                 disabled={authLoading}
                 className="w-full px-4 py-2.5 text-white font-medium text-sm border-none rounded-lg cursor-pointer bg-white/20 backdrop-blur-[10px] transition-all hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] active:bg-white/25 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                {authLoading ? 'Processing...' : 'Sign in'}
+                {authLoading ? 'Đang xử lý...' : 'Đăng nhập'}
               </button>
             </form>
 
@@ -218,7 +218,7 @@ export default function LoginPage() {
                   href="/"
                   className="text-white no-underline font-medium hover:underline"
                 >
-                  ← Back to Loopy
+                  ← Về trang Loopy
                 </a>
               </p>
             </div>

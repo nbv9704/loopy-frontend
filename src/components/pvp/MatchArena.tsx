@@ -204,7 +204,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 
           {/* Question Progress */}
           <div className="text-center">
-            <p className="text-slate-400 text-sm mb-1">Question</p>
+            <p className="text-slate-400 text-sm mb-1">Câu hỏi</p>
             <p className="text-white font-bold text-lg">
               {match.current_question_index + 1} / {match.question_ids.length}
             </p>
@@ -230,7 +230,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Participants Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-lg font-bold text-white mb-4">Players</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Người chơi</h3>
             {match.participants?.map(participant => (
               <ParticipantCard
                 key={participant.user_id}
@@ -266,7 +266,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Submitted!' : 'Submit Answer'}
+                    {hasSubmitted ? 'Đã gửi' : 'Gửi đáp án'}
                   </button>
                 </>
               )}
@@ -314,7 +314,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Submitted!' : 'Submit Answer'}
+                    {hasSubmitted ? 'Đã gửi' : 'Gửi đáp án'}
                   </button>
                 </>
               )}
@@ -328,7 +328,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Code className="w-5 h-5 text-brand-teal" />
-                      <h3 className="text-lg font-bold text-white">Your Solution</h3>
+                      <h3 className="text-lg font-bold text-white">Lời giải của bạn</h3>
                     </div>
                     <CodeMirror
                       value={code}
@@ -347,7 +347,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Submitted!' : 'Submit Code'}
+                    {hasSubmitted ? 'Đã gửi' : 'Gửi code'}
                   </button>
                 </>
               )}
@@ -379,7 +379,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     </div>
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-4">Round Over!</h2>
+                <h2 className="text-3xl font-bold text-white mb-4">Hết vòng!</h2>
                   <p className="text-brand-teal text-lg font-medium animate-pulse">
                     {isMatchOverCooldown
                       ? t('pvp.match.summarizing')

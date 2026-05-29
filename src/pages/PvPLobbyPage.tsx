@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Trophy, Zap, Users, Clock, Target } from 'lucide-react'
+import { BookOpen, Clock, Lock, Target, Trophy, Users, Zap } from 'lucide-react'
 import Header from '../components/common/Header'
 import Footer from '../components/common/Footer'
 import { useAuth } from '../contexts/AuthContext'
@@ -37,6 +37,8 @@ const PvPLobbyPage: React.FC = () => {
   const [isJoining, setIsJoining] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'1v1' | 'battle_royale'>('1v1')
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
+  const canPlay = Boolean(user?.points && user.points > 0)
+  const preferredLang = user?.preferredLanguage || (user?.learningGoal === 'build_web' ? 'javascript' : user?.learningGoal === 'school_work' ? 'cpp' : 'python')
 
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +53,12 @@ const PvPLobbyPage: React.FC = () => {
     if (!user.onboardingCompleted) {
       toast.error(t('pvp.completeOnboardingFirst'))
       navigate('/onboarding')
+      return
+    }
+
+    if (!canPlay) {
+      toast.error('Hoàn thành bài học đầu tiên để mở khóa PvP')
+      navigate(`/library/${preferredLang}`)
       return
     }
 
@@ -77,6 +85,12 @@ const PvPLobbyPage: React.FC = () => {
     if (!user.onboardingCompleted) {
       toast.error(t('pvp.completeOnboardingFirst'))
       navigate('/onboarding')
+      return
+    }
+
+    if (!canPlay) {
+      toast.error('Hoàn thành bài học đầu tiên để mở khóa PvP')
+      navigate(`/library/${preferredLang}`)
       return
     }
 
@@ -120,28 +134,26 @@ const PvPLobbyPage: React.FC = () => {
 
       <main className="flex-grow pt-32 pb-16 relative z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* PvP Gate: encourage learning first (Roadmap Phase 6) */}
-          {user && (user.points === undefined || user.points === 0) && (
+          {user && !canPlay && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-8 bg-gradient-to-r from-brand-teal/10 via-brand-cyan/5 to-brand-teal/10 border border-brand-teal/30 rounded-2xl p-8 text-center"
             >
-              <div className="text-4xl mb-4">🎓</div>
+              <Lock className="mx-auto mb-4 h-10 w-10 text-brand-teal" />
               <h3 className="text-xl font-bold text-white mb-2">
-                Hoàn thành bài học đầu tiên để mở Thách Đấu!
+                Hoàn thành bài học đầu tiên để mở khóa thử thách.
               </h3>
               <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
                 Bạn cần nắm vững kiến thức cơ bản trước khi đấu trí với người chơi khác. Hãy hoàn thành ít nhất 1 bài học nhé!
               </p>
               <button
                 onClick={() => {
-                  const lang = user.learningGoal === 'build_web' ? 'javascript' : user.learningGoal === 'school_work' ? 'cpp' : 'python'
-                  navigate(`/library/${lang}`)
+                  navigate(`/library/${preferredLang}`)
                 }}
                 className="px-6 py-3 bg-brand-teal text-[#0a0e1a] font-bold rounded-xl cursor-pointer hover:scale-105 transition-all"
               >
-                Bắt đầu học ngay →
+                <BookOpen className="mr-2 inline h-4 w-4" /> Hoàn thành bài đầu tiên
               </button>
             </motion.div>
           )}
@@ -151,12 +163,13 @@ const PvPLobbyPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-3 mb-6">
-              <Zap className="w-12 h-12 text-brand-teal" />
-              <h1 className="text-5xl font-bold text-white">{t('pvp.title')}</h1>
+            <div className="inline-flex items-center gap-3 mb-6 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-brand-teal">
+              <Zap className="w-5 h-5" />
+              <span className="text-sm font-black uppercase tracking-widest">Challenge Hub</span>
             </div>
-            <p className="text-slate-400 text-xl max-w-2xl mx-auto">
-              {t('pvp.subtitle')}
+            <h1 className="mb-5 text-4xl font-black text-white md:text-6xl">Thử thách nhanh sau bài học.</h1>
+            <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-8">
+              PvP giúp bạn luyện phản xạ và củng cố kiến thức sau khi đã có chiến thắng học tập đầu tiên.
             </p>
           </motion.div>
 
@@ -167,7 +180,7 @@ const PvPLobbyPage: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">{t('pvp.selectMode')}</h2>
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Chọn kiểu thử thách</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {/* 1v1 Mode */}
               <button
@@ -181,7 +194,7 @@ const PvPLobbyPage: React.FC = () => {
                 <Users className="w-12 h-12 text-brand-teal mb-4 mx-auto" />
                 <h3 className="text-xl font-bold text-white mb-2">{t('pvp.duel')}</h3>
                 <p className="text-slate-400 text-sm">
-                  {t('pvp.duelDesc')}
+                  Một vòng nhanh để luyện lại kiến thức vừa học.
                 </p>
               </button>
 
@@ -192,9 +205,9 @@ const PvPLobbyPage: React.FC = () => {
                 className="p-8 rounded-2xl border-2 bg-white/5 border-white/10 opacity-50 cursor-not-allowed"
               >
                 <Trophy className="w-12 h-12 text-slate-500 mb-4 mx-auto" />
-                <h3 className="text-xl font-bold text-white mb-2">{t('pvp.battleRoyale')}</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Battle Royale</h3>
                 <p className="text-slate-400 text-sm">
-                  {t('pvp.battleRoyaleDesc')}
+                  Sắp có. Hiện tại Loopy tập trung vào 1v1 để giữ vòng chơi ngắn và dễ học.
                 </p>
               </button>
             </div>
@@ -207,7 +220,7 @@ const PvPLobbyPage: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">{t('pvp.selectDifficulty')}</h2>
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Độ khó đề xuất</h2>
             <div className="flex gap-4 justify-center">
               {(['easy', 'medium', 'hard'] as const).map(difficulty => (
                 <button
@@ -234,7 +247,7 @@ const PvPLobbyPage: React.FC = () => {
           >
             <button
               onClick={handleQuickMatch}
-              disabled={isSearching || isJoining}
+              disabled={isSearching || isJoining || !canPlay}
               className="group relative px-12 py-6 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] text-xl font-bold rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden w-full md:w-auto"
             >
               <span className="relative z-10 flex items-center gap-3">
@@ -246,14 +259,14 @@ const PvPLobbyPage: React.FC = () => {
                 ) : (
                   <>
                     <Zap className="w-6 h-6" />
-                    {t('pvp.quickMatch')}
+                    Bắt đầu thử thách 1v1
                   </>
                 )}
               </span>
               <div className="absolute inset-0 bg-brand-cyan transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
             </button>
 
-            <div className="text-slate-500 font-bold hidden md:block">OR</div>
+            <div className="text-slate-500 font-bold hidden md:block">HOẶC</div>
 
             <form 
               onSubmit={handleJoinRoom}
@@ -261,7 +274,7 @@ const PvPLobbyPage: React.FC = () => {
             >
               <input
                 type="text"
-                placeholder={t('pvp.enterRoomCode')}
+                placeholder="Mã phòng 6 ký tự"
                 value={roomCodeInput}
                 onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
                 maxLength={6}
@@ -269,7 +282,7 @@ const PvPLobbyPage: React.FC = () => {
               />
               <button
                 type="submit"
-                disabled={isJoining || isSearching || !roomCodeInput}
+                disabled={isJoining || isSearching || !roomCodeInput || !canPlay}
                 className="px-8 py-6 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 transition-all disabled:opacity-50"
               >
                 {isJoining ? t('pvp.joining') : t('pvp.joinRoom')}
@@ -286,25 +299,25 @@ const PvPLobbyPage: React.FC = () => {
           >
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Clock className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.realtime')}</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Realtime</h3>
               <p className="text-slate-400 text-sm">
-                {t('pvp.realtimeDesc')}
+                Vòng chơi ngắn, phản hồi nhanh, không làm gián đoạn lộ trình học.
               </p>
             </div>
 
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Target className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.skillBased')}</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Theo kỹ năng</h3>
               <p className="text-slate-400 text-sm">
-                {t('pvp.skillBasedDesc')}
+                Chọn độ khó phù hợp với bài bạn vừa học.
               </p>
             </div>
 
             <div className="p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
               <Trophy className="w-8 h-8 text-brand-teal mb-3" />
-              <h3 className="text-lg font-bold text-white mb-2">{t('pvp.ranked')}</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Ôn sau trận</h3>
               <p className="text-slate-400 text-sm">
-                {t('pvp.rankedDesc')}
+                Kết quả nên giúp bạn biết cần ôn lại phần nào trong Journey Map.
               </p>
             </div>
 

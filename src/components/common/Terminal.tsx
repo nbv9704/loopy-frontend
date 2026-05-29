@@ -10,7 +10,7 @@ const Terminal: React.FC<TerminalProps> = ({ logs, onClear, isActive = true }) =
   const { t } = useTranslation()
   return (
     <div
-      className={`h-48 flex flex-col bg-black border border-brand-teal/20 rounded-card overflow-hidden flex-shrink-0 ${!isActive ? 'opacity-50' : ''}`}
+      className={`h-40 flex flex-col bg-black border border-brand-teal/20 rounded-card overflow-hidden flex-shrink-0 ${!isActive ? 'opacity-50' : ''}`}
     >
       {/* Terminal Header */}
       <div className="bg-slate-950/50 px-4 py-2 flex justify-between items-center border-b border-brand-teal/20">

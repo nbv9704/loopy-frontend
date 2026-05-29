@@ -30,11 +30,11 @@ const ProgressStats = () => {
       if (response.success && response.data) {
         const data = response.data as any
         setProgressStats({
-          completedLessons: data.completed_lessons || 0,
-          totalLessons: data.total_lessons || 99,
-          currentStreak: data.current_streak || 0,
-          longestStreak: data.longest_streak || 0,
-          totalPoints: data.total_points || 0,
+          completedLessons: data.completedLessons || data.completed_lessons || 0,
+          totalLessons: data.totalLessons || data.total_lessons || 99,
+          currentStreak: data.currentStreak || data.current_streak || 0,
+          longestStreak: data.longestStreak || data.longest_streak || 0,
+          totalPoints: data.totalPoints || data.total_points || 0,
           badges: data.badges || [],
         })
 
@@ -42,8 +42,8 @@ const ProgressStats = () => {
         const dates: string[] = []
         if (Array.isArray(data.progress)) {
           for (const p of data.progress) {
-            if (p.completed_at) dates.push(p.completed_at)
-            if (p.updated_at) dates.push(p.updated_at)
+            if (p.completedAt || p.completed_at) dates.push(p.completedAt || p.completed_at)
+            if (p.updatedAt || p.updated_at) dates.push(p.updatedAt || p.updated_at)
           }
         }
         setActivityDates(dates)

@@ -21,8 +21,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation()
   const { isAuthenticated, isAdmin, isLoading } = useAdminAuth()
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
+  // Show loading spinner only on initial load (when not yet authenticated and loading)
+  // Don't show loading spinner if already authenticated (to avoid unmounting UI during background polling)
+  if (isLoading && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">

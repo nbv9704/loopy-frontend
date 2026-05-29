@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { User, LogOut, Settings, Flame, Star } from 'lucide-react'
+import { Flame, LogOut, Menu, Settings, Star, User, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -27,6 +27,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -44,6 +45,7 @@ const Header: React.FC = () => {
   const handleSignOut = async () => {
     await signOut()
     setShowDropdown(false)
+    setShowMobileMenu(false)
     navigate('/')
   }
 
@@ -54,6 +56,15 @@ const Header: React.FC = () => {
     }
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
+
+  const getItemPath = (item: (typeof NAV_ITEMS)[number]) => {
+    if (item.id === 'learn' && user?.onboardingCompleted) {
+      return `/library/${user.preferredLanguage || goalToLang[user.learningGoal || ''] || 'javascript'}`
+    }
+    return item.path
+  }
+
+  const visibleNavItems = NAV_ITEMS.filter(item => !(item.id === 'pvp' && !user))
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#0a0e1a]/90 backdrop-blur-xl border-b border-white/10 z-50">
@@ -75,10 +86,10 @@ const Header: React.FC = () => {
 
             {/* Navigation Links */}
             <nav className="hidden md:flex items-center gap-2">
-              {NAV_ITEMS.filter(item => !(item.id === 'pvp' && !user)).map(item => (
+              {visibleNavItems.map(item => (
                 <Link
                   key={item.id}
-                  to={item.id === 'learn' && user?.onboardingCompleted ? `/library/${user.preferredLanguage || goalToLang[user.learningGoal || ''] || 'javascript'}` : item.path}
+                  to={getItemPath(item)}
                   className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
                     isActive(item.path)
                       ? 'text-brand-teal bg-brand-teal/10'
@@ -182,8 +193,81 @@ const Header: React.FC = () => {
                 <span className="relative z-10">{t('auth.login')}</span>
               </Link>
             )}
+
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(value => !value)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition-colors hover:border-brand-teal/40 hover:text-brand-teal md:hidden"
+              aria-label="Mở menu"
+              aria-expanded={showMobileMenu}
+            >
+              {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
+
+        {showMobileMenu && (
+          <div className="mt-4 rounded-2xl border border-white/10 bg-[#0a0e1a]/95 p-3 shadow-2xl md:hidden">
+            <nav className="space-y-1">
+              {visibleNavItems.map(item => (
+                <Link
+                  key={item.id}
+                  to={getItemPath(item)}
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`block rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-brand-teal/10 text-brand-teal'
+                      : 'text-slate-300 hover:bg-white/5 hover:text-brand-teal'
+                  }`}
+                >
+                  {t(item.labelKey)}
+                </Link>
+              ))}
+            </nav>
+
+            {user ? (
+              <div className="mt-3 border-t border-white/10 pt-3">
+                <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-3">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand-teal to-brand-cyan text-sm font-bold text-white">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      user.displayName?.[0]?.toUpperCase() || user.email[0].toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-white">{user.displayName || 'User'}</p>
+                    <p className="truncate text-xs text-slate-400">{user.email}</p>
+                  </div>
+                </div>
+                <Link
+                  to="/settings"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-brand-teal"
+                >
+                  <Settings className="h-4 w-4" />
+                  {t('nav.settings')}
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-red-500/5 hover:text-red-400"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t('auth.logout')}
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setShowMobileMenu(false)}
+                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-4 py-3 text-sm font-black text-[#0a0e1a]"
+              >
+                <User className="h-4 w-4" />
+                {t('auth.login')}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </header>
   )

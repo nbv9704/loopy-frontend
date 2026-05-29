@@ -8,52 +8,42 @@ interface StatCardProps {
     value: number
     isPositive: boolean
   }
-  color?: 'teal' | 'cyan' | 'blue' | 'purple' | 'green' | 'yellow'
+  color?: 'teal' | 'cyan' | 'blue' | 'purple' | 'green' | 'yellow' | 'amber' | 'slate'
 }
 
 const colorClasses = {
-  teal: 'from-brand-teal/20 to-brand-teal/5 text-brand-teal',
-  cyan: 'from-brand-cyan/20 to-brand-cyan/5 text-brand-cyan',
-  blue: 'from-blue-500/20 to-blue-500/5 text-blue-400',
-  purple: 'from-purple-500/20 to-purple-500/5 text-purple-400',
-  green: 'from-green-500/20 to-green-500/5 text-green-400',
-  yellow: 'from-yellow-500/20 to-yellow-500/5 text-yellow-400',
+  teal: 'bg-teal-50 text-teal-700 ring-teal-100',
+  cyan: 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+  blue: 'bg-blue-50 text-blue-700 ring-blue-100',
+  purple: 'bg-purple-50 text-purple-700 ring-purple-100',
+  green: 'bg-green-50 text-green-700 ring-green-100',
+  yellow: 'bg-amber-50 text-amber-700 ring-amber-100',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-100',
+  slate: 'bg-slate-50 text-slate-700 ring-slate-100',
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, trend, color = 'teal' }) => {
   return (
-    <div className="relative group">
-      {/* Glow effect on hover */}
-      <div
-        className={`absolute -inset-0.5 bg-gradient-to-r ${colorClasses[color]} rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300`}
-      />
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-300">
+      <div className={`mb-5 inline-flex rounded-lg p-3 ring-1 ${colorClasses[color]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
 
-      {/* Card content */}
-      <div className="relative bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all duration-300">
-        {/* Icon */}
-        <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} mb-4`}>
-          <Icon className="w-6 h-6" />
-        </div>
+      <p className="mb-2 text-sm font-bold text-slate-500">{label}</p>
 
-        {/* Label */}
-        <p className="text-slate-400 text-sm font-medium mb-1">{label}</p>
+      <div className="flex items-end justify-between gap-3">
+        <h3 className="text-3xl font-black tracking-tight text-slate-950">{value}</h3>
 
-        {/* Value */}
-        <div className="flex items-end justify-between">
-          <h3 className="text-3xl font-bold text-white">{value}</h3>
-
-          {/* Trend (optional) */}
-          {trend && (
-            <span
-              className={`text-sm font-semibold ${
-                trend.isPositive ? 'text-green-400' : 'text-red-400'
-              }`}
-            >
-              {trend.isPositive ? '+' : ''}
-              {trend.value}%
-            </span>
-          )}
-        </div>
+        {trend && (
+          <span
+            className={`rounded-full px-2 py-1 text-xs font-black ${
+              trend.isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}
+          >
+            {trend.isPositive ? '+' : ''}
+            {trend.value}%
+          </span>
+        )}
       </div>
     </div>
   )

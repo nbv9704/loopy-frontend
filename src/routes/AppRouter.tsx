@@ -18,20 +18,33 @@ const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
 const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
 const SampleLessonPage = lazy(() => import('../pages/SampleLessonPage'))
 const LibraryPage = lazy(() => import('../pages/LibraryPage'))
+const V2LandingPage = lazy(() => import('../pages/v2/V2LandingPage'))
+const V2LanguagesPage = lazy(() => import('../pages/v2/V2LanguagesPage'))
+const V2LanguageDetailPage = lazy(() => import('../pages/v2/V2LanguageDetailPage'))
+const V2LibraryPage = lazy(() => import('../pages/v2/V2LibraryPage'))
+const V2LearnPage = lazy(() => import('../pages/v2/V2LearnPage'))
+const V2PlaygroundPage = lazy(() => import('../pages/v2/V2PlaygroundPage'))
+const V2DocsPage = lazy(() => import('../pages/v2/V2DocsPage'))
+const V2ProfilePage = lazy(() => import('../pages/v2/V2ProfilePage'))
+const V2OnboardingPage = lazy(() => import('../pages/v2/V2OnboardingPage'))
 
 // Lazy load admin pages for code splitting
 const AdminLoginPage = lazy(() => import('../pages/admin/LoginPage'))
 const AdminDashboardPage = lazy(() => import('../pages/admin/DashboardPage'))
 const AdminBulkImportPage = lazy(() => import('../pages/admin/BulkImportPage'))
+const AdminLessonsPage = lazy(() => import('../pages/admin/LessonsPage'))
 const AdminLessonEditorPage = lazy(() => import('../pages/admin/LessonEditorPage'))
+const AdminSubmissionsPage = lazy(() => import('../pages/admin/SubmissionsPage'))
+const AdminAuditLogsPage = lazy(() => import('../pages/admin/AuditLogsPage'))
+const AdminImportHistoryPage = lazy(() => import('../pages/admin/ImportHistoryPage'))
 
 // Loading fallback component for lazy-loaded admin pages
 function AdminLoadingFallback() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0a0e1a]">
+    <div className="flex items-center justify-center min-h-screen bg-[#f4f7fb]">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-teal mb-4"></div>
-        <p className="text-slate-400 text-lg">Loading admin panel...</p>
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mb-4"></div>
+        <p className="text-slate-600 text-lg">Loading admin panel...</p>
       </div>
     </div>
   )
@@ -76,6 +89,18 @@ const AppRouter: React.FC = () => {
         />
         <Route path="/sample-lesson" element={<Suspense fallback={<PageLoadingFallback />}><SampleLessonPage /></Suspense>} />
 
+        {/* V2 sandbox routes */}
+        <Route path="/v2" element={<Suspense fallback={<PageLoadingFallback />}><V2LandingPage /></Suspense>} />
+        <Route path="/v2/landing" element={<Suspense fallback={<PageLoadingFallback />}><V2LandingPage /></Suspense>} />
+        <Route path="/v2/languages" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguagesPage /></Suspense>} />
+        <Route path="/v2/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguageDetailPage /></Suspense>} />
+        <Route path="/v2/library" element={<Suspense fallback={<PageLoadingFallback />}><V2LibraryPage /></Suspense>} />
+        <Route path="/v2/learn" element={<Suspense fallback={<PageLoadingFallback />}><V2LearnPage /></Suspense>} />
+        <Route path="/v2/playground" element={<Suspense fallback={<PageLoadingFallback />}><V2PlaygroundPage /></Suspense>} />
+        <Route path="/v2/docs" element={<Suspense fallback={<PageLoadingFallback />}><V2DocsPage /></Suspense>} />
+        <Route path="/v2/profile" element={<Suspense fallback={<PageLoadingFallback />}><V2ProfilePage /></Suspense>} />
+        <Route path="/v2/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><V2OnboardingPage /></Suspense>} />
+
         {/* PvP routes */}
         <Route path="/pvp" element={<Suspense fallback={<PageLoadingFallback />}><PvPLobbyPage /></Suspense>} />
         <Route path="/pvp/match/:roomCode" element={<Suspense fallback={<PageLoadingFallback />}><PvPMatchPage /></Suspense>} />
@@ -101,8 +126,12 @@ const AppRouter: React.FC = () => {
                     <Route path="/" element={<AdminDashboardPage />} />
                     <Route path="dashboard" element={<AdminDashboardPage />} />
                     <Route path="import" element={<AdminBulkImportPage />} />
+                    <Route path="import-history" element={<AdminImportHistoryPage />} />
+                    <Route path="lessons" element={<AdminLessonsPage />} />
                     <Route path="lessons/new" element={<AdminLessonEditorPage />} />
                     <Route path="lessons/:id" element={<AdminLessonEditorPage />} />
+                    <Route path="submissions" element={<AdminSubmissionsPage />} />
+                    <Route path="audit-logs" element={<AdminAuditLogsPage />} />
                   </Routes>
                 </Suspense>
               </AdminLayout>

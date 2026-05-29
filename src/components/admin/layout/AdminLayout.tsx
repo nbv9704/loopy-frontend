@@ -8,16 +8,11 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <div className="admin-layout min-h-screen bg-gray-50">
-      {/* Sidebar - Fixed left */}
+    <div className="admin-layout min-h-screen bg-[#f4f7fb] text-slate-900">
       <Sidebar />
-
-      {/* Header - Fixed top, offset by sidebar width */}
       <Header />
-
-      {/* Main Content - Offset by sidebar and header */}
       <main className="ml-64 pt-16">
-        <div className="p-8">{children}</div>
+        <div className="mx-auto max-w-[1500px] p-6 lg:p-8">{children}</div>
       </main>
     </div>
   )

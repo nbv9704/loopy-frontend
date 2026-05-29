@@ -21,6 +21,10 @@ interface ApiResponse<T> {
   }
 }
 
+interface ApiRequestOptions extends RequestInit {
+  suppressAuthToast?: boolean
+}
+
 export interface ExecutionResult {
   output: string
   executionTime: number
@@ -32,6 +36,8 @@ export interface LessonCheckResult {
   score: number
   output: string
   hint: string | null
+  validationType?: string
+  gradingMode?: string
   checks: Array<{
     label: string
     passed: boolean
@@ -53,22 +59,23 @@ class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  public async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  public async request<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+    const { suppressAuthToast, ...fetchOptions } = options
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
+      ...(fetchOptions.headers as Record<string, string>),
     }
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        ...options,
+        ...fetchOptions,
         headers,
         credentials: 'include', // CRITICAL: Send cookies with every request
       })
 
       // Handle HTTP errors with interceptor logic
       if (!response.ok) {
-        await this.handleHttpError(response)
+        await this.handleHttpError(response, endpoint, Boolean(suppressAuthToast))
       }
 
       const data = await response.json()
@@ -91,14 +98,22 @@ class ApiClient {
    * HTTP Error Interceptor
    * Handles common HTTP errors globally with appropriate user feedback
    */
-  private async handleHttpError(response: Response): Promise<void> {
+  private async handleHttpError(
+    response: Response,
+    endpoint: string,
+    suppressAuthToast: boolean
+  ): Promise<void> {
     const status = response.status
+    const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+    const isAuthBootstrap = endpoint === '/api/auth/me' || endpoint === '/api/auth/refresh'
 
     switch (status) {
       case 401:
         // Unauthorized - only show error message, don't redirect
         // Let individual components handle auth requirements
-        toast.error('Phiên đăng nhập đã hết hạn', { id: 'session-expired-toast' })
+        if (!suppressAuthToast && !isAdminRoute && !isAuthBootstrap) {
+          toast.error('Phiên đăng nhập đã hết hạn', { id: 'session-expired-toast' })
+        }
         break
 
       case 403:
@@ -146,7 +161,7 @@ class ApiClient {
   }
 
   async getCurrentUser() {
-    return this.request('/api/auth/me')
+    return this.request('/api/auth/me', { suppressAuthToast: true })
   }
 
   async refreshToken(refreshToken?: string) {
@@ -155,6 +170,7 @@ class ApiClient {
     return this.request('/api/auth/refresh', {
       method: 'POST',
       body: refreshToken ? JSON.stringify({ refreshToken }) : JSON.stringify({}),
+      suppressAuthToast: true,
     })
   }
 

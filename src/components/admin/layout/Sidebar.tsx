@@ -2,27 +2,36 @@ import { NavLink } from 'react-router-dom'
 import {
   FiHome,
   FiFileText,
+  FiBookOpen,
+  FiActivity,
   FiStar,
+  FiClock,
+  FiUpload,
 } from 'react-icons/fi'
 import { cn } from '../../../utils/admin/cn'
 import logoImg from '../../../assets/images/logos/logo-256x256.png'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: FiHome },
-  { name: 'Bulk Import', href: '/admin/import', icon: FiFileText, section: 'Content' },
+  { name: 'Lessons', href: '/admin/lessons', icon: FiBookOpen, section: 'Content' },
+  { name: 'Bulk Import', href: '/admin/import', icon: FiFileText },
+  { name: 'Import History', href: '/admin/import-history', icon: FiUpload },
   { name: 'New Lesson', href: '/admin/lessons/new', icon: FiStar },
+  { name: 'Submissions', href: '/admin/submissions', icon: FiActivity, section: 'Monitoring' },
+  { name: 'Audit Logs', href: '/admin/audit-logs', icon: FiClock, section: 'System' },
 ]
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 bg-gradient-to-b from-dark to-secondary text-white flex flex-col h-screen fixed left-0 top-0 scrollbar-thin">
+    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-slate-200 bg-white text-slate-900 shadow-sm scrollbar-thin">
       {/* Logo */}
-      <div className="p-6 border-b border-white/10">
-        <img src={logoImg} alt="Interloop" className="h-8 w-auto" />
+      <div className="border-b border-slate-200 p-6">
+        <img src={logoImg} alt="Loopy Admin" className="h-8 w-auto" />
+        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-slate-500">Admin Console</p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {navigation.map((item, index) => {
           const showSection =
             item.section && (index === 0 || navigation[index - 1].section !== item.section)
@@ -30,7 +39,7 @@ export default function Sidebar() {
           return (
             <div key={item.name}>
               {showSection && (
-                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white/40 mt-2">
+                <div className="mt-3 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   {item.section}
                 </div>
               )}
@@ -38,11 +47,11 @@ export default function Sidebar() {
                 to={item.href}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all relative',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-dark',
+                    'relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2',
                     isActive
-                      ? 'bg-primary/15 text-white font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-3/5 before:bg-primary before:rounded-r'
-                      : 'text-white/75 hover:bg-white/10 hover:text-white hover:translate-x-0.5'
+                      ? 'bg-teal-50 text-teal-800 shadow-sm ring-1 ring-teal-100 before:absolute before:left-0 before:top-1/2 before:h-3/5 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:bg-teal-600'
+                      : 'text-slate-600 hover:translate-x-0.5 hover:bg-slate-50 hover:text-slate-950'
                   )
                 }
               >
@@ -55,9 +64,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/10">
-        <p className="text-xs text-white/60 text-center">
-          &copy; {new Date().getFullYear()} Interloop
+      <div className="border-t border-slate-200 p-4">
+        <p className="text-center text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} Loopy
         </p>
       </div>
     </aside>
