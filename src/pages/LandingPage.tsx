@@ -60,7 +60,7 @@ const LandingPage: React.FC = () => {
         navigate('/onboarding')
       }
     } else {
-      navigate('/sample-lesson')
+      navigate('/onboarding')
     }
   }
 

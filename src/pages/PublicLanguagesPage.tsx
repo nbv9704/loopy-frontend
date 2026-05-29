@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Code2, Compass, Cpu, GraduationCap, Globe, HelpCircle, LayoutTemplate, PlayCircle } from 'lucide-react'
+import { ArrowRight, Code2, Compass, Cpu, GraduationCap, Globe, HelpCircle, LayoutTemplate } from 'lucide-react'
 import { api } from '../lib/api'
 import Header from '../components/common/Header'
 import SEO from '../components/common/SEO'
@@ -33,7 +33,6 @@ const goalCards = [
   { icon: HelpCircle, title: 'Mình chưa biết gì', desc: 'Bắt đầu nhẹ với Python và bài học đầu tiên trong 5 phút.', target: '/languages/python' },
   { icon: LayoutTemplate, title: 'Mình muốn làm web', desc: 'Đi theo JavaScript để tạo tương tác trong trình duyệt.', target: '/languages/javascript' },
   { icon: GraduationCap, title: 'Mình học ở trường', desc: 'Chọn C++ để luyện tư duy bài tập và thuật toán cơ bản.', target: '/languages/cpp' },
-  { icon: PlayCircle, title: 'Mình chỉ muốn thử', desc: 'Không cần chọn vội. Làm bài thử miễn phí trước.', target: '/sample-lesson' },
 ]
 
 const PublicLanguagesPage: React.FC = () => {

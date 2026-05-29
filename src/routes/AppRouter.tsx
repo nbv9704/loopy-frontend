@@ -30,7 +30,6 @@ const V2OnboardingPage = lazy(() => import('../pages/v2/V2OnboardingPage'))
 // Other pages
 const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
 const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
-const SampleLessonPage = lazy(() => import('../pages/SampleLessonPage'))
 
 // Lazy load admin pages for code splitting
 const AdminLoginPage = lazy(() => import('../pages/admin/LoginPage'))
@@ -94,8 +93,7 @@ const AppRouter: React.FC = () => {
             </UserProtectedRoute>
           }
         />
-        <Route path="/sample-lesson" element={<Suspense fallback={<PageLoadingFallback />}><SampleLessonPage /></Suspense>} />
-
+        
         {/* Legacy routes - kept for backward compatibility, can be removed later */}
         <Route path="/legacy/landing" element={<Suspense fallback={<PageLoadingFallback />}><LandingPage /></Suspense>} />
         <Route path="/legacy/languages" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguagesPage /></Suspense>} />

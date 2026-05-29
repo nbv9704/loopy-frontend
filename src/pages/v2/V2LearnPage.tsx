@@ -195,8 +195,7 @@ const V2LearnPage: React.FC = () => {
               Nếu hướng này ổn, bước sau nên nối v2 vào data thật hoặc chọn page production đầu tiên để thay thế dần.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to="/sample-lesson">So với sample hiện tại</V2PressedButton>
-              <V2PressedButton to="/library/javascript" variant="secondary">Xem Library</V2PressedButton>
+              <V2PressedButton to="/library/javascript">Xem Library</V2PressedButton>
             </div>
           </div>
         </section>

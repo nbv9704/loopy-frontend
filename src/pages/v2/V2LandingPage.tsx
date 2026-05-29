@@ -95,7 +95,7 @@ const V2LandingPage: React.FC = () => {
                 Loopy dẫn bạn qua một flow rõ ràng: quan sát code mẫu, sửa một dòng, chạy thử output, kiểm tra bằng test case, rồi debug lỗi nhỏ như khi lập trình thật.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to="/sample-lesson"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
+                <V2PressedButton to="/onboarding"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
                 <V2PressedButton to="/languages" variant="secondary">Xem lộ trình</V2PressedButton>
               </div>
               <div className="mt-8 flex flex-wrap gap-2">
@@ -179,7 +179,7 @@ const V2LandingPage: React.FC = () => {
             <h2 className="text-4xl font-black tracking-tight">Bắt đầu bằng một bài nhỏ.</h2>
             <p className="mt-4 max-w-2xl text-slate-600">Nếu hướng v2 này ổn, ta sẽ tiếp tục dựng `/v2/library` và `/v2/learn` trước khi thay UI thật.</p>
             <div className="mt-7">
-              <V2PressedButton to="/sample-lesson">Thử sample lesson</V2PressedButton>
+              <V2PressedButton to="/onboarding">Tìm lộ trình phù hợp</V2PressedButton>
             </div>
           </div>
         </section>

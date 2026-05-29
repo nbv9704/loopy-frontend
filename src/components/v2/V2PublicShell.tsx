@@ -39,7 +39,7 @@ export function V2PublicShell({ children }: { children: ReactNode }) {
             <Link to="/v2/landing#faq" className="hover:text-slate-950">FAQ</Link>
           </nav>
 
-          <V2PressedButton to="/sample-lesson">Thử bài đầu</V2PressedButton>
+          <V2PressedButton to="/onboarding">Tìm lộ trình</V2PressedButton>
         </div>
       </header>
 
@@ -63,7 +63,6 @@ export function V2PublicShell({ children }: { children: ReactNode }) {
               <Link to="/v2/docs">Docs v2</Link>
               <Link to="/v2/profile">Profile v2</Link>
               <Link to="/v2/onboarding">Onboarding v2</Link>
-              <Link to="/sample-lesson">Sample lesson</Link>
               <Link to="/playground">Playground hiện tại</Link>
             </div>
           </div>

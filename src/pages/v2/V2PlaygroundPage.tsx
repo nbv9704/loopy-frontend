@@ -184,7 +184,7 @@ const V2PlaygroundPage: React.FC = () => {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <V2PressedButton to="/library/javascript">Vào Journey Map</V2PressedButton>
-              <V2PressedButton to="/sample-lesson" variant="secondary">Thử lesson mẫu</V2PressedButton>
+              <V2PressedButton to="/onboarding" variant="secondary">Tìm lộ trình</V2PressedButton>
             </div>
           </div>
         </section>

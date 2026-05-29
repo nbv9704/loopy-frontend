@@ -176,7 +176,7 @@ const V2LanguagesPage: React.FC = () => {
                 Catalog v2 tập trung vào câu hỏi của người mới: "mình nên bắt đầu ở đâu?". Mỗi lộ trình nói rõ phù hợp với ai và bài đầu tiên sẽ làm gì.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to="/sample-lesson"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
+                <V2PressedButton to="/onboarding"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
                 <V2PressedButton to="/onboarding" variant="secondary">Tìm lộ trình phù hợp</V2PressedButton>
               </div>
             </div>
@@ -267,7 +267,7 @@ const V2LanguagesPage: React.FC = () => {
               </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <V2PressedButton to="/onboarding">Tìm lộ trình phù hợp</V2PressedButton>
-                <V2PressedButton to="/sample-lesson" variant="secondary">Bỏ qua, học thử ngay</V2PressedButton>
+                <V2PressedButton to="/onboarding" variant="secondary">Bỏ qua, học thử ngay</V2PressedButton>
               </div>
             </div>
           </div>

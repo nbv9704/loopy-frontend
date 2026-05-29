@@ -25,7 +25,7 @@ const AuthPage: React.FC = () => {
   const from = typeof fromValue === 'string' ? fromValue : fromValue?.pathname || '/'
 
   const contextCopy = (() => {
-    if (from.includes('sample-lesson')) return 'Lưu bài học đầu tiên của bạn và học tiếp đúng lộ trình.'
+    if (from.includes('onboarding')) return 'Lưu bài học đầu tiên của bạn và học tiếp đúng lộ trình.'
     if (from.includes('pvp')) return 'Đăng nhập để tham gia thử thách và lưu kết quả.'
     if (from.includes('library') || from.includes('learn')) return 'Đăng nhập để lưu tiến độ và tiếp tục bài đang học.'
     if (from.includes('onboarding')) return 'Tạo lộ trình học phù hợp với mục tiêu của bạn.'
