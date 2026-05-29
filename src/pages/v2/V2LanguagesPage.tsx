@@ -1,57 +1,77 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowRight, FiCheckCircle, FiCode, FiCompass, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiHelpCircle, FiLayers, FiPlay, FiTerminal } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
+import { api } from '../../lib/api'
 
-const languageCards = [
-  {
-    name: 'Python',
-    slug: 'python',
-    icon: FiCpu,
-    accent: 'bg-amber-200 text-amber-950 border-amber-300',
+type LanguageCard = {
+  name: string
+  slug: string
+  icon: typeof FiCpu
+  accent: string
+  fit: string
+  next: string
+}
+
+// Icon mapping for languages
+const iconMap: Record<string, typeof FiCpu> = {
+  python: FiCpu,
+  javascript: FiCode,
+  html: FiGlobe,
+  css: FiLayers,
+  sql: FiDatabase,
+  git: FiGitBranch,
+  cpp: FiCpu,
+  c: FiCpu,
+}
+
+// Accent color mapping for languages
+const accentMap: Record<string, string> = {
+  python: 'bg-amber-200 text-amber-950 border-amber-300',
+  javascript: 'bg-yellow-200 text-yellow-950 border-yellow-300',
+  html: 'bg-orange-200 text-orange-950 border-orange-300',
+  css: 'bg-sky-200 text-sky-950 border-sky-300',
+  sql: 'bg-emerald-200 text-emerald-950 border-emerald-300',
+  git: 'bg-rose-200 text-rose-950 border-rose-300',
+  cpp: 'bg-purple-200 text-purple-950 border-purple-300',
+  c: 'bg-indigo-200 text-indigo-950 border-indigo-300',
+}
+
+// Language descriptions
+const descriptionMap: Record<string, { fit: string; next: string }> = {
+  python: {
     fit: 'Bạn mới bắt đầu và muốn thấy kết quả nhanh.',
     next: 'In output, biến, điều kiện, vòng lặp.',
   },
-  {
-    name: 'JavaScript',
-    slug: 'javascript',
-    icon: FiCode,
-    accent: 'bg-yellow-200 text-yellow-950 border-yellow-300',
+  javascript: {
     fit: 'Bạn muốn hiểu web tương tác và logic frontend.',
     next: 'Console, biến, function, DOM cơ bản.',
   },
-  {
-    name: 'HTML',
-    slug: 'html',
-    icon: FiGlobe,
-    accent: 'bg-orange-200 text-orange-950 border-orange-300',
+  html: {
     fit: 'Bạn muốn dựng cấu trúc trang web đầu tiên.',
     next: 'Tag, heading, link, form và semantic layout.',
   },
-  {
-    name: 'CSS',
-    slug: 'css',
-    icon: FiLayers,
-    accent: 'bg-sky-200 text-sky-950 border-sky-300',
+  css: {
     fit: 'Bạn muốn biến trang thô thành giao diện rõ ràng.',
     next: 'Selector, box model, flex, responsive.',
   },
-  {
-    name: 'SQL',
-    slug: 'sql',
-    icon: FiDatabase,
-    accent: 'bg-emerald-200 text-emerald-950 border-emerald-300',
+  sql: {
     fit: 'Bạn muốn hỏi dữ liệu bằng câu lệnh ngắn.',
     next: 'SELECT, WHERE, JOIN, GROUP BY.',
   },
-  {
-    name: 'Git',
-    slug: 'git',
-    icon: FiGitBranch,
-    accent: 'bg-rose-200 text-rose-950 border-rose-300',
+  git: {
     fit: 'Bạn muốn lưu phiên bản code mà không sợ làm hỏng.',
     next: 'Init, add, commit, branch, merge.',
   },
-]
+  cpp: {
+    fit: 'Bạn muốn học lập trình hệ thống và hiệu năng cao.',
+    next: 'Biến, con trỏ, class, STL cơ bản.',
+  },
+  c: {
+    fit: 'Bạn muốn hiểu lập trình cấp thấp và bộ nhớ.',
+    next: 'Biến, mảng, con trỏ, struct cơ bản.',
+  },
+}
 
 const howItWorks = [
   {
@@ -71,11 +91,11 @@ const howItWorks = [
   },
 ]
 
-function LanguageCard({ language }: { language: typeof languageCards[number] }) {
+function LanguageCard({ language }: { language: LanguageCard }) {
   const Icon = language.icon
 
   return (
-    <Link to={`/v2/languages/${language.slug}`} className="group rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl hover:shadow-slate-200/80">
+    <Link to={`/languages/${language.slug}`} className="group rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl hover:shadow-slate-200/80">
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border text-2xl shadow-[0_4px_0_rgba(15,23,42,0.12)] ${language.accent}`}>
           <Icon />
@@ -98,6 +118,47 @@ function LanguageCard({ language }: { language: typeof languageCards[number] }) 
 }
 
 const V2LanguagesPage: React.FC = () => {
+  const [languages, setLanguages] = useState<LanguageCard[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await api.getLanguages()
+        
+        if (response.success && response.data && Array.isArray(response.data)) {
+          // Transform API response to LanguageCard format
+          const cards: LanguageCard[] = response.data.map((lang: any) => {
+            const slug = lang.slug || lang.name?.toLowerCase() || ''
+            const description = descriptionMap[slug] || { fit: 'Học lập trình với Loopy.', next: 'Bắt đầu từ bài đầu tiên.' }
+            
+            return {
+              name: lang.name || 'Unknown',
+              slug: slug,
+              icon: iconMap[slug] || FiCode,
+              accent: accentMap[slug] || 'bg-slate-200 text-slate-950 border-slate-300',
+              fit: description.fit,
+              next: description.next,
+            }
+          })
+          setLanguages(cards)
+        } else {
+          setError('Không thể tải danh sách lộ trình')
+        }
+      } catch (err) {
+        console.error('Error fetching languages:', err)
+        setError('Lỗi khi tải danh sách lộ trình')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLanguages()
+  }, [])
+
   return (
     <V2PublicShell>
       <main>
@@ -112,7 +173,7 @@ const V2LanguagesPage: React.FC = () => {
                 Chọn ngôn ngữ theo mục tiêu, không theo danh sách dài.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                Catalog v2 tập trung vào câu hỏi của người mới: “mình nên bắt đầu ở đâu?”. Mỗi lộ trình nói rõ phù hợp với ai và bài đầu tiên sẽ làm gì.
+                Catalog v2 tập trung vào câu hỏi của người mới: "mình nên bắt đầu ở đâu?". Mỗi lộ trình nói rõ phù hợp với ai và bài đầu tiên sẽ làm gì.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <V2PressedButton to="/sample-lesson"><FiPlay /> Thử bài đầu tiên</V2PressedButton>
@@ -144,15 +205,27 @@ const V2LanguagesPage: React.FC = () => {
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Browse languages</div>
-                <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Các lộ trình sandbox</h2>
+                <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Các lộ trình có sẵn</h2>
               </div>
-              <p className="max-w-md text-sm leading-6 text-slate-600">
-                Danh sách này dùng mock data để test UI v2. Chưa claim số lượng course, certificate hoặc rating.
-              </p>
             </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {languageCards.map(language => <LanguageCard key={language.slug} language={language} />)}
-            </div>
+            
+            {loading && (
+              <div className="mt-8 text-center text-slate-600">
+                Đang tải danh sách lộ trình...
+              </div>
+            )}
+            
+            {error && (
+              <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+                {error}
+              </div>
+            )}
+            
+            {!loading && languages.length > 0 && (
+              <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {languages.map(language => <LanguageCard key={language.slug} language={language} />)}
+              </div>
+            )}
           </div>
         </section>
 

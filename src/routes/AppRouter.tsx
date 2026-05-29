@@ -7,6 +7,7 @@ import UserProtectedRoute from '../components/UserProtectedRoute'
 import AdminLayout from '../components/admin/layout/AdminLayout'
 
 // Lazy load heavier product pages for code splitting
+// Legacy pages (kept for backward compatibility)
 const DocsPage = lazy(() => import('../pages/DocsPage'))
 const OnboardingPage = lazy(() => import('../pages/OnboardingPage'))
 const PublicLanguagesPage = lazy(() => import('../pages/PublicLanguagesPage'))
@@ -14,10 +15,9 @@ const PublicLanguageDetailPage = lazy(() => import('../pages/PublicLanguageDetai
 const LearnPage = lazy(() => import('../pages/LearnPage'))
 const PlaygroundPage = lazy(() => import('../pages/PlaygroundPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage'))
-const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
-const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
-const SampleLessonPage = lazy(() => import('../pages/SampleLessonPage'))
 const LibraryPage = lazy(() => import('../pages/LibraryPage'))
+
+// V2 production pages
 const V2LandingPage = lazy(() => import('../pages/v2/V2LandingPage'))
 const V2LanguagesPage = lazy(() => import('../pages/v2/V2LanguagesPage'))
 const V2LanguageDetailPage = lazy(() => import('../pages/v2/V2LanguageDetailPage'))
@@ -27,6 +27,11 @@ const V2PlaygroundPage = lazy(() => import('../pages/v2/V2PlaygroundPage'))
 const V2DocsPage = lazy(() => import('../pages/v2/V2DocsPage'))
 const V2ProfilePage = lazy(() => import('../pages/v2/V2ProfilePage'))
 const V2OnboardingPage = lazy(() => import('../pages/v2/V2OnboardingPage'))
+
+// Other pages
+const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
+const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
+const SampleLessonPage = lazy(() => import('../pages/SampleLessonPage'))
 
 // Lazy load admin pages for code splitting
 const AdminLoginPage = lazy(() => import('../pages/admin/LoginPage'))
@@ -67,18 +72,39 @@ const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Public routes - V2 production */}
+        <Route path="/" element={<Suspense fallback={<PageLoadingFallback />}><V2LandingPage /></Suspense>} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/docs" element={<Suspense fallback={<PageLoadingFallback />}><DocsPage /></Suspense>} />
-        <Route path="/languages" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguagesPage /></Suspense>} />
-        <Route path="/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguageDetailPage /></Suspense>} />
-        <Route path="/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><OnboardingPage /></Suspense>} />
-        <Route path="/library/:language" element={<Suspense fallback={<PageLoadingFallback />}><LibraryPage /></Suspense>} />
-        <Route path="/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><LearnPage /></Suspense>} />
-        <Route path="/playground" element={<Suspense fallback={<PageLoadingFallback />}><PlaygroundPage /></Suspense>} />
+        <Route path="/docs" element={<Suspense fallback={<PageLoadingFallback />}><V2DocsPage /></Suspense>} />
+        <Route path="/languages" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguagesPage /></Suspense>} />
+        <Route path="/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguageDetailPage /></Suspense>} />
+        <Route path="/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><V2OnboardingPage /></Suspense>} />
+        <Route path="/library/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LibraryPage /></Suspense>} />
+        <Route path="/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><V2LearnPage /></Suspense>} />
+        <Route path="/playground" element={<Suspense fallback={<PageLoadingFallback />}><V2PlaygroundPage /></Suspense>} />
         <Route
           path="/settings"
+          element={
+            <UserProtectedRoute>
+              <Suspense fallback={<PageLoadingFallback />}>
+                <V2ProfilePage />
+              </Suspense>
+            </UserProtectedRoute>
+          }
+        />
+        <Route path="/sample-lesson" element={<Suspense fallback={<PageLoadingFallback />}><SampleLessonPage /></Suspense>} />
+
+        {/* Legacy routes - kept for backward compatibility, can be removed later */}
+        <Route path="/legacy/landing" element={<Suspense fallback={<PageLoadingFallback />}><LandingPage /></Suspense>} />
+        <Route path="/legacy/languages" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguagesPage /></Suspense>} />
+        <Route path="/legacy/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><PublicLanguageDetailPage /></Suspense>} />
+        <Route path="/legacy/library/:language" element={<Suspense fallback={<PageLoadingFallback />}><LibraryPage /></Suspense>} />
+        <Route path="/legacy/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><LearnPage /></Suspense>} />
+        <Route path="/legacy/playground" element={<Suspense fallback={<PageLoadingFallback />}><PlaygroundPage /></Suspense>} />
+        <Route path="/legacy/docs" element={<Suspense fallback={<PageLoadingFallback />}><DocsPage /></Suspense>} />
+        <Route path="/legacy/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><OnboardingPage /></Suspense>} />
+        <Route
+          path="/legacy/settings"
           element={
             <UserProtectedRoute>
               <Suspense fallback={<PageLoadingFallback />}>
@@ -87,19 +113,6 @@ const AppRouter: React.FC = () => {
             </UserProtectedRoute>
           }
         />
-        <Route path="/sample-lesson" element={<Suspense fallback={<PageLoadingFallback />}><SampleLessonPage /></Suspense>} />
-
-        {/* V2 sandbox routes */}
-        <Route path="/v2" element={<Suspense fallback={<PageLoadingFallback />}><V2LandingPage /></Suspense>} />
-        <Route path="/v2/landing" element={<Suspense fallback={<PageLoadingFallback />}><V2LandingPage /></Suspense>} />
-        <Route path="/v2/languages" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguagesPage /></Suspense>} />
-        <Route path="/v2/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguageDetailPage /></Suspense>} />
-        <Route path="/v2/library" element={<Suspense fallback={<PageLoadingFallback />}><V2LibraryPage /></Suspense>} />
-        <Route path="/v2/learn" element={<Suspense fallback={<PageLoadingFallback />}><V2LearnPage /></Suspense>} />
-        <Route path="/v2/playground" element={<Suspense fallback={<PageLoadingFallback />}><V2PlaygroundPage /></Suspense>} />
-        <Route path="/v2/docs" element={<Suspense fallback={<PageLoadingFallback />}><V2DocsPage /></Suspense>} />
-        <Route path="/v2/profile" element={<Suspense fallback={<PageLoadingFallback />}><V2ProfilePage /></Suspense>} />
-        <Route path="/v2/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><V2OnboardingPage /></Suspense>} />
 
         {/* PvP routes */}
         <Route path="/pvp" element={<Suspense fallback={<PageLoadingFallback />}><PvPLobbyPage /></Suspense>} />
