@@ -22,7 +22,6 @@ const V2LandingPage = lazy(() => import('../pages/v2/V2LandingPage'))
 const V2LanguagesPage = lazy(() => import('../pages/v2/V2LanguagesPage'))
 const V2LanguageDetailPage = lazy(() => import('../pages/v2/V2LanguageDetailPage'))
 const V2LibraryPage = lazy(() => import('../pages/v2/V2LibraryPage'))
-const V2LearnPage = lazy(() => import('../pages/v2/V2LearnPage'))
 const V2PlaygroundPage = lazy(() => import('../pages/v2/V2PlaygroundPage'))
 const V2DocsPage = lazy(() => import('../pages/v2/V2DocsPage'))
 const V2ProfilePage = lazy(() => import('../pages/v2/V2ProfilePage'))
@@ -80,7 +79,7 @@ const AppRouter: React.FC = () => {
         <Route path="/languages/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LanguageDetailPage /></Suspense>} />
         <Route path="/onboarding" element={<Suspense fallback={<PageLoadingFallback />}><V2OnboardingPage /></Suspense>} />
         <Route path="/library/:language" element={<Suspense fallback={<PageLoadingFallback />}><V2LibraryPage /></Suspense>} />
-        <Route path="/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><V2LearnPage /></Suspense>} />
+        <Route path="/learn/:language/*" element={<Suspense fallback={<PageLoadingFallback />}><LearnPage /></Suspense>} />
         <Route path="/playground" element={<Suspense fallback={<PageLoadingFallback />}><V2PlaygroundPage /></Suspense>} />
         <Route
           path="/settings"
