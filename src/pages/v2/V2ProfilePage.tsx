@@ -1,17 +1,8 @@
+import { useEffect, useState } from 'react'
 import { FiActivity, FiAward, FiBell, FiBookOpen, FiCheckCircle, FiCompass, FiPlay, FiSettings, FiTarget, FiZap } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
-
-const stats = [
-  { label: 'Bài đã lưu', value: '12', icon: FiCheckCircle, note: 'sau completeLesson' },
-  { label: 'Streak mẫu', value: '4', icon: FiZap, note: 'ngày liên tiếp' },
-  { label: 'Điểm mẫu', value: '180', icon: FiAward, note: 'sandbox data' },
-]
-
-const activities = [
-  ['Progress đã lưu', 'Hoàn thành “Đổi biến name” sau khi backend xác nhận.'],
-  ['Mở khóa bài mới', 'Bài “Sửa output lời chào” đang là bước tiếp theo.'],
-  ['Docs đã xem', 'Bạn mở note `console.log` để hiểu output.'],
-]
+import { useAuth } from '../../contexts/AuthContext'
+import { api } from '../../lib/api'
 
 const sideNav = [
   ['Overview', FiActivity],
@@ -22,6 +13,58 @@ const sideNav = [
 ]
 
 const V2ProfilePage: React.FC = () => {
+  const { user } = useAuth()
+  const [stats, setStats] = useState({
+    completedLessons: 0,
+    currentStreak: 0,
+    totalPoints: 0,
+  })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        
+        // Get user profile to fetch stats
+        if (user) {
+          // Stats từ user profile
+          const currentStreak = (user as any).current_streak || (user as any).currentStreak || 0
+          const totalPoints = (user as any).total_points || (user as any).totalPoints || 0
+          
+          // Fetch progress để count completed lessons
+          const progressResponse = await api.request('/api/progress/me')
+          let completedLessons = 0
+          
+          if (progressResponse.success && progressResponse.data) {
+            if (Array.isArray(progressResponse.data)) {
+              completedLessons = progressResponse.data.filter((p: any) => p.completed_at || p.completedAt).length
+            } else if (typeof progressResponse.data === 'object') {
+              completedLessons = Object.keys(progressResponse.data).length
+            }
+          }
+          
+          setStats({
+            completedLessons,
+            currentStreak,
+            totalPoints,
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching stats:', err)
+      }
+    }
+
+    fetchStats()
+  }, [user])
+
+  const activities = [
+    ['Progress đã lưu', 'Hoàn thành bài học sau khi backend xác nhận.'],
+    ['Mở khóa bài mới', 'Bài tiếp theo đang là bước tiếp theo.'],
+    ['Docs đã xem', 'Bạn mở note để hiểu thêm về khái niệm.'],
+  ]
+
+  const userName = (user as any)?.name || (user as any)?.email?.split('@')[0] || 'Loopy learner'
+  const userInitial = userName.charAt(0).toUpperCase()
+
   return (
     <V2PublicShell>
       <main className="px-4 py-10 md:px-6">
@@ -29,10 +72,10 @@ const V2ProfilePage: React.FC = () => {
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200/70">
               <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal text-xl font-black text-slate-950 shadow-[0_4px_0_#0b889c]">L</div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal text-xl font-black text-slate-950 shadow-[0_4px_0_#0b889c]">{userInitial}</div>
                 <div>
-                  <div className="font-black">Loopy learner</div>
-                  <div className="text-xs font-bold text-slate-500">V2 sample profile</div>
+                  <div className="font-black">{userName}</div>
+                  <div className="text-xs font-bold text-slate-500">Loopy learner</div>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -54,28 +97,32 @@ const V2ProfilePage: React.FC = () => {
               <div className="relative grid gap-8 lg:grid-cols-[1fr,360px] lg:items-end">
                 <div>
                   <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
-                    Profile v2 sandbox
+                    Profile
                   </div>
                   <h1 className="max-w-3xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
                     Hồ sơ nên trả lời: học tiếp gì hôm nay?
                   </h1>
                   <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                    Profile v2 gom journey hiện tại, progress đã lưu, mục tiêu hôm nay và activity feed. Đây là dữ liệu mẫu để test layout logged-in app shell.
+                    Profile gom journey hiện tại, progress đã lưu, mục tiêu hôm nay và activity feed.
                   </p>
                 </div>
                 <div className="rounded-[1.5rem] border border-slate-200 bg-[#f8fafc] p-5">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Current journey</div>
-                  <h2 className="mt-2 text-2xl font-black">JavaScript Starter</h2>
+                  <h2 className="mt-2 text-2xl font-black">Learning Path</h2>
                   <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
                     <div className="h-full w-[42%] rounded-full bg-brand-teal" />
                   </div>
-                  <p className="mt-3 text-sm text-slate-600">5/12 bài đã hoàn thành trong sample journey.</p>
+                  <p className="mt-3 text-sm text-slate-600">{stats.completedLessons} bài đã hoàn thành.</p>
                 </div>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              {stats.map(stat => {
+              {[
+                { label: 'Bài đã lưu', value: stats.completedLessons.toString(), icon: FiCheckCircle, note: 'sau completeLesson' },
+                { label: 'Streak', value: stats.currentStreak.toString(), icon: FiZap, note: 'ngày liên tiếp' },
+                { label: 'Điểm', value: stats.totalPoints.toString(), icon: FiAward, note: 'từ bài hoàn thành' },
+              ].map(stat => {
                 const Icon = stat.icon
                 return (
                   <div key={stat.label} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
@@ -93,13 +140,13 @@ const V2ProfilePage: React.FC = () => {
                 <div className="mb-5 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiPlay /> Bước tiếp theo</div>
                 <div className="rounded-[1.5rem] border border-brand-teal/30 bg-brand-teal/10 p-5">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-brand-ocean">Lesson mở khóa</div>
-                  <h2 className="mt-2 text-3xl font-black text-slate-950">Sửa output lời chào</h2>
+                  <h2 className="mt-2 text-3xl font-black text-slate-950">Tiếp tục học</h2>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Bài này đang mở vì progress bài trước đã lưu thành công. Vào Learn để quan sát, chạy thử, kiểm tra và debug.
+                    Vào Learn để quan sát, chạy thử, kiểm tra và debug.
                   </p>
                   <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <V2PressedButton to="/v2/learn">Vào Learn v2</V2PressedButton>
-                    <V2PressedButton to="/v2/library" variant="secondary">Xem Journey Map</V2PressedButton>
+                    <V2PressedButton to="/languages">Chọn lộ trình</V2PressedButton>
+                    <V2PressedButton to="/library/javascript" variant="secondary">Xem Journey Map</V2PressedButton>
                   </div>
                 </div>
 
@@ -133,13 +180,13 @@ const V2ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBell /> Thông báo mẫu</div>
+                  <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBell /> Thông báo</div>
                   <div className="grid gap-3">
                     <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">
                       Bài tiếp theo đã mở khóa sau khi progress lưu xong.
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">
-                      Docs `console.log` có thể giúp bạn hiểu output trước khi debug.
+                      Docs có thể giúp bạn hiểu thêm về khái niệm trước khi debug.
                     </div>
                   </div>
                 </div>
@@ -148,9 +195,9 @@ const V2ProfilePage: React.FC = () => {
 
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm md:p-8">
               <FiBookOpen className="mx-auto mb-4 h-10 w-10 text-brand-ocean" />
-              <h2 className="text-3xl font-black tracking-tight">Profile v2 không phải leaderboard.</h2>
+              <h2 className="text-3xl font-black tracking-tight">Profile không phải leaderboard.</h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Mục tiêu là giúp người học mới quay lại đúng bước tiếp theo, không tạo áp lực so sánh hoặc claim thành tích không có dữ liệu thật.
+                Mục tiêu là giúp bạn quay lại đúng bước tiếp theo, không tạo áp lực so sánh hoặc claim thành tích không có dữ liệu thật.
               </p>
             </div>
           </section>

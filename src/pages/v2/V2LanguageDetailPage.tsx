@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import type { IconType } from 'react-icons'
 import { Link, useParams } from 'react-router-dom'
-import { FiArrowLeft, FiArrowRight, FiCheckCircle, FiCode, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiLayers, FiPlay, FiTerminal, FiZap } from 'react-icons/fi'
+import { FiArrowLeft, FiCheckCircle, FiCode, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiLayers, FiPlay, FiTerminal } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
+import { api } from '../../lib/api'
 
 type LessonTag = 'Quan sát' | 'Thực hành' | 'Kiểm tra' | 'Debug'
 
@@ -31,42 +33,33 @@ type LanguageDetail = {
   syllabus: SyllabusSection[]
 }
 
-const sharedSyllabus: SyllabusSection[] = [
-  {
-    title: 'Bắt đầu thật nhỏ',
-    description: 'Làm quen editor, chạy code mẫu, đọc output và sửa một dòng đầu tiên.',
-    lessons: [
-      { title: 'Chạy code mẫu đầu tiên', tags: ['Quan sát', 'Thực hành'] },
-      { title: 'Đổi giá trị và xem output', tags: ['Thực hành', 'Kiểm tra'] },
-      { title: 'Sửa lỗi cú pháp nhỏ', tags: ['Debug', 'Kiểm tra'] },
-    ],
-  },
-  {
-    title: 'Nền tảng logic',
-    description: 'Biến, điều kiện và vòng lặp được học bằng bài ngắn có kiểm tra rõ ràng.',
-    lessons: [
-      { title: 'Lưu dữ liệu bằng biến', tags: ['Quan sát', 'Thực hành'] },
-      { title: 'Rẽ nhánh bằng điều kiện', tags: ['Thực hành', 'Kiểm tra'] },
-      { title: 'Lặp lại thao tác an toàn', tags: ['Debug', 'Kiểm tra'] },
-    ],
-  },
-  {
-    title: 'Tự tin làm bài mới',
-    description: 'Tổng hợp các bước đã học thành mini challenge có run, check và debug.',
-    lessons: [
-      { title: 'Đọc yêu cầu và chia nhỏ', tags: ['Quan sát'] },
-      { title: 'Viết lời giải ngắn', tags: ['Thực hành', 'Kiểm tra'] },
-      { title: 'Hoàn thành checkpoint', tags: ['Debug', 'Kiểm tra'] },
-    ],
-  },
-]
+// Icon mapping for languages
+const iconMap: Record<string, typeof FiCpu> = {
+  python: FiCpu,
+  javascript: FiCode,
+  html: FiGlobe,
+  css: FiLayers,
+  sql: FiDatabase,
+  git: FiGitBranch,
+  cpp: FiCpu,
+  c: FiCpu,
+}
 
-const languageDetails: Record<string, LanguageDetail> = {
+// Accent color mapping for languages
+const accentMap: Record<string, string> = {
+  python: 'bg-amber-200 text-amber-950 border-amber-300',
+  javascript: 'bg-yellow-200 text-yellow-950 border-yellow-300',
+  html: 'bg-orange-200 text-orange-950 border-orange-300',
+  css: 'bg-sky-200 text-sky-950 border-sky-300',
+  sql: 'bg-emerald-200 text-emerald-950 border-emerald-300',
+  git: 'bg-rose-200 text-rose-950 border-rose-300',
+  cpp: 'bg-purple-200 text-purple-950 border-purple-300',
+  c: 'bg-indigo-200 text-indigo-950 border-indigo-300',
+}
+
+// Language descriptions
+const descriptionMap: Record<string, { subtitle: string; promise: string; fit: string; firstWin: string; codeFile: string; codeSample: string[]; output: string }> = {
   python: {
-    name: 'Python',
-    slug: 'python',
-    icon: FiCpu,
-    accent: 'bg-amber-200 text-amber-950 border-amber-300',
     subtitle: 'Bắt đầu nhẹ nhất cho người mới',
     promise: 'Học Python bằng output rõ ràng, ít nhiễu cú pháp và nhiều lần thử nhỏ.',
     fit: 'Bạn mới bắt đầu và muốn hiểu tư duy lập trình trước khi học tool phức tạp.',
@@ -74,13 +67,8 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'main.py',
     codeSample: ['name = "Loopy"', 'print(f"Xin chào {name}")'],
     output: 'Xin chào Loopy',
-    syllabus: sharedSyllabus,
   },
   javascript: {
-    name: 'JavaScript',
-    slug: 'javascript',
-    icon: FiCode,
-    accent: 'bg-yellow-200 text-yellow-950 border-yellow-300',
     subtitle: 'Đường vào web tương tác',
     promise: 'Học JavaScript qua console, biến, function và những thay đổi thấy được ngay.',
     fit: 'Bạn muốn hiểu cách web phản hồi với hành động của người dùng.',
@@ -88,13 +76,8 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'main.js',
     codeSample: ['const name = "Loopy"', 'console.log(`Xin chào ${name}`)'],
     output: 'Xin chào Loopy',
-    syllabus: sharedSyllabus,
   },
   html: {
-    name: 'HTML',
-    slug: 'html',
-    icon: FiGlobe,
-    accent: 'bg-orange-200 text-orange-950 border-orange-300',
     subtitle: 'Cấu trúc trang web đầu tiên',
     promise: 'Học HTML bằng cách chỉnh tag thật và xem trang thay đổi từng bước.',
     fit: 'Bạn muốn biết một trang web được dựng từ những khối nào.',
@@ -102,13 +85,8 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'index.html',
     codeSample: ['<h1>Xin chào Loopy</h1>', '<p>Mình đang học HTML.</p>'],
     output: 'Trang hiển thị heading và đoạn văn.',
-    syllabus: sharedSyllabus,
   },
   css: {
-    name: 'CSS',
-    slug: 'css',
-    icon: FiLayers,
-    accent: 'bg-sky-200 text-sky-950 border-sky-300',
     subtitle: 'Biến trang thô thành giao diện rõ ràng',
     promise: 'Học CSS qua selector, spacing, màu sắc và layout nhỏ dễ nhìn thấy.',
     fit: 'Bạn đã thấy HTML và muốn làm giao diện gọn, đẹp, responsive hơn.',
@@ -116,13 +94,8 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'style.css',
     codeSample: ['.card {', '  padding: 16px;', '  border-radius: 20px;', '}'],
     output: 'Card có spacing và bo góc rõ ràng.',
-    syllabus: sharedSyllabus,
   },
   sql: {
-    name: 'SQL',
-    slug: 'sql',
-    icon: FiDatabase,
-    accent: 'bg-emerald-200 text-emerald-950 border-emerald-300',
     subtitle: 'Hỏi dữ liệu bằng câu lệnh ngắn',
     promise: 'Học SQL bằng bảng nhỏ, query rõ ràng và kết quả kiểm tra được.',
     fit: 'Bạn muốn lấy, lọc và tổng hợp dữ liệu mà không cần viết app hoàn chỉnh.',
@@ -130,13 +103,8 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'query.sql',
     codeSample: ['SELECT name, score', 'FROM learners', 'WHERE score >= 80;'],
     output: 'Bảng kết quả chỉ còn learner đạt điều kiện.',
-    syllabus: sharedSyllabus,
   },
   git: {
-    name: 'Git',
-    slug: 'git',
-    icon: FiGitBranch,
-    accent: 'bg-rose-200 text-rose-950 border-rose-300',
     subtitle: 'Lưu phiên bản code không sợ hỏng',
     promise: 'Học Git bằng thao tác nhỏ: xem thay đổi, commit, branch và quay lại an toàn.',
     fit: 'Bạn đã bắt đầu code và muốn biết cách lưu từng bước làm việc.',
@@ -144,7 +112,6 @@ const languageDetails: Record<string, LanguageDetail> = {
     codeFile: 'terminal',
     codeSample: ['git status', 'git add index.html', 'git commit -m "first page"'],
     output: 'Working tree clean sau commit.',
-    syllabus: sharedSyllabus,
   },
 }
 
@@ -183,9 +150,76 @@ function CodePreview({ detail }: { detail: LanguageDetail }) {
 
 const V2LanguageDetailPage: React.FC = () => {
   const { language } = useParams<{ language: string }>()
-  const detail = languageDetails[language || 'javascript'] || languageDetails.javascript
-  const Icon = detail.icon
-  const related = Object.values(languageDetails).filter(item => item.slug !== detail.slug).slice(0, 3)
+  const slug = language || 'javascript'
+  
+  const [chapters, setChapters] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get language detail from description map
+  const desc = descriptionMap[slug] || descriptionMap.javascript
+  const icon = iconMap[slug] || FiCode
+  const accent = accentMap[slug] || 'bg-slate-200 text-slate-950 border-slate-300'
+
+  const detail: LanguageDetail = {
+    name: slug.charAt(0).toUpperCase() + slug.slice(1),
+    slug: slug,
+    icon: icon,
+    accent: accent,
+    subtitle: desc.subtitle,
+    promise: desc.promise,
+    fit: desc.fit,
+    firstWin: desc.firstWin,
+    codeFile: desc.codeFile,
+    codeSample: desc.codeSample,
+    output: desc.output,
+    syllabus: [], // Will be populated from API
+  }
+
+  useEffect(() => {
+    const fetchChapters = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Fetch chapters by language
+        const response = await api.getChaptersByLanguage(slug)
+        
+        if (response.success && response.data && Array.isArray(response.data)) {
+          // Transform chapters to syllabus format
+          const syllabusData: SyllabusSection[] = await Promise.all(
+            (response.data as any[]).map(async (chapter: any) => {
+              // Fetch lessons for this chapter
+              const lessonsResponse = await api.getLessonsByChapter(chapter.id)
+              const lessons = (lessonsResponse.success && lessonsResponse.data ? lessonsResponse.data : []) as any[]
+              
+              return {
+                title: chapter.title || chapter.name || 'Untitled Chapter',
+                description: chapter.description || 'Học các bài trong chương này.',
+                lessons: lessons.map((lesson: any) => ({
+                  title: lesson.title || 'Untitled Lesson',
+                  tags: ['Quan sát', 'Thực hành'] as LessonTag[], // Default tags
+                })),
+              }
+            })
+          )
+          
+          setChapters(syllabusData as any)
+        } else {
+          setError('Không thể tải danh sách chương')
+        }
+      } catch (err) {
+        console.error('Error fetching chapters:', err)
+        setError('Lỗi khi tải danh sách chương')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchChapters()
+  }, [slug])
+
+  const syllabusToDisplay = chapters.length > 0 ? chapters : []
 
   return (
     <V2PublicShell>
@@ -194,11 +228,11 @@ const V2LanguageDetailPage: React.FC = () => {
           <div className="absolute left-0 top-16 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr,1.1fr] lg:items-center">
             <div>
-              <Link to="/v2/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
+              <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
                 <FiArrowLeft /> Tất cả lộ trình
               </Link>
               <div className="mb-5 flex items-center gap-4">
-                <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-3xl shadow-[0_5px_0_rgba(15,23,42,0.14)] ${detail.accent}`}><Icon /></div>
+                <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-3xl shadow-[0_5px_0_rgba(15,23,42,0.14)] ${detail.accent}`}><detail.icon /></div>
                 <div>
                   <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Lộ trình {detail.name}</div>
                   <div className="mt-1 text-sm font-bold text-slate-500">{detail.subtitle}</div>
@@ -233,11 +267,23 @@ const V2LanguageDetailPage: React.FC = () => {
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Syllabus</div>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Từng chương là một checkpoint nhỏ.</h2>
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                V2 detail page ưu tiên syllabus trước marketing. Tags phản ánh hành vi thật trong Loopy: quan sát, thực hành, kiểm tra và debug.
+                Mỗi chương gồm các bài học nhỏ với hành động rõ ràng: quan sát, thực hành, kiểm tra và debug.
               </p>
             </div>
             <div className="grid gap-4">
-              {detail.syllabus.map((section, sectionIndex) => (
+              {loading && (
+                <div className="text-center text-slate-600">
+                  Đang tải danh sách chương...
+                </div>
+              )}
+              
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+                  {error}
+                </div>
+              )}
+              
+              {!loading && syllabusToDisplay.length > 0 && ((syllabusToDisplay as any) || []).map((section: SyllabusSection, sectionIndex: number) => (
                 <div key={section.title} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -248,62 +294,28 @@ const V2LanguageDetailPage: React.FC = () => {
                     <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-500">{section.lessons.length} bài</div>
                   </div>
                   <div className="mt-5 grid gap-2">
-                    {section.lessons.map((lesson, lessonIndex) => (
-                      <div key={lesson.title} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-brand-teal">{lessonIndex + 1}</div>
-                          <div className="font-black text-slate-800">{lesson.title}</div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {lesson.tags.map(tag => <LessonTagPill key={tag} tag={tag} />)}
+                    {section.lessons.map((lesson: SyllabusLesson, lessonIndex: number) => (
+                      <div key={lesson.title} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-500">{lessonIndex + 1}</div>
+                        <div className="flex-1">
+                          <div className="font-black text-slate-900">{lesson.title}</div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {lesson.tags.map(tag => (
+                              <LessonTagPill key={tag} tag={tag} />
+                            ))}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-16 md:px-6">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr,1.1fr] lg:items-center">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
-              <div className="flex items-center gap-3 text-brand-ocean">
-                <FiZap />
-                <span className="text-sm font-black uppercase tracking-[0.2em]">Run vs Check</span>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
-                  <h3 className="font-black">Chạy thử</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Chỉ execute code và cho bạn xem output.</p>
+              
+              {!loading && syllabusToDisplay.length === 0 && !error && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
+                  Chưa có chương nào cho lộ trình này.
                 </div>
-                <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/10 p-4">
-                  <h3 className="font-black text-brand-ocean">Kiểm tra</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Chấm bằng rule/test case trước khi lưu progress.</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Related paths</div>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Có thể học song song sau khi có nền.</h2>
-              <div className="mt-6 grid gap-3">
-                {related.map(item => {
-                  const RelatedIcon = item.icon
-                  return (
-                    <Link key={item.slug} to={`/v2/languages/${item.slug}`} className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-brand-teal hover:shadow-lg hover:shadow-slate-200">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${item.accent}`}><RelatedIcon /></div>
-                        <div>
-                          <div className="font-black">{item.name}</div>
-                          <div className="text-xs text-slate-500">{item.subtitle}</div>
-                        </div>
-                      </div>
-                      <FiArrowRight className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-brand-ocean" />
-                    </Link>
-                  )
-                })}
-              </div>
+              )}
             </div>
           </div>
         </section>
@@ -311,13 +323,13 @@ const V2LanguageDetailPage: React.FC = () => {
         <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <FiCheckCircle className="mb-4 h-10 w-10 text-brand-teal" />
-            <h2 className="text-4xl font-black tracking-tight">Sẵn sàng làm bài đầu tiên?</h2>
+            <h2 className="text-4xl font-black tracking-tight">Sẵn sàng bắt đầu?</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
-              Route v2 này mới là preview visual. CTA đưa về journey production hiện tại để không tạo flow giả.
+              Bài đầu tiên sẽ dạy bạn quan sát code mẫu, chạy thử output, rồi sửa một dòng nhỏ. Không áp lực, chỉ học từng bước.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to={`/library/${detail.slug}`}>Bắt đầu {detail.name}</V2PressedButton>
-              <V2PressedButton to="/v2/languages" variant="secondary">Xem lộ trình khác</V2PressedButton>
+              <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> Bắt đầu bài đầu tiên</V2PressedButton>
+              <V2PressedButton to="/languages" variant="secondary">Đổi lộ trình</V2PressedButton>
             </div>
           </div>
         </section>
