@@ -59,6 +59,52 @@ const getQualityIssues = (lesson: AdminLesson) => {
   return issues
 }
 
+const LessonStatsSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-3">
+    {Array.from({ length: 3 }).map((_, index) => (
+      <div key={index} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="h-4 w-32 animate-pulse rounded bg-slate-100" />
+        <div className="mt-3 h-8 w-16 animate-pulse rounded bg-slate-100" />
+        {index === 2 && <div className="mt-2 h-3 w-28 animate-pulse rounded bg-slate-100" />}
+      </div>
+    ))}
+  </div>
+)
+
+const LessonTableSkeleton = () => (
+  <>
+    {Array.from({ length: 5 }).map((_, index) => (
+      <tr key={index}>
+        <td className="max-w-xl px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 h-8 w-8 shrink-0 animate-pulse rounded-lg bg-slate-100" />
+            <div className="w-full space-y-2">
+              <div className="h-4 w-56 animate-pulse rounded bg-slate-100" />
+              <div className="h-3 w-32 animate-pulse rounded bg-slate-100" />
+              <div className="h-3 w-full max-w-md animate-pulse rounded bg-slate-100" />
+            </div>
+          </div>
+        </td>
+        <td className="px-5 py-4">
+          <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100" />
+        </td>
+        <td className="px-5 py-4">
+          <div className="h-4 w-20 animate-pulse rounded bg-slate-100" />
+          <div className="mt-2 h-3 w-16 animate-pulse rounded bg-slate-100" />
+          <div className="mt-2 h-3 w-24 animate-pulse rounded bg-slate-100" />
+        </td>
+        <td className="px-5 py-4">
+          <div className="flex justify-end gap-2">
+            {Array.from({ length: 3 }).map((_, actionIndex) => (
+              <div key={actionIndex} className="h-9 w-9 animate-pulse rounded-lg bg-slate-100" />
+            ))}
+          </div>
+        </td>
+      </tr>
+    ))}
+  </>
+)
+
 const LessonsPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -168,6 +214,7 @@ const LessonsPage: React.FC = () => {
   const lessonsMissingRequiredFields = lessons.filter(lesson => getMissingFields(lesson).length > 0)
   const lessonsWithoutHint = lessons.filter(lesson => !String(lesson.hint || '').trim())
   const lessonsWithoutTestCases = lessons.filter(lesson => (lesson.test_case_count || 0) === 0)
+  const shouldShowLessonSkeleton = isLoadingChapters || isLoadingLessons
 
   const handleDelete = async (lesson: AdminLesson) => {
     const lessonName = lesson.title || lesson.lesson_id || lesson.id
@@ -224,27 +271,31 @@ const LessonsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Lessons trong chapter</p>
-          <p className="mt-2 text-3xl font-black text-slate-950">{lessons.length}</p>
+      {shouldShowLessonSkeleton ? (
+        <LessonStatsSkeleton />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Lessons trong chapter</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{lessons.length}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Cần kiểm tra</p>
+            <p className="mt-2 text-3xl font-black text-amber-700">
+              {lessonsMissingRequiredFields.length}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Thiếu test case</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">
+              {lessonsWithoutTestCases.length}
+            </p>
+            <p className="mt-1 text-xs font-bold text-slate-400">
+              {lessonsWithoutHint.length} lesson chưa có hint
+            </p>
+          </div>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Cần kiểm tra</p>
-          <p className="mt-2 text-3xl font-black text-amber-700">
-            {lessonsMissingRequiredFields.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Thiếu test case</p>
-          <p className="mt-2 text-3xl font-black text-slate-950">
-            {lessonsWithoutTestCases.length}
-          </p>
-          <p className="mt-1 text-xs font-bold text-slate-400">
-            {lessonsWithoutHint.length} lesson chưa có hint
-          </p>
-        </div>
-      </div>
+      )}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-4 border-b border-slate-200 p-5 lg:grid-cols-[minmax(260px,360px),1fr,auto]">
@@ -319,15 +370,9 @@ const LessonsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {isLoadingLessons && (
-                <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center text-sm font-bold text-slate-500">
-                    Đang tải lessons...
-                  </td>
-                </tr>
-              )}
+              {shouldShowLessonSkeleton && <LessonTableSkeleton />}
 
-              {!isLoadingLessons && filteredLessons.length === 0 && (
+              {!shouldShowLessonSkeleton && filteredLessons.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-5 py-10 text-center text-sm font-bold text-slate-500">
                     Không có lesson phù hợp.
@@ -335,7 +380,7 @@ const LessonsPage: React.FC = () => {
                 </tr>
               )}
 
-              {!isLoadingLessons &&
+              {!shouldShowLessonSkeleton &&
                 filteredLessons.map(lesson => {
                   const qualityIssues = getQualityIssues(lesson)
                   const isComplete = qualityIssues.length === 0

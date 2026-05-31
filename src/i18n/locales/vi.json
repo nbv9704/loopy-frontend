@@ -13,7 +13,7 @@
     "titlePrefix": "Học lập trình",
     "titleHighlight": "từ số 0,",
     "titleSuffix": "code ngay trên trình duyệt.",
-    "subtitle": "Vượt qua 20 giờ đầu tiên học lập trình với lộ trình cá nhân hóa, thực hành thật và phản hồi thông minh từ AI Mentor.",
+    "subtitle": "Loopy dẫn bạn qua một flow rõ ràng: quan sát code mẫu, sửa một dòng, chạy thử output, kiểm tra bằng test case, rồi debug lỗi nhỏ như khi lập trình thật.",
     "cta": "Bắt đầu từ số 0",
     "learnMore": "Tìm hiểu thêm",
     "startLearning": "Bắt đầu từ số 0",
@@ -28,7 +28,8 @@
       "runInstantly": "Chạy ngay",
       "noInstall": "Không cần cài đặt",
       "executed": "Executed successfully"
-    }
+    },
+    "title": "Học code bằng từng bước nhỏ, không bị ném vào IDE một mình."
   },
   "auth": {
     "login": "Đăng nhập",
@@ -45,7 +46,24 @@
     "signupNow": "Đăng ký ngay",
     "processing": "Đang xử lý...",
     "checkEmail": "Vui lòng kiểm tra email để xác nhận tài khoản",
-    "devLoginOnly": "Chỉ hiển thị trong môi trường development"
+    "devLoginOnly": "Chỉ hiển thị trong môi trường development",
+    "feat4": "AUTH.FEAT4 VI",
+    "feat3": "AUTH.FEAT3 VI",
+    "feat2": "AUTH.FEAT2 VI",
+    "feat1": "AUTH.FEAT1 VI",
+    "title": {
+      "signup2": "AUTH.TITLE.SIGNUP2 VI",
+      "login2": "AUTH.TITLE.LOGIN2 VI",
+      "signup1": "AUTH.TITLE.SIGNUP1 VI",
+      "login1": "AUTH.TITLE.LOGIN1 VI"
+    },
+    "ctx": {
+      "default": "AUTH.CTX.DEFAULT VI",
+      "onboarding2": "AUTH.CTX.ONBOARDING2 VI",
+      "learn": "AUTH.CTX.LEARN VI",
+      "pvp": "AUTH.CTX.PVP VI",
+      "onboarding": "AUTH.CTX.ONBOARDING VI"
+    }
   },
   "common": {
     "loading": "Đang tải...",
@@ -309,7 +327,7 @@
     "developingContent": "Đang phát triển nội dung {{language}}",
     "keyInsight": "Điểm chú ý",
     "markDone": "Đánh dấu xong",
-    "completed": "Hoàn thành",
+    "completed": "Đã hoàn thành",
     "runCode": "Chạy code",
     "theory": "Lý thuyết",
     "example": "Ví dụ",
@@ -323,7 +341,6 @@
     "backToLibrary": "Quay lại lộ trình",
     "startLesson": "Bắt đầu học",
     "continueLesson": "Học tiếp",
-    "completed": "Đã hoàn thành",
     "locked": "Chưa mở khóa",
     "curriculum": "Lộ trình học tập",
     "myProgress": "Tiến độ của tôi",
@@ -342,7 +359,69 @@
     "errorLoading": "Không thể tải tài liệu. Vui lòng thử lại.",
     "retry": "Thử lại",
     "previous": "Trước",
-    "next": "Sau"
+    "next": {
+      "btn2": "DOCS.NEXT.BTN2 VI",
+      "btn1": "DOCS.NEXT.BTN1 VI",
+      "desc": "DOCS.NEXT.DESC VI",
+      "title": "DOCS.NEXT.TITLE VI",
+      "badge": "DOCS.NEXT.BADGE VI"
+    },
+    "bottom": {
+      "btn2": "DOCS.BOTTOM.BTN2 VI",
+      "btn1": "DOCS.BOTTOM.BTN1 VI",
+      "desc": "DOCS.BOTTOM.DESC VI",
+      "title": "DOCS.BOTTOM.TITLE VI"
+    },
+    "toc": {
+      "items": "DOCS.TOC.ITEMS VI",
+      "title": "DOCS.TOC.TITLE VI"
+    },
+    "terminal": {
+      "desc": "DOCS.TERMINAL.DESC VI",
+      "badge": "DOCS.TERMINAL.BADGE VI"
+    },
+    "tips": {
+      "desc": "DOCS.TIPS.DESC VI",
+      "title": "DOCS.TIPS.TITLE VI"
+    },
+    "check": {
+      "desc": "DOCS.CHECK.DESC VI",
+      "badge": "DOCS.CHECK.BADGE VI"
+    },
+    "play": {
+      "desc": "DOCS.PLAY.DESC VI",
+      "badge": "DOCS.PLAY.BADGE VI"
+    },
+    "ref": {
+      "desc": "DOCS.REF.DESC VI",
+      "title": "DOCS.REF.TITLE VI",
+      "badge": "DOCS.REF.BADGE VI"
+    },
+    "group3": {
+      "items": "DOCS.GROUP3.ITEMS VI",
+      "title": "DOCS.GROUP3.TITLE VI"
+    },
+    "group2": {
+      "items": "DOCS.GROUP2.ITEMS VI",
+      "title": "DOCS.GROUP2.TITLE VI"
+    },
+    "group1": {
+      "items": "DOCS.GROUP1.ITEMS VI",
+      "title": "DOCS.GROUP1.TITLE VI"
+    },
+    "topic": {
+      "title": "DOCS.TOPIC.TITLE VI"
+    },
+    "search": {
+      "hint": "DOCS.SEARCH.HINT VI",
+      "quick": "DOCS.SEARCH.QUICK VI"
+    },
+    "sandbox": {
+      "badge": "DOCS.SANDBOX.BADGE VI"
+    },
+    "code": {
+      "output": "DOCS.CODE.OUTPUT VI"
+    }
   },
   "settings": {
     "title": "Cài đặt",
@@ -406,7 +485,68 @@
     "readyToStart": "Sẵn sàng bắt đầu chưa?",
     "joinThousands": "Tham gia cùng hàng nghìn học viên đang chinh phục 20 giờ học đầu tiên.",
     "startLearningFree": "Bắt đầu ngay miễn phí",
-    "lessonsCount": "{{count}} bài học"
+    "lessonsCount": "{{count}} bài học",
+    "learn": {
+      "title": "tesst",
+      "badge": "LANDING.LEARN.BADGE VI"
+    },
+    "bottom": {
+      "btn": "bruh",
+      "desc": "LANDING.BOTTOM.DESC VI",
+      "title": "234243"
+    },
+    "faq3": {
+      "a": "LANDING.FAQ3.A VI",
+      "q": "LANDING.FAQ3.Q VI"
+    },
+    "faq2": {
+      "a": "LANDING.FAQ2.A VI",
+      "q": "LANDING.FAQ2.Q VI"
+    },
+    "faq1": {
+      "a": "LANDING.FAQ1.A VI",
+      "q": "LANDING.FAQ1.Q VI"
+    },
+    "faq": {
+      "title": "LANDING.FAQ.TITLE VI",
+      "badge": "LANDING.FAQ.BADGE VI"
+    },
+    "journey": {
+      "desc": "LANDING.JOURNEY.DESC VI",
+      "title": "LANDING.JOURNEY.TITLE VI",
+      "badge": "LANDING.JOURNEY.BADGE VI",
+      "node5": "LANDING.JOURNEY.NODE5 VI",
+      "node4": "LANDING.JOURNEY.NODE4 VI",
+      "node3": "LANDING.JOURNEY.NODE3 VI",
+      "node2": "LANDING.JOURNEY.NODE2 VI",
+      "node1": "LANDING.JOURNEY.NODE1 VI"
+    },
+    "step3": {
+      "desc": "LANDING.STEP3.DESC VI",
+      "title": "LANDING.STEP3.TITLE VI"
+    },
+    "step2": {
+      "desc": "LANDING.STEP2.DESC VI",
+      "title": "LANDING.STEP2.TITLE VI"
+    },
+    "step1": {
+      "desc": "LANDING.STEP1.DESC VI",
+      "title": "LANDING.STEP1.TITLE VI"
+    },
+    "hero": {
+      "badge": "LANDING.HERO.BADGE VI"
+    },
+    "pmock": {
+      "checkbtn": "LANDING.PMOCK.CHECKBTN VI",
+      "item4": "LANDING.PMOCK.ITEM4 VI",
+      "item3": "LANDING.PMOCK.ITEM3 VI",
+      "item2": "LANDING.PMOCK.ITEM2 VI",
+      "item1": "LANDING.PMOCK.ITEM1 VI",
+      "desc": "LANDING.PMOCK.DESC VI",
+      "title": "LANDING.PMOCK.TITLE VI",
+      "role": "LANDING.PMOCK.ROLE VI",
+      "status": "LANDING.PMOCK.STATUS VI"
+    }
   },
   "pvp": {
     "title": "Chế độ Thử thách",
@@ -452,7 +592,55 @@
       "summarizing": "Đang tổng hợp kết quả chung cuộc...",
       "pausedTitle": "Trận đấu tạm dừng",
       "waitingRecon": "Đang chờ kết nối lại",
-      "reconHint": "Nếu không kết nối lại kịp, người chơi sẽ bị xử thua"
+      "reconHint": "Nếu không kết nối lại kịp, người chơi sẽ bị xử thua",
+      "notfound": {
+        "desc": "PVP.MATCH.NOTFOUND.DESC VI",
+        "title": "PVP.MATCH.NOTFOUND.TITLE VI"
+      }
+    },
+    "header": {
+      "title": "PVP.HEADER.TITLE VI"
+    },
+    "unlock": {
+      "desc": "PVP.UNLOCK.DESC VI",
+      "badge": "PVP.UNLOCK.BADGE VI"
+    },
+    "feat3": {
+      "desc": "PVP.FEAT3.DESC VI",
+      "title": "PVP.FEAT3.TITLE VI"
+    },
+    "feat2": {
+      "desc": "PVP.FEAT2.DESC VI",
+      "title": "PVP.FEAT2.TITLE VI"
+    },
+    "feat1": {
+      "desc": "PVP.FEAT1.DESC VI",
+      "title": "PVP.FEAT1.TITLE VI"
+    },
+    "input": {
+      "code": "PVP.INPUT.CODE VI"
+    },
+    "or": "PVP.OR VI",
+    "btn": {
+      "start1v1": "PVP.BTN.START1V1 VI"
+    },
+    "diff": {
+      "title": "PVP.DIFF.TITLE VI"
+    },
+    "mode": {
+      "br": {
+        "desc": "PVP.MODE.BR.DESC VI",
+        "title": "PVP.MODE.BR.TITLE VI"
+      },
+      "1v1": {
+        "desc": "PVP.MODE.1V1.DESC VI"
+      },
+      "title": "PVP.MODE.TITLE VI"
+    },
+    "locked": {
+      "btn": "PVP.LOCKED.BTN VI",
+      "desc": "PVP.LOCKED.DESC VI",
+      "title": "PVP.LOCKED.TITLE VI"
     }
   },
   "grading": {
@@ -504,5 +692,65 @@
   },
   "pvpQuestion": {
     "selectAndSubmit": "Chọn đáp án rồi bấm Submit bên dưới"
+  },
+  "test": {
+    "update": "Updated Value"
+  },
+  "bottom": {
+    "btn": "Tìm lộ trình phù hợp",
+    "desc": "Nếu hướng v2 này ổn, ta sẽ tiếp tục dựng `/v2/library` và `/v2/learn` trước khi thay UI thật.",
+    "title": "Bắt đầu bằng một bài nhỏ."
+  },
+  "faq3": {
+    "a": "Sau landing, nên dựng v2 library/journey map rồi mới polish Learn.",
+    "q": "Ưu tiên tiếp theo là gì?"
+  },
+  "faq2": {
+    "a": "Không. Capture chỉ dùng làm reference về cấu trúc. Copy, asset và claim được viết lại cho Loopy.",
+    "q": "Có copy Coddy không?"
+  },
+  "faq1": {
+    "a": "Không. Đây là sandbox riêng để test visual trước khi thay route thật.",
+    "q": "Route này có thay landing hiện tại không?"
+  },
+  "faq": {
+    "title": "V2 đang test điều gì?",
+    "badge": "FAQ"
+  },
+  "pmock": {
+    "item4": "Debug lỗi thật",
+    "item3": "Kiểm tra bằng rule",
+    "item2": "Sửa yêu cầu nhỏ",
+    "item1": "Quan sát code mẫu",
+    "desc": "Loopy không bắt bạn đọc hết lý thuyết trước. Bạn quan sát, sửa code nhỏ, chạy thử, rồi kiểm tra bằng test rõ ràng.",
+    "title": "Thay đổi một dòng, thấy output ngay",
+    "status": "Đang học",
+    "badge": "Lesson 03"
+  },
+  "journey": {
+    "node5": "Vòng lặp",
+    "node4": "Điều kiện",
+    "node3": "In output",
+    "node2": "Biến",
+    "node1": "Hello code",
+    "desc": "V2 ưu tiên journey rõ hơn catalog: done, active, locked được tách bạch để người mới không phải tự đoán bước kế tiếp.",
+    "title": "Biết mình đang ở đâu, bài nào mở tiếp theo.",
+    "badge": "Journey map"
+  },
+  "step3": {
+    "desc": "Gặp lỗi nhỏ có chủ đích, đọc terminal và debug từng bước như khi code thật.",
+    "title": "Sửa lỗi"
+  },
+  "step2": {
+    "desc": "Sửa một phần nhỏ trong editor. Loopy kiểm tra đúng yêu cầu bằng rule/test case.",
+    "title": "Thay đổi"
+  },
+  "step1": {
+    "desc": "Đọc một ví dụ ngắn, chạy code mẫu và hiểu output trước khi phải tự viết.",
+    "title": "Quan sát"
+  },
+  "cta": {
+    "secondary": "Xem lộ trình",
+    "primary": "Thử bài đầu tiên"
   }
 }

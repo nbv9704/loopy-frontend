@@ -1,30 +1,39 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Code2, BookOpen } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 
-const V2Footer: React.FC = () => {
-  const { t } = useTranslation()
+export interface V2FooterProps {
+  footerContent?: {
+    [key: string]: string | null
+  }
+}
+
+const V2Footer: React.FC<V2FooterProps> = ({ footerContent = {} }) => {
   const currentYear = new Date().getFullYear()
+
+  // Helper to get footer content with fallback
+  const getFooterText = (key: string, fallback: string = ''): string => {
+    return footerContent[key] || fallback
+  }
 
   const FOOTER_COLUMNS = [
     {
       id: 'about',
-      title: t('footer.aboutLoopy'),
+      titleKey: 'footer.aboutLoopy',
       items: [
-        { label: t('footer.about'), path: '/about' },
-        { label: t('footer.team'), path: '/team' },
-        { label: t('footer.contact'), path: '/contact' },
+        { labelKey: 'footer.about', path: '/about' },
+        { labelKey: 'footer.team', path: '/team' },
+        { labelKey: 'footer.contact', path: '/contact' },
       ],
     },
     {
       id: 'resources',
-      title: t('footer.resources'),
+      titleKey: 'footer.resources',
       items: [
-        { label: t('footer.docs'), path: '/docs' },
-        { label: t('footer.blog'), path: '/blog' },
-        { label: t('footer.faq'), path: '/faq' },
+        { labelKey: 'footer.docs', path: '/docs' },
+        { labelKey: 'footer.blog', path: '/blog' },
+        { labelKey: 'footer.faq', path: '/faq' },
       ],
     },
   ]
@@ -40,7 +49,7 @@ const V2Footer: React.FC = () => {
               <img src={headerLogo} alt="Loopy" className="h-10" />
             </div>
             <p className="text-slate-600 text-sm leading-relaxed mb-6 max-w-md">
-              {t('footer.description')}
+              {getFooterText('footer.description', 'Learn to code by building real projects.')}
             </p>
 
             {/* Social */}
@@ -73,7 +82,9 @@ const V2Footer: React.FC = () => {
           {/* Footer Columns */}
           {FOOTER_COLUMNS.map(column => (
             <div key={column.id}>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">{column.title}</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
+                {getFooterText(column.titleKey, column.titleKey)}
+              </h3>
               <ul className="space-y-3">
                 {column.items.map(item => (
                   <li key={item.path}>
@@ -81,7 +92,7 @@ const V2Footer: React.FC = () => {
                       to={item.path}
                       className="text-sm text-slate-600 hover:text-brand-teal transition-colors"
                     >
-                      {item.label}
+                      {getFooterText(item.labelKey, item.labelKey)}
                     </Link>
                   </li>
                 ))}
@@ -95,14 +106,14 @@ const V2Footer: React.FC = () => {
           {/* Bottom Section */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-slate-500">
-              © {currentYear} Loopy. {t('footer.allRightsReserved')}
+              © {currentYear} Loopy. {getFooterText('footer.allRightsReserved', 'All rights reserved.')}
             </p>
             <div className="flex items-center gap-6">
               <Link to="/privacy" className="text-xs text-slate-500 hover:text-slate-700 transition-colors">
-                {t('footer.privacy')}
+                {getFooterText('footer.privacy', 'Privacy')}
               </Link>
               <Link to="/terms" className="text-xs text-slate-500 hover:text-slate-700 transition-colors">
-                {t('footer.terms')}
+                {getFooterText('footer.terms', 'Terms')}
               </Link>
             </div>
           </div>

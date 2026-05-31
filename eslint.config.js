@@ -16,6 +16,10 @@ export default [
       'coverage/**',
       '*.config.js',
       '*.config.ts',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      'src/**/__tests__/**',
+      'scripts/**',
     ],
     languageOptions: {
       ecmaVersion: 2022,

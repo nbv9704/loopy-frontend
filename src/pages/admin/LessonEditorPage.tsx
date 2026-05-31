@@ -10,7 +10,6 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import FullscreenLoader from '../../components/common/FullscreenLoader'
 import { contentService, LessonTestCase } from '../../services/admin/content.service'
 
 interface ChapterOption {
@@ -69,6 +68,60 @@ const parseJsonField = (value: string, fallback: unknown) => {
     return value
   }
 }
+
+const LessonEditorSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex items-start gap-4">
+        <div className="mt-1 h-10 w-10 animate-pulse rounded-lg bg-slate-100" />
+        <div>
+          <div className="mb-3 h-7 w-36 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-10 w-52 animate-pulse rounded bg-slate-100" />
+          <div className="mt-3 h-5 w-full max-w-xl animate-pulse rounded bg-slate-100" />
+        </div>
+      </div>
+      <div className="h-12 w-32 animate-pulse rounded-lg bg-slate-100" />
+    </div>
+
+    <div className="grid gap-6 xl:grid-cols-[1fr,340px]">
+      <div className="space-y-5">
+        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 h-6 w-44 animate-pulse rounded bg-slate-100" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className={index === 2 ? 'md:col-span-2' : ''}>
+                <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-100" />
+                <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {Array.from({ length: 3 }).map((_, index) => (
+          <section key={index} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 h-6 w-40 animate-pulse rounded bg-slate-100" />
+            <div className="h-36 animate-pulse rounded-lg bg-slate-100" />
+          </section>
+        ))}
+      </div>
+
+      <aside className="space-y-5">
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 h-5 w-32 animate-pulse rounded bg-slate-100" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+            ))}
+          </div>
+        </section>
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 h-5 w-28 animate-pulse rounded bg-slate-100" />
+          <div className="h-24 animate-pulse rounded-lg bg-slate-100" />
+        </section>
+      </aside>
+    </div>
+  </div>
+)
 
 const LessonEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -337,7 +390,7 @@ const LessonEditorPage: React.FC = () => {
     autoSaveChecklist(newItems)
   }
 
-  if (loading) return <FullscreenLoader message="Đang tải bài học..." />
+  if (loading) return <LessonEditorSkeleton />
 
   return (
     <div className="space-y-6">

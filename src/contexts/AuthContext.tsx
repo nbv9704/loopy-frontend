@@ -12,7 +12,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import FullscreenLoader from '../components/common/FullscreenLoader'
+import { LoadingScreen } from '../components/v2/LoadingScreen'
 
 interface User {
   id: string
@@ -265,7 +265,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   if (loading) {
-    return <FullscreenLoader message={t('common.initializing')} />
+    return <LoadingScreen message={t('common.initializing')} />
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

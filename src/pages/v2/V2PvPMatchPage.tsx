@@ -1,29 +1,43 @@
 /**
- * PvP Match Page
+ * V2 PvP Match Page - Light Theme
  * Real-time match interface
  */
 
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../contexts/AuthContext'
-import { usePvPSocket } from '../hooks/usePvPSocket'
-import { pvpService } from '../services/pvp.service'
+import { useAuth } from '../../contexts/AuthContext'
+import { usePvPSocket } from '../../hooks/usePvPSocket'
+import { pvpService } from '../../services/pvp.service'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import type { PvPMatch, PvPQuestion, FinalScore, MatchPausedPayload } from '../types/pvp.types'
+import { useContentPreloader } from '../../hooks/useContentPreloader'
+import type { PvPMatch, PvPQuestion, FinalScore, MatchPausedPayload } from '../../types/pvp.types'
 
 // Components
-import MatchLobby from '../components/pvp/MatchLobby'
-import MatchArena from '../components/pvp/MatchArena'
-import MatchResults from '../components/pvp/MatchResults'
-import LoadingSpinner from '../components/common/LoadingSpinner'
+import MatchLobby from '../../components/pvp/MatchLobby'
+import MatchArena from '../../components/pvp/MatchArena'
+import MatchResults from '../../components/pvp/MatchResults'
+import LoadingScreen from '../../components/v2/LoadingScreen'
 
-const PvPMatchPage: React.FC = () => {
+const V2PvPMatchPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+
+  // Define all content keys needed for this page
+  const contentKeys = [
+    'pvp.match.notfound.title',
+    'pvp.match.notfound.desc',
+  ]
+
+  // Preload all content at once
+  const { content } = useContentPreloader(contentKeys, i18n.language)
+
+  // Extract content values with fallbacks
+  const pvpNotFoundTitle = content['pvp.match.notfound.title'] || 'Không tìm thấy phòng đấu'
+  const pvpNotFoundDesc = content['pvp.match.notfound.desc'] || 'Phòng có thể đã kết thúc hoặc mã phòng không đúng. Hãy quay lại Challenge Hub để tạo trận mới.'
 
   const [match, setMatch] = useState<PvPMatch | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState<PvPQuestion | null>(null)
@@ -288,21 +302,17 @@ const PvPMatchPage: React.FC = () => {
   }, [isPaused, pauseCountdown])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
+    return <LoadingScreen message={t('common.loading')} className="bg-[#f7fbff]" />
   }
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
-        <p className="text-white text-2xl font-black">Không tìm thấy phòng đấu</p>
-        <p className="text-slate-400 text-sm max-w-md text-center">Phòng có thể đã kết thúc hoặc mã phòng không đúng. Hãy quay lại Challenge Hub để tạo trận mới.</p>
+      <div className="min-h-screen bg-[#f7fbff] flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-900 text-2xl font-black">{pvpNotFoundTitle}</p>
+        <p className="text-slate-600 text-sm max-w-md text-center">{pvpNotFoundDesc}</p>
         <button
           onClick={() => navigate('/pvp')}
-          className="px-4 py-2 bg-brand-teal text-[#0a0e1a] rounded-lg hover:bg-brand-cyan transition-colors"
+          className="px-4 py-2 bg-brand-teal text-white rounded-lg hover:bg-brand-cyan transition-colors"
         >
           {t('pvp.match.backToLobby')}
         </button>
@@ -311,11 +321,11 @@ const PvPMatchPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] relative overflow-hidden">
-      {/* Ambient background */}
+    <div className="min-h-screen bg-[#f7fbff] relative overflow-hidden">
+      {/* Ambient background - light theme */}
       <div className="absolute inset-0 pointer-events-none opacity-30">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-brand-teal/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-brand-cyan/10 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-brand-teal/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-brand-cyan/5 rounded-full blur-[100px]" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -371,4 +381,4 @@ const PvPMatchPage: React.FC = () => {
   )
 }
 
-export default PvPMatchPage
+export default V2PvPMatchPage

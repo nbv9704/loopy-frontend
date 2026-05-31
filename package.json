@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "quality:check": "npm run format:check && npm run lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sync:content": "node scripts/sync-content-i18n.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.0",

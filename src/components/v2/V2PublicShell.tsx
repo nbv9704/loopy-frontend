@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import V2Header from './V2Header'
-import V2Footer from './V2Footer'
+import V2Header, { V2HeaderProps } from './V2Header'
+import V2Footer, { V2FooterProps } from './V2Footer'
 
 export function V2PressedButton({ children, to, variant = 'primary' }: { children: ReactNode; to: string; variant?: 'primary' | 'secondary' }) {
   const classes = variant === 'primary'
@@ -15,12 +15,15 @@ export function V2PressedButton({ children, to, variant = 'primary' }: { childre
   )
 }
 
-export function V2PublicShell({ children }: { children: ReactNode }) {
+export function V2PublicShell({ children, headerContent, footerContent }: { children: ReactNode; headerContent?: V2HeaderProps['headerContent']; footerContent?: V2FooterProps['footerContent'] }) {
   return (
     <div className="min-h-screen bg-[#f7fbff] text-slate-950 flex flex-col">
-      <V2Header />
-      {children}
-      <V2Footer />
+      <V2Header headerContent={headerContent} />
+      <div className="flex-1 animate-v2-page-enter">
+        {children}
+      </div>
+      <V2Footer footerContent={footerContent} />
     </div>
   )
 }
+

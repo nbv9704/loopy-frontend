@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { IconType } from 'react-icons'
 import { Link, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiCheckCircle, FiCode, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiLayers, FiPlay, FiTerminal } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
 import { api } from '../../lib/api'
+import { useContentPreloader } from '../../hooks/useContentPreloader'
+import { LoadingScreen } from '../../components/v2/LoadingScreen'
 
 type LessonTag = 'Quan sát' | 'Thực hành' | 'Kiểm tra' | 'Debug'
 
@@ -150,11 +153,150 @@ function CodePreview({ detail }: { detail: LanguageDetail }) {
 
 const V2LanguageDetailPage: React.FC = () => {
   const { language } = useParams<{ language: string }>()
+  const { i18n } = useTranslation()
   const slug = language || 'javascript'
   
   const [chapters, setChapters] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [apiLoading, setApiLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Define all content keys needed for this page (including header)
+  const contentKeys = [
+    // Header content
+    'nav.learn',
+    'nav.playground',
+    'nav.pvp',
+    'nav.docs',
+    'nav.settings',
+    'nav.logout',
+    // Detail page content
+    `language.${slug}.title`,
+    `language.${slug}.subtitle`,
+    'detail.back_btn',
+    'detail.fit_label',
+    'detail.first_win_label',
+    'detail.start_btn',
+    'detail.syllabus_btn',
+    'detail.syllabus.badge',
+    'detail.syllabus.title',
+    'detail.syllabus.desc',
+    'detail.loading',
+    'detail.empty',
+    'detail.cta.title',
+    'detail.cta.desc',
+    'detail.cta.btn1',
+    'detail.cta.btn2',
+    // Footer content
+    'footer.aboutLoopy',
+    'footer.about',
+    'footer.team',
+    'footer.contact',
+    'footer.resources',
+    'footer.docs',
+    'footer.blog',
+    'footer.faq',
+    'footer.description',
+    'footer.allRightsReserved',
+    'footer.privacy',
+    'footer.terms',
+  ]
+
+  // Preload all content at once
+  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
+
+  // Fetch curriculum from API (must be called before early return)
+  useEffect(() => {
+    const fetchCurriculum = async () => {
+      try {
+        setApiLoading(true)
+        setError(null)
+        
+        const response = await api.getCurriculum(slug)
+        const responseData = response.data as any
+        const apiChapters = Array.isArray(responseData)
+          ? responseData
+          : Array.isArray(responseData?.chapters)
+            ? responseData.chapters
+            : []
+        const apiLessons = Array.isArray(responseData?.lessons) ? responseData.lessons : []
+        
+        if (response.success && apiChapters.length > 0) {
+          const syllabusData: SyllabusSection[] = apiChapters.map((chapter: any) => {
+            const lessons = apiLessons
+              .filter((lesson: any) => lesson.chapterId === chapter.id || lesson.chapter_id === chapter.id)
+              .sort((a: any, b: any) => (a.orderIndex ?? a.order_index ?? 0) - (b.orderIndex ?? b.order_index ?? 0))
+
+            return {
+              title: chapter.title || chapter.name || 'Untitled Chapter',
+              description: chapter.description || 'Học các bài trong chương này.',
+              lessons: lessons.map((lesson: any) => ({
+                title: lesson.title || 'Untitled Lesson',
+                tags: ['Quan sát', 'Thực hành'] as LessonTag[],
+              })),
+            }
+          })
+          
+          setChapters(syllabusData as any)
+        } else {
+          setChapters([])
+        }
+      } catch (err) {
+        console.error('Error fetching curriculum:', err)
+        setError('Lỗi khi tải syllabus')
+      } finally {
+        setApiLoading(false)
+      }
+    }
+
+    fetchCurriculum()
+  }, [slug])
+
+  // Show loading screen while content is being fetched
+  if (contentLoading) {
+    return <LoadingScreen message="Loading language detail..." />
+  }
+
+  // Extract header content
+  const headerContent = {
+    'nav.learn': content['nav.learn'],
+    'nav.playground': content['nav.playground'],
+    'nav.pvp': content['nav.pvp'],
+    'nav.docs': content['nav.docs'],
+    'nav.settings': content['nav.settings'],
+    'nav.logout': content['nav.logout'],
+  }
+
+  // Extract footer content
+  const footerContent = {
+    'footer.aboutLoopy': content['footer.aboutLoopy'],
+    'footer.about': content['footer.about'],
+    'footer.team': content['footer.team'],
+    'footer.contact': content['footer.contact'],
+    'footer.resources': content['footer.resources'],
+    'footer.docs': content['footer.docs'],
+    'footer.blog': content['footer.blog'],
+    'footer.faq': content['footer.faq'],
+    'footer.description': content['footer.description'],
+    'footer.allRightsReserved': content['footer.allRightsReserved'],
+    'footer.privacy': content['footer.privacy'],
+    'footer.terms': content['footer.terms'],
+  }
+
+  // Extract content values with fallbacks
+  const backBtn = content['detail.back_btn'] || 'Tất cả lộ trình'
+  const fitLabel = content['detail.fit_label'] || 'Phù hợp nếu'
+  const firstWinLabel = content['detail.first_win_label'] || 'First win'
+  const startBtn = content['detail.start_btn'] || 'Bắt đầu bài đầu tiên'
+  const syllabusBtn = content['detail.syllabus_btn'] || 'Xem syllabus'
+  const syllabusBadge = content['detail.syllabus.badge'] || 'Syllabus'
+  const syllabusTitle = content['detail.syllabus.title'] || 'Từng chương là một checkpoint nhỏ.'
+  const syllabusDesc = content['detail.syllabus.desc'] || 'Mỗi chương gồm các bài học nhỏ với hành động rõ ràng: quan sát, thực hành, kiểm tra và debug.'
+  const loadingText = content['detail.loading'] || 'Đang tải danh sách chương...'
+  const emptyText = content['detail.empty'] || 'Chưa có chương nào cho lộ trình này.'
+  const ctaTitle = content['detail.cta.title'] || 'Sẵn sàng bắt đầu?'
+  const ctaDesc = content['detail.cta.desc'] || 'Bài đầu tiên sẽ dạy bạn quan sát code mẫu, chạy thử output, rồi sửa một dòng nhỏ. Không áp lực, chỉ học từng bước.'
+  const ctaBtn1 = content['detail.cta.btn1'] || 'Bắt đầu bài đầu tiên'
+  const ctaBtn2 = content['detail.cta.btn2'] || 'Đổi lộ trình'
 
   // Get language detail from description map
   const desc = descriptionMap[slug] || descriptionMap.javascript
@@ -176,60 +318,17 @@ const V2LanguageDetailPage: React.FC = () => {
     syllabus: [], // Will be populated from API
   }
 
-  useEffect(() => {
-    const fetchChapters = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        // Fetch chapters by language
-        const response = await api.getChaptersByLanguage(slug)
-        
-        if (response.success && response.data && Array.isArray(response.data)) {
-          // Transform chapters to syllabus format
-          const syllabusData: SyllabusSection[] = await Promise.all(
-            (response.data as any[]).map(async (chapter: any) => {
-              // Fetch lessons for this chapter
-              const lessonsResponse = await api.getLessonsByChapter(chapter.id)
-              const lessons = (lessonsResponse.success && lessonsResponse.data ? lessonsResponse.data : []) as any[]
-              
-              return {
-                title: chapter.title || chapter.name || 'Untitled Chapter',
-                description: chapter.description || 'Học các bài trong chương này.',
-                lessons: lessons.map((lesson: any) => ({
-                  title: lesson.title || 'Untitled Lesson',
-                  tags: ['Quan sát', 'Thực hành'] as LessonTag[], // Default tags
-                })),
-              }
-            })
-          )
-          
-          setChapters(syllabusData as any)
-        } else {
-          setError('Không thể tải danh sách chương')
-        }
-      } catch (err) {
-        console.error('Error fetching chapters:', err)
-        setError('Lỗi khi tải danh sách chương')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchChapters()
-  }, [slug])
-
   const syllabusToDisplay = chapters.length > 0 ? chapters : []
 
   return (
-    <V2PublicShell>
+    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main>
         <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute left-0 top-16 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr,1.1fr] lg:items-center">
             <div>
               <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
-                <FiArrowLeft /> Tất cả lộ trình
+                <FiArrowLeft /> {backBtn}
               </Link>
               <div className="mb-5 flex items-center gap-4">
                 <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-3xl shadow-[0_5px_0_rgba(15,23,42,0.14)] ${detail.accent}`}><detail.icon /></div>
@@ -244,17 +343,17 @@ const V2LanguageDetailPage: React.FC = () => {
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">{detail.promise}</p>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Phù hợp nếu</div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{fitLabel}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{detail.fit}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">First win</div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{firstWinLabel}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{detail.firstWin}</p>
                 </div>
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> Bắt đầu bài đầu tiên</V2PressedButton>
-                <V2PressedButton to="#syllabus" variant="secondary">Xem syllabus</V2PressedButton>
+                <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> {startBtn}</V2PressedButton>
+                <V2PressedButton to="#syllabus" variant="secondary">{syllabusBtn}</V2PressedButton>
               </div>
             </div>
             <CodePreview detail={detail} />
@@ -264,16 +363,16 @@ const V2LanguageDetailPage: React.FC = () => {
         <section id="syllabus" className="bg-white px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr,1.3fr]">
             <div>
-              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Syllabus</div>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Từng chương là một checkpoint nhỏ.</h2>
+              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{syllabusBadge}</div>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{syllabusTitle}</h2>
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                Mỗi chương gồm các bài học nhỏ với hành động rõ ràng: quan sát, thực hành, kiểm tra và debug.
+                {syllabusDesc}
               </p>
             </div>
             <div className="grid gap-4">
-              {loading && (
+              {apiLoading && (
                 <div className="text-center text-slate-600">
-                  Đang tải danh sách chương...
+                  {loadingText}
                 </div>
               )}
               
@@ -283,7 +382,7 @@ const V2LanguageDetailPage: React.FC = () => {
                 </div>
               )}
               
-              {!loading && syllabusToDisplay.length > 0 && ((syllabusToDisplay as any) || []).map((section: SyllabusSection, sectionIndex: number) => (
+              {!apiLoading && syllabusToDisplay.length > 0 && ((syllabusToDisplay as any) || []).map((section: SyllabusSection, sectionIndex: number) => (
                 <div key={section.title} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -311,9 +410,9 @@ const V2LanguageDetailPage: React.FC = () => {
                 </div>
               ))}
               
-              {!loading && syllabusToDisplay.length === 0 && !error && (
+              {!apiLoading && syllabusToDisplay.length === 0 && !error && (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
-                  Chưa có chương nào cho lộ trình này.
+                  {emptyText}
                 </div>
               )}
             </div>
@@ -323,13 +422,13 @@ const V2LanguageDetailPage: React.FC = () => {
         <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <FiCheckCircle className="mb-4 h-10 w-10 text-brand-teal" />
-            <h2 className="text-4xl font-black tracking-tight">Sẵn sàng bắt đầu?</h2>
+            <h2 className="text-4xl font-black tracking-tight">{ctaTitle}</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
-              Bài đầu tiên sẽ dạy bạn quan sát code mẫu, chạy thử output, rồi sửa một dòng nhỏ. Không áp lực, chỉ học từng bước.
+              {ctaDesc}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> Bắt đầu bài đầu tiên</V2PressedButton>
-              <V2PressedButton to="/languages" variant="secondary">Đổi lộ trình</V2PressedButton>
+              <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> {ctaBtn1}</V2PressedButton>
+              <V2PressedButton to="/languages" variant="secondary">{ctaBtn2}</V2PressedButton>
             </div>
           </div>
         </section>

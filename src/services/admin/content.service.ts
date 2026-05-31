@@ -184,4 +184,107 @@ export const contentService = {
   async deleteLesson(lessonId: string): Promise<void> {
     await apiClient.delete(`/api/admin/lessons/${lessonId}`)
   },
+
+  // ============================================================================
+  // Content Management API
+  // ============================================================================
+
+  /**
+   * Get content items with optional filtering and pagination
+   */
+  async getContentItems(
+    category?: string,
+    language?: 'vi' | 'en',
+    search?: string,
+    limit?: number,
+    offset?: number
+  ): Promise<{ items: any[]; total: number; limit: number; offset: number }> {
+    const params: any = {}
+    if (category) params.category = category
+    if (language) params.language = language
+    if (search) params.search = search
+    if (limit) params.limit = limit
+    if (offset !== undefined) params.offset = offset
+
+    const response = await apiClient.get('/api/admin/content', { params })
+    return response.data.data
+  },
+
+  /**
+   * Get all content categories
+   */
+  async getContentCategories(): Promise<any[]> {
+    const response = await apiClient.get('/api/admin/content/categories')
+    return response.data.data
+  },
+
+  /**
+   * Create a new content item
+   */
+  async createContentItem(data: {
+    categoryId: string
+    key: string
+    language: 'vi' | 'en'
+    value: string
+    description?: string
+    type?: 'text' | 'markdown' | 'html'
+  }): Promise<any> {
+    const response = await apiClient.post('/api/admin/content', data)
+    return response.data.data
+  },
+
+  /**
+   * Update a content item
+   */
+  async updateContentItem(
+    id: string,
+    data: {
+      value: string
+      description?: string
+      type?: 'text' | 'markdown' | 'html'
+    }
+  ): Promise<any> {
+    const response = await apiClient.put(`/api/admin/content/${id}`, data)
+    return response.data.data
+  },
+
+  /**
+   * Delete a content item
+   */
+  async deleteContentItem(id: string): Promise<void> {
+    await apiClient.delete(`/api/admin/content/${id}`)
+  },
+
+  /**
+   * Export content items for a specific language
+   */
+  async exportContent(language: 'vi' | 'en'): Promise<Blob> {
+    const response = await apiClient.get(`/api/admin/content/export?language=${language}`, {
+      responseType: 'blob',
+    })
+    return response.data
+  },
+
+  /**
+   * Import content items from a JSON file
+   */
+  async importContent(file: File): Promise<{ imported: number; errors: string[] }> {
+    const reader = new FileReader()
+
+    return new Promise((resolve, reject) => {
+      reader.onload = async (e) => {
+        try {
+          const content = JSON.parse(e.target?.result as string)
+          const response = await apiClient.post('/api/admin/content/import', content)
+          resolve(response.data.data)
+        } catch (error) {
+          reject(error)
+        }
+      }
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'))
+      }
+      reader.readAsText(file)
+    })
+  },
 }

@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiBookOpen, FiCode, FiCpu, FiDatabase, FiPlay, FiSave, FiTerminal, FiZap } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
+import { useContentPreloader } from '../../hooks/useContentPreloader'
+import { LoadingScreen } from '../../components/v2/LoadingScreen'
 
 type PlaygroundLanguage = 'python' | 'javascript' | 'sql'
 
@@ -91,10 +94,109 @@ function PlaygroundMock({ language }: { language: PlaygroundLanguage }) {
 }
 
 const V2PlaygroundPage: React.FC = () => {
+  const { i18n } = useTranslation()
   const [language, setLanguage] = useState<PlaygroundLanguage>('python')
 
+  // Define all content keys needed for this page (including header)
+  const contentKeys = [
+    // Header content
+    'nav.learn',
+    'nav.playground',
+    'nav.pvp',
+    'nav.docs',
+    'nav.settings',
+    'nav.logout',
+    // Playground page content
+    'playground.title',
+    'playground.subtitle',
+    'playground.badge',
+    'playground.runtime_label',
+    'playground.no_input',
+    'playground.run_btn',
+    'playground.sandbox_note',
+    'playground.feat1.title',
+    'playground.feat1.desc',
+    'playground.feat2.title',
+    'playground.feat2.desc',
+    'playground.feat3.title',
+    'playground.feat3.desc',
+    'playground.separate.badge',
+    'playground.separate.title',
+    'playground.separate.desc',
+    'playground.cta.title',
+    'playground.cta.desc',
+    'playground.cta.btn_journey',
+    'playground.cta.btn_path',
+    // Footer content
+    'footer.aboutLoopy',
+    'footer.about',
+    'footer.team',
+    'footer.contact',
+    'footer.resources',
+    'footer.docs',
+    'footer.blog',
+    'footer.faq',
+    'footer.description',
+    'footer.allRightsReserved',
+    'footer.privacy',
+    'footer.terms',
+  ]
+
+  // Preload all content at once
+  const { content, loading } = useContentPreloader(contentKeys, i18n.language)
+
+  // Show loading screen while content is being fetched
+  if (loading) {
+    return <LoadingScreen message="Loading playground..." />
+  }
+
+  // Extract header content
+  const headerContent = {
+    'nav.learn': content['nav.learn'],
+    'nav.playground': content['nav.playground'],
+    'nav.pvp': content['nav.pvp'],
+    'nav.docs': content['nav.docs'],
+    'nav.settings': content['nav.settings'],
+    'nav.logout': content['nav.logout'],
+  }
+
+  // Extract footer content
+  const footerContent = {
+    'footer.aboutLoopy': content['footer.aboutLoopy'],
+    'footer.about': content['footer.about'],
+    'footer.team': content['footer.team'],
+    'footer.contact': content['footer.contact'],
+    'footer.resources': content['footer.resources'],
+    'footer.docs': content['footer.docs'],
+    'footer.blog': content['footer.blog'],
+    'footer.faq': content['footer.faq'],
+    'footer.description': content['footer.description'],
+    'footer.allRightsReserved': content['footer.allRightsReserved'],
+    'footer.privacy': content['footer.privacy'],
+    'footer.terms': content['footer.terms'],
+  }
+
+  // Extract content values with fallbacks
+  const playgroundTitle = content['playground.title'] || 'Chạy code tự do, không làm rối tiến độ học.'
+  const playgroundSubtitle = content['playground.subtitle'] || 'Playground dành cho thử nghiệm nhanh: chọn ngôn ngữ, viết code, thêm input nếu cần và xem output. Kiểm tra bài học vẫn nằm trong Learn flow.'
+  const playgroundBadge = content['playground.badge'] || 'Playground v2 sandbox'
+  const runtimeLabel = content['playground.runtime_label'] || 'Chọn runtime mẫu'
+  const feat1Title = content['playground.feat1.title'] || 'Run, không Check'
+  const feat1Desc = content['playground.feat1.desc'] || 'Playground chỉ execute code và trả output, không validate yêu cầu lesson.'
+  const feat2Title = content['playground.feat2.title'] || 'Có stdin/input'
+  const feat2Desc = content['playground.feat2.desc'] || 'Dùng input để thử các ví dụ cần dữ liệu người dùng hoặc nhiều dòng.'
+  const feat3Title = content['playground.feat3.title'] || 'Quay lại guided flow'
+  const feat3Desc = content['playground.feat3.desc'] || 'Khi muốn học có thứ tự, quay về Journey Map hoặc lesson mẫu.'
+  const separateBadge = content['playground.separate.badge'] || 'Không phải completion'
+  const separateTitle = content['playground.separate.title'] || 'Playground tách khỏi progress để người mới không hiểu nhầm.'
+  const separateDesc = content['playground.separate.desc'] || 'Nếu user cần chấm bài, họ vào Learn. Nếu user cần thử nhanh một ý tưởng, họ dùng Playground. Hai flow này có nhiệm vụ khác nhau.'
+  const ctaTitle = content['playground.cta.title'] || 'Sẵn sàng quay lại học có hướng dẫn?'
+  const ctaDesc = content['playground.cta.desc'] || 'Playground giúp thử nhanh. Journey Map giúp biết bài nào nên làm tiếp.'
+  const ctaBtnJourney = content['playground.cta.btn_journey'] || 'Vào Journey Map'
+  const ctaBtnPath = content['playground.cta.btn_path'] || 'Tìm lộ trình'
+
   return (
-    <V2PublicShell>
+    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main>
         <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute right-0 top-12 h-80 w-80 rounded-full bg-brand-teal/20 blur-3xl" />
@@ -102,17 +204,17 @@ const V2PlaygroundPage: React.FC = () => {
             <div className="grid gap-8 lg:grid-cols-[0.9fr,1.1fr] lg:items-end">
               <div>
                 <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
-                  Playground v2 sandbox
+                  {playgroundBadge}
                 </div>
                 <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
-                  Chạy code tự do, không làm rối tiến độ học.
+                  {playgroundTitle}
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                  Playground dành cho thử nghiệm nhanh: chọn ngôn ngữ, viết code, thêm input nếu cần và xem output. Kiểm tra bài học vẫn nằm trong Learn flow.
+                  {playgroundSubtitle}
                 </p>
               </div>
               <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Chọn runtime mẫu</div>
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{runtimeLabel}</div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {(Object.keys(playgrounds) as PlaygroundLanguage[]).map(item => (
                     <LanguagePill key={item} language={item} active={language === item} onClick={() => setLanguage(item)} />
@@ -130,9 +232,9 @@ const V2PlaygroundPage: React.FC = () => {
         <section className="bg-white px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
             {[
-              [FiPlay, 'Run, không Check', 'Playground chỉ execute code và trả output, không validate yêu cầu lesson.'],
-              [FiTerminal, 'Có stdin/input', 'Dùng input để thử các ví dụ cần dữ liệu người dùng hoặc nhiều dòng.'],
-              [FiBookOpen, 'Quay lại guided flow', 'Khi muốn học có thứ tự, quay về Journey Map hoặc lesson mẫu.'],
+              [FiPlay, feat1Title, feat1Desc],
+              [FiTerminal, feat2Title, feat2Desc],
+              [FiBookOpen, feat3Title, feat3Desc],
             ].map(([Icon, title, description]) => {
               const CardIcon = Icon as typeof FiPlay
               return (
@@ -149,10 +251,10 @@ const V2PlaygroundPage: React.FC = () => {
         <section className="px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr,1.2fr] lg:items-center">
             <div>
-              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Không phải completion</div>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Playground tách khỏi progress để người mới không hiểu nhầm.</h2>
+              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{separateBadge}</div>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{separateTitle}</h2>
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                Nếu user cần chấm bài, họ vào Learn. Nếu user cần thử nhanh một ý tưởng, họ dùng Playground. Hai flow này có nhiệm vụ khác nhau.
+                {separateDesc}
               </p>
             </div>
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
@@ -178,13 +280,13 @@ const V2PlaygroundPage: React.FC = () => {
         <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <FiSave className="mb-4 h-10 w-10 text-brand-teal" />
-            <h2 className="text-4xl font-black tracking-tight">Sẵn sàng quay lại học có hướng dẫn?</h2>
+            <h2 className="text-4xl font-black tracking-tight">{ctaTitle}</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
-              Playground giúp thử nhanh. Journey Map giúp biết bài nào nên làm tiếp.
+              {ctaDesc}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to="/library/javascript">Vào Journey Map</V2PressedButton>
-              <V2PressedButton to="/onboarding" variant="secondary">Tìm lộ trình</V2PressedButton>
+              <V2PressedButton to="/library/javascript">{ctaBtnJourney}</V2PressedButton>
+              <V2PressedButton to="/onboarding" variant="secondary">{ctaBtnPath}</V2PressedButton>
             </div>
           </div>
         </section>

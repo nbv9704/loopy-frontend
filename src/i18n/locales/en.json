@@ -12,7 +12,7 @@
     "titlePrefix": "Learn to code",
     "titleHighlight": "from scratch,",
     "titleSuffix": "right in your browser.",
-    "subtitle": "Loopy guides you through bite-sized lessons, manageable challenges, and beginner-friendly feedback — completely free.",
+    "subtitle": "Loopy guides you through a clear flow: observe sample code, edit one line, run output, check with test cases, then debug small errors like real programming.",
     "cta": "Start from zero",
     "learnMore": "Learn More",
     "startLearning": "Start from zero",
@@ -27,7 +27,8 @@
       "runInstantly": "Run Instantly",
       "noInstall": "No installation needed",
       "executed": "Executed successfully"
-    }
+    },
+    "title": "Learn code step by step, not thrown into an IDE alone."
   },
   "auth": {
     "login": "Login",
@@ -44,7 +45,24 @@
     "signupNow": "Sign Up Now",
     "processing": "Processing...",
     "checkEmail": "Please check your email to confirm your account",
-    "devLoginOnly": "Only displayed in development environment"
+    "devLoginOnly": "Only displayed in development environment",
+    "feat4": "AUTH.FEAT4 EN",
+    "feat3": "AUTH.FEAT3 EN",
+    "feat2": "AUTH.FEAT2 EN",
+    "feat1": "AUTH.FEAT1 EN",
+    "title": {
+      "signup2": "AUTH.TITLE.SIGNUP2 EN",
+      "login2": "AUTH.TITLE.LOGIN2 EN",
+      "signup1": "AUTH.TITLE.SIGNUP1 EN",
+      "login1": "AUTH.TITLE.LOGIN1 EN"
+    },
+    "ctx": {
+      "default": "AUTH.CTX.DEFAULT EN",
+      "onboarding2": "AUTH.CTX.ONBOARDING2 EN",
+      "learn": "AUTH.CTX.LEARN EN",
+      "pvp": "AUTH.CTX.PVP EN",
+      "onboarding": "AUTH.CTX.ONBOARDING EN"
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -333,7 +351,69 @@
     "errorLoading": "Unable to load documentation. Please try again.",
     "retry": "Retry",
     "previous": "Previous",
-    "next": "Next"
+    "next": {
+      "btn2": "DOCS.NEXT.BTN2 EN",
+      "btn1": "DOCS.NEXT.BTN1 EN",
+      "desc": "DOCS.NEXT.DESC EN",
+      "title": "DOCS.NEXT.TITLE EN",
+      "badge": "DOCS.NEXT.BADGE EN"
+    },
+    "bottom": {
+      "btn2": "DOCS.BOTTOM.BTN2 EN",
+      "btn1": "DOCS.BOTTOM.BTN1 EN",
+      "desc": "DOCS.BOTTOM.DESC EN",
+      "title": "DOCS.BOTTOM.TITLE EN"
+    },
+    "toc": {
+      "items": "DOCS.TOC.ITEMS EN",
+      "title": "DOCS.TOC.TITLE EN"
+    },
+    "terminal": {
+      "desc": "DOCS.TERMINAL.DESC EN",
+      "badge": "DOCS.TERMINAL.BADGE EN"
+    },
+    "tips": {
+      "desc": "DOCS.TIPS.DESC EN",
+      "title": "DOCS.TIPS.TITLE EN"
+    },
+    "check": {
+      "desc": "DOCS.CHECK.DESC EN",
+      "badge": "DOCS.CHECK.BADGE EN"
+    },
+    "play": {
+      "desc": "DOCS.PLAY.DESC EN",
+      "badge": "DOCS.PLAY.BADGE EN"
+    },
+    "ref": {
+      "desc": "DOCS.REF.DESC EN",
+      "title": "DOCS.REF.TITLE EN",
+      "badge": "DOCS.REF.BADGE EN"
+    },
+    "group3": {
+      "items": "DOCS.GROUP3.ITEMS EN",
+      "title": "DOCS.GROUP3.TITLE EN"
+    },
+    "group2": {
+      "items": "DOCS.GROUP2.ITEMS EN",
+      "title": "DOCS.GROUP2.TITLE EN"
+    },
+    "group1": {
+      "items": "DOCS.GROUP1.ITEMS EN",
+      "title": "DOCS.GROUP1.TITLE EN"
+    },
+    "topic": {
+      "title": "DOCS.TOPIC.TITLE EN"
+    },
+    "search": {
+      "hint": "DOCS.SEARCH.HINT EN",
+      "quick": "DOCS.SEARCH.QUICK EN"
+    },
+    "sandbox": {
+      "badge": "DOCS.SANDBOX.BADGE EN"
+    },
+    "code": {
+      "output": "DOCS.CODE.OUTPUT EN"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -397,7 +477,68 @@
     "readyToStart": "Ready to start?",
     "joinThousands": "Join thousands of students learning programming every day",
     "startLearningFree": "Start Learning Free",
-    "lessonsCount": "{{count}} lessons"
+    "lessonsCount": "{{count}} lessons",
+    "bottom": {
+      "btn": "LANDING.BOTTOM.BTN EN",
+      "desc": "LANDING.BOTTOM.DESC EN",
+      "title": "LANDING.BOTTOM.TITLE EN"
+    },
+    "faq3": {
+      "a": "LANDING.FAQ3.A EN",
+      "q": "LANDING.FAQ3.Q EN"
+    },
+    "faq2": {
+      "a": "LANDING.FAQ2.A EN",
+      "q": "LANDING.FAQ2.Q EN"
+    },
+    "faq1": {
+      "a": "LANDING.FAQ1.A EN",
+      "q": "LANDING.FAQ1.Q EN"
+    },
+    "faq": {
+      "title": "LANDING.FAQ.TITLE EN",
+      "badge": "LANDING.FAQ.BADGE EN"
+    },
+    "journey": {
+      "desc": "LANDING.JOURNEY.DESC EN",
+      "title": "LANDING.JOURNEY.TITLE EN",
+      "badge": "LANDING.JOURNEY.BADGE EN",
+      "node5": "LANDING.JOURNEY.NODE5 EN",
+      "node4": "LANDING.JOURNEY.NODE4 EN",
+      "node3": "LANDING.JOURNEY.NODE3 EN",
+      "node2": "LANDING.JOURNEY.NODE2 EN",
+      "node1": "LANDING.JOURNEY.NODE1 EN"
+    },
+    "step3": {
+      "desc": "LANDING.STEP3.DESC EN",
+      "title": "LANDING.STEP3.TITLE EN"
+    },
+    "step2": {
+      "desc": "LANDING.STEP2.DESC EN",
+      "title": "LANDING.STEP2.TITLE EN"
+    },
+    "step1": {
+      "desc": "LANDING.STEP1.DESC EN",
+      "title": "LANDING.STEP1.TITLE EN"
+    },
+    "learn": {
+      "title": "tyess",
+      "badge": "LANDING.LEARN.BADGE EN"
+    },
+    "hero": {
+      "badge": "LANDING.HERO.BADGE EN"
+    },
+    "pmock": {
+      "checkbtn": "LANDING.PMOCK.CHECKBTN EN",
+      "item4": "LANDING.PMOCK.ITEM4 EN",
+      "item3": "LANDING.PMOCK.ITEM3 EN",
+      "item2": "LANDING.PMOCK.ITEM2 EN",
+      "item1": "LANDING.PMOCK.ITEM1 EN",
+      "desc": "LANDING.PMOCK.DESC EN",
+      "title": "LANDING.PMOCK.TITLE EN",
+      "role": "LANDING.PMOCK.ROLE EN",
+      "status": "LANDING.PMOCK.STATUS EN"
+    }
   },
   "pvp": {
     "title": "Challenge Mode",
@@ -443,7 +584,55 @@
       "summarizing": "Summarizing final results...",
       "pausedTitle": "Match Paused",
       "waitingRecon": "Waiting for reconnection",
-      "reconHint": "If not reconnected in time, player will forfeit"
+      "reconHint": "If not reconnected in time, player will forfeit",
+      "notfound": {
+        "desc": "PVP.MATCH.NOTFOUND.DESC EN",
+        "title": "PVP.MATCH.NOTFOUND.TITLE EN"
+      }
+    },
+    "header": {
+      "title": "PVP.HEADER.TITLE EN"
+    },
+    "unlock": {
+      "desc": "PVP.UNLOCK.DESC EN",
+      "badge": "PVP.UNLOCK.BADGE EN"
+    },
+    "feat3": {
+      "desc": "PVP.FEAT3.DESC EN",
+      "title": "PVP.FEAT3.TITLE EN"
+    },
+    "feat2": {
+      "desc": "PVP.FEAT2.DESC EN",
+      "title": "PVP.FEAT2.TITLE EN"
+    },
+    "feat1": {
+      "desc": "PVP.FEAT1.DESC EN",
+      "title": "PVP.FEAT1.TITLE EN"
+    },
+    "input": {
+      "code": "PVP.INPUT.CODE EN"
+    },
+    "or": "PVP.OR EN",
+    "btn": {
+      "start1v1": "PVP.BTN.START1V1 EN"
+    },
+    "diff": {
+      "title": "PVP.DIFF.TITLE EN"
+    },
+    "mode": {
+      "br": {
+        "desc": "PVP.MODE.BR.DESC EN",
+        "title": "PVP.MODE.BR.TITLE EN"
+      },
+      "1v1": {
+        "desc": "PVP.MODE.1V1.DESC EN"
+      },
+      "title": "PVP.MODE.TITLE EN"
+    },
+    "locked": {
+      "btn": "PVP.LOCKED.BTN EN",
+      "desc": "PVP.LOCKED.DESC EN",
+      "title": "PVP.LOCKED.TITLE EN"
     }
   },
   "grading": {
@@ -495,5 +684,62 @@
   },
   "pvpQuestion": {
     "selectAndSubmit": "Select your answer then press Submit below"
+  },
+  "bottom": {
+    "btn": "Find your learning path",
+    "desc": "If this v2 direction works, we'll continue building `/v2/library` and `/v2/learn` before changing the real UI.",
+    "title": "Start with one small lesson."
+  },
+  "faq3": {
+    "a": "After landing, we'll build v2 library/journey map before polishing Learn.",
+    "q": "What's the next priority?"
+  },
+  "faq2": {
+    "a": "No. We only use the structure as reference. Copy, assets and messaging are rewritten for Loopy.",
+    "q": "Are you copying Coddy?"
+  },
+  "faq1": {
+    "a": "No. This is a separate sandbox to test visuals before changing the real route.",
+    "q": "Will this replace the current landing?"
+  },
+  "faq": {
+    "title": "What is V2 testing?",
+    "badge": "FAQ"
+  },
+  "pmock": {
+    "item4": "Debug real errors",
+    "item3": "Check with rules",
+    "item2": "Edit small requirement",
+    "item1": "Observe sample code",
+    "desc": "Loopy doesn't make you read all theory first. You observe, edit small code, run it, then check with clear tests.",
+    "title": "Change one line, see output instantly",
+    "status": "Learning",
+    "badge": "Lesson 03"
+  },
+  "journey": {
+    "node5": "Loops",
+    "node4": "Conditions",
+    "node3": "Print output",
+    "node2": "Variables",
+    "node1": "Hello code",
+    "desc": "V2 prioritizes clear journey over catalog: done, active, locked are separated so beginners don't have to guess the next step.",
+    "title": "Know where you are, which lesson opens next.",
+    "badge": "Journey map"
+  },
+  "step3": {
+    "desc": "Hit small intentional errors, read the terminal and debug step by step like real programming.",
+    "title": "Debug"
+  },
+  "step2": {
+    "desc": "Edit a small part in the editor. Loopy checks your work with clear rules and test cases.",
+    "title": "Change"
+  },
+  "step1": {
+    "desc": "Read a short example, run sample code and understand output before writing your own.",
+    "title": "Observe"
+  },
+  "cta": {
+    "secondary": "View learning path",
+    "primary": "Try first lesson"
   }
 }

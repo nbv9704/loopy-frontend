@@ -4,6 +4,47 @@ import { AdminSubmission, contentService } from '../../services/admin/content.se
 
 type StatusFilter = 'all' | 'pass' | 'fail'
 
+const SubmissionStatsSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-3">
+    {Array.from({ length: 3 }).map((_, index) => (
+      <div key={index} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+        <div className="mt-3 h-8 w-14 animate-pulse rounded bg-slate-100" />
+      </div>
+    ))}
+  </div>
+)
+
+const SubmissionListSkeleton = () => (
+  <>
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div key={index} className="grid gap-4 p-5 lg:grid-cols-[1fr,280px]">
+        <div>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="h-7 w-16 animate-pulse rounded-full bg-slate-100" />
+            <div className="h-4 w-20 animate-pulse rounded bg-slate-100" />
+          </div>
+          <div className="h-6 w-60 animate-pulse rounded bg-slate-100" />
+          <div className="mt-2 h-4 w-36 animate-pulse rounded bg-slate-100" />
+          <div className="mt-3 h-16 animate-pulse rounded-lg bg-slate-100" />
+          <div className="mt-3 h-24 animate-pulse rounded-lg bg-slate-100" />
+        </div>
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+          <div className="h-5 w-24 animate-pulse rounded bg-slate-100" />
+          <div className="mt-4 space-y-3">
+            {Array.from({ length: 3 }).map((_, metricIndex) => (
+              <div key={metricIndex} className="flex justify-between gap-4">
+                <div className="h-4 w-20 animate-pulse rounded bg-slate-100" />
+                <div className="h-4 w-16 animate-pulse rounded bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </>
+)
+
 const SubmissionsPage: React.FC = () => {
   const [submissions, setSubmissions] = useState<AdminSubmission[]>([])
   const [status, setStatus] = useState<StatusFilter>('all')
@@ -63,20 +104,24 @@ const SubmissionsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Đang xem</p>
-          <p className="mt-2 text-3xl font-black text-slate-950">{submissions.length}</p>
+      {isLoading && submissions.length === 0 ? (
+        <SubmissionStatsSkeleton />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Đang xem</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{submissions.length}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Pass</p>
+            <p className="mt-2 text-3xl font-black text-green-700">{passCount}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-bold text-slate-500">Fail</p>
+            <p className="mt-2 text-3xl font-black text-red-700">{failCount}</p>
+          </div>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Pass</p>
-          <p className="mt-2 text-3xl font-black text-green-700">{passCount}</p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-bold text-slate-500">Fail</p>
-          <p className="mt-2 text-3xl font-black text-red-700">{failCount}</p>
-        </div>
-      </div>
+      )}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
@@ -97,11 +142,7 @@ const SubmissionsPage: React.FC = () => {
         </div>
 
         <div className="divide-y divide-slate-100">
-          {isLoading && (
-            <div className="p-10 text-center text-sm font-bold text-slate-500">
-              Đang tải submissions...
-            </div>
-          )}
+          {isLoading && <SubmissionListSkeleton />}
 
           {!isLoading && submissions.length === 0 && (
             <div className="p-10 text-center text-sm font-bold text-slate-500">

@@ -138,6 +138,96 @@
   .animate-modal-in {
     animation: modalIn 0.3s ease-out;
   }
+
+  @keyframes v2PageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.992);
+      filter: blur(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes v2DropdownEnter {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes v2MenuItemEnter {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes v2LoadingGlow {
+    0%, 100% {
+      opacity: 0.45;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: translate3d(0, 10px, 0) scale(1.08);
+    }
+  }
+
+  .animate-v2-page-enter {
+    animation: v2PageEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes v2TabPanelEnter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-v2-tab-panel-enter {
+    animation: v2TabPanelEnter 0.24s ease-out both;
+  }
+
+  .animate-v2-dropdown-enter {
+    animation: v2DropdownEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: top right;
+  }
+
+  .animate-v2-menu-item-enter {
+    animation: v2MenuItemEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-v2-loading-glow {
+    animation: v2LoadingGlow 2.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-v2-page-enter,
+  .animate-v2-tab-panel-enter,
+  .animate-v2-dropdown-enter,
+  .animate-v2-menu-item-enter,
+  .animate-v2-loading-glow {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 /* Custom Scrollbar - Loopy Brand Style (Public Pages) */

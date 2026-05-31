@@ -2,6 +2,41 @@ import { useEffect, useState } from 'react'
 import { Upload, Filter, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { importHistoryService, ImportHistoryRecord, ImportStats } from '../../services/admin/import-history.service'
 
+const ImportStatsSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-5">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div key={index} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+        <div className="mt-3 h-7 w-12 animate-pulse rounded bg-slate-100" />
+      </div>
+    ))}
+  </div>
+)
+
+const ImportHistorySkeletonRows = () => (
+  <div className="space-y-2">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div key={index} className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-1 items-start gap-4">
+          <div className="h-7 w-24 animate-pulse rounded-lg bg-slate-100" />
+          <div className="flex-1">
+            <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+            <div className="mt-3 flex gap-3">
+              <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
+              <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+              <div className="h-3 w-16 animate-pulse rounded bg-slate-100" />
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 space-y-2 text-right">
+          <div className="h-3 w-28 animate-pulse rounded bg-slate-100" />
+          <div className="ml-auto h-3 w-14 animate-pulse rounded bg-slate-100" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 const ImportHistoryPage: React.FC = () => {
   const [imports, setImports] = useState<ImportHistoryRecord[]>([])
   const [stats, setStats] = useState<ImportStats | null>(null)
@@ -71,7 +106,9 @@ const ImportHistoryPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      {stats && (
+      {isLoading && !stats ? (
+        <ImportStatsSkeleton />
+      ) : stats && (
         <div className="grid gap-4 md:grid-cols-5">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Tổng import</p>
@@ -129,11 +166,7 @@ const ImportHistoryPage: React.FC = () => {
 
       {/* History Table */}
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-100 shadow-sm" />
-          ))}
-        </div>
+        <ImportHistorySkeletonRows />
       ) : error ? (
         <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           <AlertCircle className="h-5 w-5 shrink-0" />

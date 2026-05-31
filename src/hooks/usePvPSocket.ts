@@ -91,13 +91,11 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     })
 
     socket.on('connect', () => {
-      console.log('Socket connected:', socket.id)
       setIsConnected(true)
       setError(null)
     })
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected')
       setIsConnected(false)
     })
 

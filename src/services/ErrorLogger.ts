@@ -278,5 +278,5 @@ export const errorLogger = new ErrorLogger({
   batchSize: 10,
   batchTimeout: 5000,
   maxQueueSize: 100,
-  enableConsole: true,
+  enableConsole: false,
 })

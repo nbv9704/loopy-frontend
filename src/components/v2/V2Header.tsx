@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, Menu, Settings, X } from 'lucide-react'
+import { LogOut, Menu, Settings, X, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import LanguageSwitcher from '../common/LanguageSwitcher'
 import headerLogo from '../../assets/images/logos/header/logo-w256.png'
 
-// Static navigation items — labels resolved via i18n in render
+// Static navigation items — labels resolved via props
 const NAV_ITEMS = [
   { id: 'learn', labelKey: 'nav.learn', path: '/languages' },
   { id: 'playground', labelKey: 'nav.playground', path: '/playground' },
@@ -21,7 +21,13 @@ const goalToLang: Record<string, string> = {
   explore: 'python',
 }
 
-const V2Header: React.FC = () => {
+export interface V2HeaderProps {
+  headerContent?: {
+    [key: string]: string | null
+  }
+}
+
+const V2Header: React.FC<V2HeaderProps> = ({ headerContent = {} }) => {
   const { user, signOut } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -64,6 +70,10 @@ const V2Header: React.FC = () => {
     return item.path
   }
 
+  const getNavLabel = (labelKey: string) => {
+    return headerContent[labelKey] || t(labelKey)
+  }
+
   const visibleNavItems = NAV_ITEMS.filter(item => !(item.id === 'pvp' && !user))
 
   return (
@@ -96,7 +106,7 @@ const V2Header: React.FC = () => {
                       : 'text-slate-600 hover:text-brand-teal hover:bg-slate-100'
                   }`}
                 >
-                  {t(item.labelKey)}
+                  {getNavLabel(item.labelKey)}
                   {isActive(item.path) && (
                     <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-6 bg-brand-teal rounded-full" />
                   )}
@@ -113,10 +123,14 @@ const V2Header: React.FC = () => {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
+                  id="v2-user-menu-button"
+                  aria-haspopup="menu"
+                  aria-expanded={showDropdown}
+                  aria-controls="v2-user-menu"
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-slate-100 transition-colors"
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 transition-all duration-200 ${showDropdown ? 'bg-slate-100 shadow-sm ring-2 ring-brand-teal/20' : 'hover:bg-slate-100'}`}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-teal text-slate-950 font-bold">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-teal text-slate-950 font-bold transition-transform duration-200 group-hover:scale-105">
                     {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="hidden sm:inline text-sm font-semibold text-slate-700">{user.displayName || user.email?.split('@')[0]}</span>
@@ -124,20 +138,28 @@ const V2Header: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
+                  <div
+                    id="v2-user-menu"
+                    role="menu"
+                    aria-labelledby="v2-user-menu-button"
+                    className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-2xl shadow-slate-300/60 backdrop-blur-xl z-50 animate-v2-dropdown-enter"
+                  >
                     <Link
                       to="/settings"
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
+                      role="menuitem"
+                      onClick={() => setShowDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100 animate-v2-menu-item-enter"
                     >
                       <Settings size={16} />
-                      {t('nav.settings')}
+                      {getNavLabel('nav.settings')}
                     </Link>
                     <button
+                      role="menuitem"
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors animate-v2-menu-item-enter [animation-delay:60ms]"
                     >
                       <LogOut size={16} />
-                      {t('nav.logout')}
+                      {getNavLabel('nav.logout')}
                     </button>
                   </div>
                 )}
@@ -145,9 +167,11 @@ const V2Header: React.FC = () => {
             ) : (
               <Link
                 to="/auth"
-                className="px-5 py-2.5 rounded-xl bg-brand-teal text-slate-950 font-semibold text-sm hover:shadow-lg transition-all"
+                className="group relative px-6 py-2.5 bg-gradient-to-r from-brand-teal to-brand-cyan text-slate-950 text-sm font-bold rounded-full cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 flex items-center gap-2 overflow-hidden"
               >
-                {t('nav.login')}
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-teal opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <User className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{t('auth.login')}</span>
               </Link>
             )}
 
@@ -175,7 +199,7 @@ const V2Header: React.FC = () => {
                 }`}
                 onClick={() => setShowMobileMenu(false)}
               >
-                {t(item.labelKey)}
+                {getNavLabel(item.labelKey)}
               </Link>
             ))}
           </nav>

@@ -14,6 +14,7 @@ import logoImg from '../../../assets/images/logos/logo-256x256.png'
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: FiHome },
   { name: 'Lessons', href: '/admin/lessons', icon: FiBookOpen, section: 'Content' },
+  { name: 'Content Manager', href: '/admin/content', icon: FiFileText },
   { name: 'Bulk Import', href: '/admin/import', icon: FiFileText },
   { name: 'Import History', href: '/admin/import-history', icon: FiUpload },
   { name: 'New Lesson', href: '/admin/lessons/new', icon: FiStar },
