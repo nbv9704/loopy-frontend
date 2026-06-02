@@ -1,36 +1,55 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiBookOpen, FiCode, FiCpu, FiDatabase, FiPlay, FiSave, FiTerminal, FiZap } from 'react-icons/fi'
 import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
 import { useContentPreloader } from '../../hooks/useContentPreloader'
 import { LoadingScreen } from '../../components/v2/LoadingScreen'
+import { api } from '../../lib/api'
 
-type PlaygroundLanguage = 'python' | 'javascript' | 'sql'
+type PlaygroundLanguage = 'python' | 'javascript' | 'cpp' | 'java' | 'go' | 'rust'
 
-const playgrounds: Record<PlaygroundLanguage, { label: string; file: string; icon: typeof FiCpu; code: string[]; stdin: string; output: string[] }> = {
+const playgrounds: Record<PlaygroundLanguage, { label: string; file: string; icon: typeof FiCpu; code: string; output: string[] }> = {
   python: {
     label: 'Python',
     file: 'main.py',
     icon: FiCpu,
-    code: ['name = input("Tên của bạn: ")', 'print(f"Xin chào {name}")'],
-    stdin: 'Loopy',
+    code: 'name = "Loopy"\nprint(f"Xin chào {name}")',
     output: ['Xin chào Loopy'],
   },
   javascript: {
     label: 'JavaScript',
     file: 'main.js',
     icon: FiCode,
-    code: ['const name = "Loopy"', 'console.log(`Xin chào ${name}`)'],
-    stdin: '',
+    code: 'const name = "Loopy"\nconsole.log(`Xin chào ${name}`)',
     output: ['Xin chào Loopy'],
   },
-  sql: {
-    label: 'SQL',
-    file: 'query.sql',
+  cpp: {
+    label: 'C++',
+    file: 'main.cpp',
     icon: FiDatabase,
-    code: ['SELECT name, score', 'FROM learners', 'WHERE score >= 80;'],
-    stdin: 'learners table',
-    output: ['name   score', 'An     92', 'Binh   86'],
+    code: '#include <iostream>\nusing namespace std;\n\nint main() {\n  cout << "Xin chào Loopy" << endl;\n  return 0;\n}',
+    output: ['Xin chào Loopy'],
+  },
+  java: {
+    label: 'Java',
+    file: 'Main.java',
+    icon: FiDatabase,
+    code: 'class Main {\n  public static void main(String[] args) {\n    System.out.println("Xin chào Loopy");\n  }\n}',
+    output: ['Xin chào Loopy'],
+  },
+  go: {
+    label: 'Go',
+    file: 'main.go',
+    icon: FiDatabase,
+    code: 'package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Xin chào Loopy")\n}',
+    output: ['Xin chào Loopy'],
+  },
+  rust: {
+    label: 'Rust',
+    file: 'main.rs',
+    icon: FiDatabase,
+    code: 'fn main() {\n    println!("Xin chào Loopy");\n}',
+    output: ['Xin chào Loopy'],
   },
 }
 
@@ -48,8 +67,49 @@ function LanguagePill({ language, active, onClick }: { language: PlaygroundLangu
   )
 }
 
-function PlaygroundMock({ language }: { language: PlaygroundLanguage }) {
+function InteractivePlayground({ language }: { language: PlaygroundLanguage }) {
   const item = playgrounds[language]
+  const [code, setCode] = useState(item.code)
+  const [output, setOutput] = useState<string[]>(item.output)
+  const [error, setError] = useState<string | null>(null)
+  const [running, setRunning] = useState(false)
+
+  useEffect(() => {
+    setCode(item.code)
+    setOutput(item.output)
+    setError(null)
+  }, [item])
+
+  const runCode = async () => {
+    setRunning(true)
+    setError(null)
+    setOutput(['Đang chạy code...'])
+
+    try {
+      const response = await api.executeCode(language, code)
+      const result = response.data
+
+      if (!response.success || !result) {
+        setOutput([])
+        setError(response.error?.message || 'Không thể thực thi code.')
+        return
+      }
+
+      if (result.error) {
+        setOutput(result.output ? result.output.split('\n') : [])
+        setError(result.error)
+        return
+      }
+
+      setOutput(result.output ? result.output.split('\n') : ['Chạy xong, không có output.'])
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Không thể kết nối runner.'
+      setOutput([])
+      setError(message)
+    } finally {
+      setRunning(false)
+    }
+  }
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl shadow-slate-300/70">
@@ -57,34 +117,41 @@ function PlaygroundMock({ language }: { language: PlaygroundLanguage }) {
         <div className="flex items-center gap-2 font-mono text-sm text-slate-400">
           <FiCode /> {item.file}
         </div>
-        <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-4 py-2 text-sm font-black text-slate-950 shadow-[0_3px_0_#0b889c]">
-          <FiPlay /> Chạy thử
+        <button
+          onClick={runCode}
+          disabled={running}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-4 py-2 text-sm font-black text-slate-950 shadow-[0_3px_0_#0b889c] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FiPlay /> {running ? 'Đang chạy...' : 'Chạy thử'}
         </button>
       </div>
 
       <div className="grid min-h-[520px] lg:grid-cols-[1fr,360px]">
-        <div className="bg-[#020617] p-5 font-mono text-sm leading-8">
-          {item.code.map((line, index) => (
-            <div key={`${language}-${line}`}>
-              <span className="select-none pr-4 text-slate-600">{index + 1}</span>{line}
-            </div>
-          ))}
-          <div className="mt-8 rounded-2xl border border-brand-teal/20 bg-brand-teal/10 p-4 font-sans text-sm leading-6 text-brand-teal">
+        <div className="bg-[#020617] p-5">
+          <textarea
+            value={code}
+            onChange={event => setCode(event.target.value)}
+            spellCheck={false}
+            className="min-h-[390px] w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-sm leading-7 text-slate-100 outline-none transition focus:border-brand-teal/60 focus:ring-2 focus:ring-brand-teal/20"
+            aria-label={`Code editor ${item.label}`}
+          />
+          <div className="mt-4 rounded-2xl border border-brand-teal/20 bg-brand-teal/10 p-4 font-sans text-sm leading-6 text-brand-teal">
             Playground chỉ chạy code và trả output. Nó không kiểm tra lesson, không lưu progress.
           </div>
         </div>
 
         <div className="grid border-t border-white/10 lg:border-l lg:border-t-0">
           <div className="border-b border-white/10 p-5">
-            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiTerminal /> Input / stdin</div>
-            <div className="min-h-28 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-slate-300">
-              {item.stdin || 'Không cần input cho ví dụ này.'}
+            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiTerminal /> Runner</div>
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-6 text-slate-300">
+              Dùng backend `/api/execute`. Python/C++/Java/Go/Rust sẽ chạy qua Piston nếu có, hoặc Glot fallback nếu đã cấu hình token.
             </div>
           </div>
           <div className="p-5">
             <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiZap /> Output</div>
-            <div className="min-h-32 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-slate-300">
-              {item.output.map(line => <div key={line}>{line}</div>)}
+            <div className="min-h-52 rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-slate-300">
+              {error && <div className="mb-3 whitespace-pre-wrap text-red-300">❌ {error}</div>}
+              {output.map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}
             </div>
           </div>
         </div>
@@ -224,7 +291,7 @@ const V2PlaygroundPage: React.FC = () => {
             </div>
 
             <div className="mt-10">
-              <PlaygroundMock language={language} />
+              <InteractivePlayground language={language} />
             </div>
           </div>
         </section>

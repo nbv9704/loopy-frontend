@@ -1,18 +1,31 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiArrowRight, FiCheckCircle, FiCode, FiCompass, FiCpu, FiGlobe, FiMap, FiPlay, FiSave, FiTarget } from 'react-icons/fi'
-import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
+import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiCode, FiCompass, FiCpu, FiGlobe, FiMap, FiPlay, FiSave, FiTarget } from 'react-icons/fi'
+import { V2PublicShell } from '../../components/v2/V2PublicShell'
 import { useContentPreloader } from '../../hooks/useContentPreloader'
 import { LoadingScreen } from '../../components/v2/LoadingScreen'
+import { useAuth } from '../../contexts/AuthContext'
+import { api } from '../../lib/api'
 
 type GoalId = 'zero' | 'web' | 'school' | 'try'
 type ExperienceId = 'new' | 'some' | 'basic'
 
-const goals: Array<{ id: GoalId; title: string; description: string; language: string; icon: typeof FiCompass }> = [
-  { id: 'zero', title: 'Tôi bắt đầu từ số 0', description: 'Ưu tiên Python và bài đầu thật nhỏ để hiểu output.', language: 'Python', icon: FiCompass },
-  { id: 'web', title: 'Tôi muốn làm web', description: 'Bắt đầu với JavaScript và tương tác trong trình duyệt.', language: 'JavaScript', icon: FiGlobe },
-  { id: 'school', title: 'Tôi học cho trường/lớp', description: 'Đi theo nền tảng input/output và tư duy giải bài.', language: 'C++', icon: FiCpu },
-  { id: 'try', title: 'Tôi chỉ muốn thử trước', description: 'Vào lesson mẫu ngắn để xem mình có hợp không.', language: 'Python', icon: FiPlay },
+type GoalOption = {
+  id: GoalId
+  title: string
+  description: string
+  language: 'python' | 'javascript' | 'cpp'
+  languageLabel: string
+  learningGoal: string
+  icon: typeof FiCompass
+}
+
+const goals: GoalOption[] = [
+  { id: 'zero', title: 'Tôi bắt đầu từ số 0', description: 'Ưu tiên Python và bài đầu thật nhỏ để hiểu output.', language: 'python', languageLabel: 'Python', learningGoal: 'start_from_zero', icon: FiCompass },
+  { id: 'web', title: 'Tôi muốn làm web', description: 'Bắt đầu với JavaScript và tương tác trong trình duyệt.', language: 'javascript', languageLabel: 'JavaScript', learningGoal: 'build_web', icon: FiGlobe },
+  { id: 'school', title: 'Tôi học cho trường/lớp', description: 'Đi theo nền tảng input/output và tư duy giải bài.', language: 'cpp', languageLabel: 'C++', learningGoal: 'school_work', icon: FiCpu },
+  { id: 'try', title: 'Tôi chỉ muốn thử trước', description: 'Vào lesson mẫu ngắn để xem mình có hợp không.', language: 'python', languageLabel: 'Python', learningGoal: 'explore', icon: FiPlay },
 ]
 
 const experiences: Array<{ id: ExperienceId; title: string; description: string }> = [
@@ -20,6 +33,12 @@ const experiences: Array<{ id: ExperienceId; title: string; description: string 
   { id: 'some', title: 'Đã xem qua nhưng chưa tự làm', description: 'Ưu tiên thực hành và debug lỗi dễ hiểu.' },
   { id: 'basic', title: 'Biết chút cơ bản', description: 'Đi nhanh hơn qua phần quan sát, tập trung kiểm tra.' },
 ]
+
+const languageToGoal: Partial<Record<string, GoalId>> = {
+  python: 'zero',
+  javascript: 'web',
+  cpp: 'school',
+}
 
 function StepBar({ step }: { step: number }) {
   return (
@@ -33,9 +52,17 @@ function StepBar({ step }: { step: number }) {
 
 const V2OnboardingPage: React.FC = () => {
   const { i18n } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user, loading: authLoading, refreshUser } = useAuth()
+  const locationState = location.state as { intendedLanguage?: string; onboardingDraft?: { selectedGoal?: GoalId; selectedExperience?: ExperienceId } } | null
+  const initialGoal = languageToGoal[locationState?.intendedLanguage || ''] || 'web'
+
   const [step, setStep] = useState(1)
-  const [selectedGoal, setSelectedGoal] = useState<GoalId>('web')
-  const [selectedExperience, setSelectedExperience] = useState<ExperienceId>('new')
+  const [selectedGoal, setSelectedGoal] = useState<GoalId>(locationState?.onboardingDraft?.selectedGoal || initialGoal)
+  const [selectedExperience, setSelectedExperience] = useState<ExperienceId>(locationState?.onboardingDraft?.selectedExperience || 'new')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const goal = goals.find(item => item.id === selectedGoal) || goals[1]
   const experience = experiences.find(item => item.id === selectedExperience) || experiences[0]
 
@@ -89,8 +116,7 @@ const V2OnboardingPage: React.FC = () => {
   // Preload all content at once
   const { content, loading } = useContentPreloader(contentKeys, i18n.language)
 
-  // Show loading screen while content is being fetched
-  if (loading) {
+  if (loading || authLoading) {
     return <LoadingScreen message="Loading onboarding..." />
   }
 
@@ -121,28 +147,73 @@ const V2OnboardingPage: React.FC = () => {
   }
 
   // Extract content values with fallbacks
-  const onboardingTitle = content['onboarding.title'] || 'Onboarding phải chọn được bước học đầu tiên, không chỉ hỏi cho vui.'
-  const onboardingSubtitle = content['onboarding.subtitle'] || 'Sandbox này preview flow 3 bước: mục tiêu, kinh nghiệm, xác nhận lộ trình. Production vẫn phải lưu profile thành công trước khi chuyển trang.'
+  const onboardingTitle = content['onboarding.title'] || 'Chọn một lộ trình đầu tiên để bắt đầu đúng bước.'
+  const onboardingSubtitle = content['onboarding.subtitle'] || 'Loopy dùng mục tiêu và kinh nghiệm của bạn để lưu hồ sơ học, rồi đưa bạn vào Journey Map phù hợp. Nếu lưu thất bại, bạn sẽ ở lại trang này để thử lại.'
   const badge = content['onboarding.badge'] || 'Journey Builder v2'
   const progressLabel = content['onboarding.progress'] || 'Tiến trình'
   const stepGoal = content['onboarding.step.goal'] || 'Mục tiêu'
   const stepExp = content['onboarding.step.exp'] || 'Kinh nghiệm'
-  const stepPreview = content['onboarding.step.preview'] || 'Preview lộ trình'
+  const stepPreview = content['onboarding.step.preview'] || 'Xác nhận lộ trình'
   const goalTitle = content['onboarding.goal.title'] || 'Bạn muốn Loopy giúp đạt điều gì trước?'
   const goalDesc = content['onboarding.goal.desc'] || 'Chọn mục tiêu gần nhất. Đây là cách Loopy gợi ý lộ trình đầu tiên.'
   const goalHint = content['onboarding.goal.hint'] || 'Gợi ý'
   const expTitle = content['onboarding.exp.title'] || 'Bạn đã từng code đến đâu?'
   const expDesc = content['onboarding.exp.desc'] || 'Câu trả lời này chỉ dùng để điều chỉnh tốc độ giải thích, không khóa lộ trình.'
   const previewTitle = content['onboarding.preview.title'] || 'Lộ trình đầu tiên đã sẵn sàng.'
-  const previewDesc = content['onboarding.preview.desc'] || 'Trong production, bước này sẽ gọi API lưu profile. Nếu save fail thì không chuyển trang.'
+  const previewDesc = content['onboarding.preview.desc'] || 'Bấm lưu để cập nhật hồ sơ học. Loopy chỉ chuyển vào Journey Map sau khi backend xác nhận thành công.'
   const previewBadge = content['onboarding.preview.badge'] || 'Recommended path'
   const btnBack = content['onboarding.preview.btn_back'] || 'Quay lại'
   const btnNext = content['onboarding.preview.btn_next'] || 'Tiếp tục'
-  const btnJourney = content['onboarding.preview.btn_journey'] || 'Preview Journey Map'
-  const sidebarBadge = content['onboarding.sidebar.badge'] || 'Preview'
+  const btnJourney = user
+    ? content['onboarding.preview.btn_journey'] || 'Lưu và mở Journey Map'
+    : 'Đăng nhập để lưu lộ trình'
+  const sidebarBadge = content['onboarding.sidebar.badge'] || 'Lộ trình đầu tiên'
   const sidebarDesc = content['onboarding.sidebar.desc'] || 'Loopy sẽ mở bài đầu phù hợp, thay vì đưa bạn vào catalog tự chọn.'
   const sidebarWhyTitle = content['onboarding.sidebar.why.title'] || 'Vì sao cần onboarding?'
   const sidebarWhyDesc = content['onboarding.sidebar.why.desc'] || 'Người mới không cần thấy toàn bộ catalog ngay. Họ cần một bài đầu rõ ràng và một đường quay lại nếu bị kẹt.'
+
+  const handleFinish = async () => {
+    setSaveError('')
+
+    if (!user) {
+      navigate('/auth', {
+        state: {
+          from: '/onboarding',
+          intendedLanguage: goal.language,
+          onboardingDraft: {
+            selectedGoal,
+            selectedExperience,
+            preferredLanguage: goal.language,
+            learningGoal: goal.learningGoal,
+            experienceLevel: selectedExperience,
+          },
+        },
+      })
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      const response = await api.updateProfile({
+        preferredLanguage: goal.language,
+        learningGoal: goal.learningGoal,
+        experienceLevel: selectedExperience,
+        onboardingCompleted: true,
+      })
+
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Không lưu được onboarding. Vui lòng thử lại.')
+      }
+
+      await refreshUser()
+      navigate(`/library/${goal.language}`, { replace: true })
+    } catch (err: any) {
+      setSaveError(err.message || 'Không lưu được onboarding. Vui lòng thử lại.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
@@ -182,7 +253,7 @@ const V2OnboardingPage: React.FC = () => {
                           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal"><Icon /></div>
                           <h3 className="text-xl font-black">{item.title}</h3>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                          <div className="mt-4 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-500">{goalHint}: {item.language}</div>
+                          <div className="mt-4 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-500">{goalHint}: {item.languageLabel}</div>
                         </button>
                       )
                     })}
@@ -219,7 +290,7 @@ const V2OnboardingPage: React.FC = () => {
                   <p className="mt-3 text-sm leading-6 text-slate-600">{previewDesc}</p>
                   <div className="mt-6 rounded-[1.5rem] border border-brand-teal/30 bg-brand-teal/10 p-6">
                     <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">{previewBadge}</div>
-                    <h3 className="mt-3 text-4xl font-black">{goal.language} Starter</h3>
+                    <h3 className="mt-3 text-4xl font-black">{goal.languageLabel} Starter</h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{stepGoal}: {goal.title}. {stepExp}: {experience.title}.</p>
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
                       {['Bài đầu: chạy code mẫu', 'Flow: quan sát -> sửa -> kiểm tra', 'Progress: lưu sau completeLesson'].map(item => (
@@ -227,11 +298,17 @@ const V2OnboardingPage: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                  {saveError && (
+                    <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
+                      <FiAlertCircle className="mt-0.5 shrink-0" />
+                      <span>{saveError}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
               <div className="mt-8 flex flex-col justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
-                <button onClick={() => setStep(prev => Math.max(1, prev - 1))} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-[0_4px_0_#cbd5e1] disabled:opacity-40" disabled={step === 1}>
+                <button onClick={() => setStep(prev => Math.max(1, prev - 1))} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-[0_4px_0_#cbd5e1] disabled:opacity-40" disabled={step === 1 || saving}>
                   {btnBack}
                 </button>
                 {step < 3 ? (
@@ -239,7 +316,9 @@ const V2OnboardingPage: React.FC = () => {
                     {btnNext} <FiArrowRight />
                   </button>
                 ) : (
-                  <V2PressedButton to="/library/javascript"><FiSave /> {btnJourney}</V2PressedButton>
+                  <button type="button" onClick={handleFinish} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-teal px-5 py-3 text-sm font-black text-slate-950 shadow-[0_5px_0_#0b889c] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+                    <FiSave /> {saving ? 'Đang lưu...' : btnJourney}
+                  </button>
                 )}
               </div>
             </section>
@@ -247,7 +326,7 @@ const V2OnboardingPage: React.FC = () => {
             <aside className="grid gap-4 lg:self-start">
               <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-xl shadow-slate-200/70">
                 <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiTarget /> {sidebarBadge}</div>
-                <h2 className="text-3xl font-black">{goal.language} Starter</h2>
+                <h2 className="text-3xl font-black">{goal.languageLabel} Starter</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-400">{sidebarDesc}</p>
                 <div className="mt-5 grid gap-2">
                   {['Không celebration trước khi lưu', 'Không navigate nếu save profile fail', 'CTA đầu tiên là bài học thật'].map(item => (

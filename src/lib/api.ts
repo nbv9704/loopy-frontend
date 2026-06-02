@@ -45,12 +45,15 @@ export interface LessonCheckResult {
   }>
 }
 
+export interface CapabilityInfo {
+  supported: boolean
+  runner: 'local' | 'piston'
+  requiresRunner: boolean
+  reason: string | null
+}
+
 export interface CapabilitiesResult {
-  capabilities: {
-    javascript: boolean
-    python: boolean
-    cpp: boolean
-  }
+  capabilities: Record<string, CapabilityInfo | boolean>
 }
 
 class ApiClient {

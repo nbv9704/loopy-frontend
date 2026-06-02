@@ -32,6 +32,8 @@ const V2ProfilePage: React.FC = () => {
     completedLessons: 0,
     currentStreak: 0,
     totalPoints: 0,
+    hasProgressData: false,
+    completedToday: 0,
   })
 
   const contentKeys = [
@@ -60,16 +62,24 @@ const V2ProfilePage: React.FC = () => {
         const totalPoints = (user as any).total_points || (user as any).totalPoints || 0
         const progressResponse = await api.request('/api/progress/me')
         let completedLessons = 0
+        let hasProgressData = false
+        let completedToday = 0
+        const todayKey = new Date().toISOString().slice(0, 10)
 
         if (progressResponse.success && progressResponse.data) {
-          if (Array.isArray(progressResponse.data)) {
-            completedLessons = progressResponse.data.filter((p: any) => p.completed_at || p.completedAt).length
-          } else if (typeof progressResponse.data === 'object') {
-            completedLessons = Object.keys(progressResponse.data).length
-          }
+          const progressItems = Array.isArray(progressResponse.data)
+            ? progressResponse.data
+            : Object.values(progressResponse.data as Record<string, any>)
+
+          hasProgressData = progressItems.length > 0
+          completedLessons = progressItems.filter((p: any) => p?.completed_at || p?.completedAt || p?.status === 'completed').length
+          completedToday = progressItems.filter((p: any) => {
+            const completedAt = p?.completed_at || p?.completedAt
+            return completedAt ? String(completedAt).slice(0, 10) === todayKey : false
+          }).length
         }
 
-        setStats({ completedLessons, currentStreak, totalPoints })
+        setStats({ completedLessons, currentStreak, totalPoints, hasProgressData, completedToday })
       } catch (err) {
         console.error('Error fetching stats:', err)
       }
@@ -116,10 +126,16 @@ const V2ProfilePage: React.FC = () => {
     { label: text('profile.stats.points', 'Points'), value: stats.totalPoints.toString(), icon: FiAward, note: 'saved lessons' },
   ], [content, stats])
 
+  const savedLessonsLabel = stats.completedLessons === 1 ? '1 saved lesson' : `${stats.completedLessons} saved lessons`
+  const todayCompleted = stats.completedToday > 0
+  const todayProgressWidth = todayCompleted ? '100%' : '0%'
+
   const activities = [
-    ['Progress đã lưu', 'Hoàn thành bài học sau khi backend xác nhận.'],
-    ['Mở khóa bài mới', 'Bài tiếp theo đang là bước tiếp theo.'],
-    ['Docs đã xem', 'Bạn mở note để hiểu thêm về khái niệm.'],
+    stats.hasProgressData
+      ? ['Progress đã lưu', `${savedLessonsLabel} đã được backend ghi nhận qua progress.`]
+      : ['Chưa có progress đã lưu', 'Hoàn thành một lesson bằng nút Kiểm tra để backend ghi nhận tiến độ.'],
+    [(user as any)?.onboardingCompleted ? 'Onboarding đã hoàn tất' : 'Onboarding chưa hoàn tất', (user as any)?.onboardingCompleted ? 'Mục tiêu học và ngôn ngữ ưu tiên đã được lưu trong profile.' : 'Chạy onboarding để Loopy gợi ý lộ trình đầu tiên.'],
+    ['Lộ trình hiện tại', `Journey Map đang mở theo ${preferredLanguage}.`],
   ]
 
   if (contentLoading) {
@@ -145,9 +161,15 @@ const V2ProfilePage: React.FC = () => {
           <div className="rounded-[1.5rem] border border-slate-200 bg-[#f8fafc] p-5">
             <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{text('profile.journey.badge', 'Journey progress')}</div>
             <h2 className="mt-2 text-2xl font-black">{text('profile.journey.title', 'You are building a coding habit one step at a time.')}</h2>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
-              <div className="h-full w-[42%] rounded-full bg-brand-teal" />
-            </div>
+            {stats.hasProgressData ? (
+              <div className="mt-4 rounded-2xl border border-brand-teal/30 bg-white p-4 text-sm font-black text-brand-ocean">
+                {savedLessonsLabel}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-500">
+                Chưa có lesson nào được lưu. Hãy hoàn thành bài đầu tiên bằng nút Kiểm tra.
+              </div>
+            )}
             <p className="mt-3 text-sm text-slate-600">{stats.completedLessons} {text('profile.journey.lessons_done', 'lessons completed')}</p>
           </div>
         </div>
@@ -194,8 +216,8 @@ const V2ProfilePage: React.FC = () => {
             <h2 className="text-3xl font-black">{text('profile.today.title', 'One small lesson is enough.')}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{text('profile.today.desc', 'Today’s goal: complete one lesson with a successful Check.')}</p>
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-              <div className="flex items-center justify-between text-sm font-black"><span>{text('profile.today.progress', 'Today’s progress')}</span><span className="text-brand-teal">0/1</span></div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[12%] rounded-full bg-brand-teal" /></div>
+              <div className="flex items-center justify-between text-sm font-black"><span>{text('profile.today.progress', 'Today’s progress')}</span><span className="text-brand-teal">{stats.completedToday}/1</span></div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-brand-teal" style={{ width: todayProgressWidth }} /></div>
             </div>
           </div>
           <NoticeCard />
@@ -208,8 +230,10 @@ const V2ProfilePage: React.FC = () => {
     <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBell /> {text('profile.notify.badge', 'Notice')}</div>
       <div className="grid gap-3">
-        <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">Bài tiếp theo đã mở khóa sau khi progress lưu xong.</div>
-        <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">Docs có thể giúp bạn hiểu thêm về khái niệm trước khi debug.</div>
+        <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">
+          {stats.hasProgressData ? 'Progress đang đọc từ backend. Mở Journey Map để tiếp tục đúng bước.' : 'Chưa có progress backend; hoàn thành lesson đầu tiên để profile cập nhật.'}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">Docs là tài liệu tham khảo; progress chỉ lưu sau khi lesson được Kiểm tra thành công.</div>
       </div>
     </div>
   )

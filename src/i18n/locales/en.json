@@ -99,7 +99,7 @@
     "initializing": "Initializing..."
   },
   "playground": {
-    "title": "Code Playground",
+    "title": "Try code quickly without affecting progress.",
     "runCode": "Run Code",
     "clearOutput": "Clear Output",
     "newFile": "New File",
@@ -123,7 +123,36 @@
     "languageAutoDetect": "Language will be auto-detected from extension",
     "supportedExtensions": "Supported: .js, .ts, .py, .cpp, .html, .css, .json, .md, .php, .rs, .java, .sql...",
     "createFile": "Create File",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "cta": {
+      "btn_path": "Choose a path",
+      "btn_journey": "Open Journey Map",
+      "desc": "Open the Journey Map to choose the active lesson, get guidance, and save progress after completion.",
+      "title": "Want a guided path?"
+    },
+    "separate": {
+      "desc": "Output can look fine, but a lesson needs rules or test cases to confirm the learning goal is met.",
+      "title": "Running code does not always mean it meets the requirement.",
+      "badge": "Run is not Check"
+    },
+    "feat3": {
+      "desc": "To save progress, complete the lesson inside Learn and pass Check.",
+      "title": "Return to Learn when ready"
+    },
+    "feat2": {
+      "desc": "Playground does not grade correctness. It only helps you understand how code runs.",
+      "title": "Separate from grading"
+    },
+    "feat1": {
+      "desc": "Write a few lines of code and inspect the output without opening a lesson.",
+      "title": "Try quickly"
+    },
+    "sandbox_note": "This sandbox is saved locally in this browser and does not count as lesson completion.",
+    "run_btn": "Run",
+    "no_input": "No input",
+    "runtime_label": "Runtime",
+    "badge": "Code sandbox",
+    "subtitle": "Playground is a sandbox for testing ideas, input, and output. To complete a lesson, return to Learn and click Check."
   },
   "admin": {
     "verifyingAccess": "Verifying access...",
@@ -286,8 +315,8 @@
     "subtitle": "Start your programming journey"
   },
   "onboarding": {
-    "title": "What is your goal?",
-    "subtitle": "Choose the path that fits you best right now.",
+    "title": "Build a learning path that fits you.",
+    "subtitle": "Answer a few short questions so Loopy can suggest the easiest starting point to follow.",
     "goals": {
       "python": {
         "title": "I know nothing",
@@ -305,7 +334,39 @@
         "title": "I just want to try it out",
         "desc": "Jump right into the first lesson in 30 seconds"
       }
-    }
+    },
+    "sidebar": {
+      "why": {
+        "desc": "A clear starting point helps you keep learning and avoid quitting at the first error.",
+        "title": "Why onboarding matters"
+      },
+      "desc": "Loopy does not force you to choose from dozens of topics on day one.",
+      "badge": "Newbie-first"
+    },
+    "preview": {
+      "btn_journey": "Save and open Journey Map",
+      "btn_next": "Continue",
+      "btn_back": "Back",
+      "badge": "Preview",
+      "desc": "Start with a small lesson, clear guidance, and real code checks.",
+      "title": "Your suggested path"
+    },
+    "exp": {
+      "desc": "Your current experience helps Loopy choose a first lesson that is not too hard or too slow.",
+      "title": "Have you coded before?"
+    },
+    "goal": {
+      "hint": "You can change this later, so do not worry about picking perfectly.",
+      "desc": "Choose the nearest goal. Loopy uses it to suggest your starting path.",
+      "title": "Why do you want to learn coding?"
+    },
+    "step": {
+      "preview": "Preview",
+      "exp": "Experience",
+      "goal": "Goal"
+    },
+    "progress": "Setup progress",
+    "badge": "Journey builder"
   },
   "learn": {
     "title": "Learn Programming",
@@ -541,8 +602,8 @@
     }
   },
   "pvp": {
-    "title": "Challenge Mode",
-    "subtitle": "Level up your skills with real-time coding challenges",
+    "title": "Code in real-time challenges with other learners.",
+    "subtitle": "Join a 1v1 room, solve a small question, and compare how you handled it. PvP helps you practice reactions; it does not replace the main learning path.",
     "selectMode": "Select Challenge Mode",
     "duel": "1v1 Challenge",
     "duelDesc": "Intense coding duel with a single opponent",
@@ -586,53 +647,53 @@
       "waitingRecon": "Waiting for reconnection",
       "reconHint": "If not reconnected in time, player will forfeit",
       "notfound": {
-        "desc": "PVP.MATCH.NOTFOUND.DESC EN",
-        "title": "PVP.MATCH.NOTFOUND.TITLE EN"
+        "desc": "The room code may be wrong or the match may have ended. Check the code or create a new match.",
+        "title": "Match not found"
       }
     },
     "header": {
-      "title": "PVP.HEADER.TITLE EN"
+      "title": "PvP Coding Room"
     },
     "unlock": {
-      "desc": "PVP.UNLOCK.DESC EN",
-      "badge": "PVP.UNLOCK.BADGE EN"
+      "desc": "Complete lessons first, then use PvP to improve speed and confidence.",
+      "badge": "Practice mode"
     },
     "feat3": {
-      "desc": "PVP.FEAT3.DESC EN",
-      "title": "PVP.FEAT3.TITLE EN"
+      "desc": "PvP works best for reviewing skills you have already practiced in the Journey Map.",
+      "title": "Practice after learning"
     },
     "feat2": {
-      "desc": "PVP.FEAT2.DESC EN",
-      "title": "PVP.FEAT2.TITLE EN"
+      "desc": "Track match state, time, and submissions inside the same room.",
+      "title": "Realtime feedback"
     },
     "feat1": {
-      "desc": "PVP.FEAT1.DESC EN",
-      "title": "PVP.FEAT1.TITLE EN"
+      "desc": "Focus on one specific skill instead of a problem that is too large.",
+      "title": "Small questions"
     },
     "input": {
-      "code": "PVP.INPUT.CODE EN"
+      "code": "Enter room code"
     },
-    "or": "PVP.OR EN",
+    "or": "or",
     "btn": {
-      "start1v1": "PVP.BTN.START1V1 EN"
+      "start1v1": "Start 1v1"
     },
     "diff": {
-      "title": "PVP.DIFF.TITLE EN"
+      "title": "Difficulty"
     },
     "mode": {
       "br": {
-        "desc": "PVP.MODE.BR.DESC EN",
-        "title": "PVP.MODE.BR.TITLE EN"
+        "desc": "The multi-player mode is being prepared. Start with 1v1 first.",
+        "title": "Battle Royale"
       },
       "1v1": {
-        "desc": "PVP.MODE.1V1.DESC EN"
+        "desc": "Match with one learner in a short round focused on a single question."
       },
-      "title": "PVP.MODE.TITLE EN"
+      "title": "Choose a mode"
     },
     "locked": {
-      "btn": "PVP.LOCKED.BTN EN",
-      "desc": "PVP.LOCKED.DESC EN",
-      "title": "PVP.LOCKED.TITLE EN"
+      "btn": "Back to learning",
+      "desc": "PvP is easier after you are comfortable with Run, Check, and reading output inside Learn.",
+      "title": "Complete a few lessons before entering PvP."
     }
   },
   "grading": {
@@ -741,5 +802,63 @@
   "cta": {
     "secondary": "View learning path",
     "primary": "Try first lesson"
+  },
+  "profile": {
+    "notice": {
+      "desc": "Loopy does not celebrate before the backend confirms the lesson is complete.",
+      "title": "Progress only increases after a successful save."
+    },
+    "notify": {
+      "badge": "Notice"
+    },
+    "today": {
+      "progress": "Today’s progress",
+      "desc": "Today’s goal: complete one lesson with a successful Check.",
+      "title": "One small lesson is enough.",
+      "badge": "Today focus"
+    },
+    "next": {
+      "btn_journey": "Go to Journey Map",
+      "btn_path": "View paths",
+      "desc": "Continue the active lesson instead of picking a random new topic.",
+      "headline": "Return to the step that is already open.",
+      "badge": "Next lesson",
+      "title": "Recommended next lesson"
+    },
+    "stats": {
+      "points": "Points",
+      "streak": "Streak",
+      "saved": "Progress saved"
+    },
+    "journey": {
+      "lessons_done": "lessons completed",
+      "title": "You are building a coding habit one step at a time.",
+      "badge": "Journey progress"
+    },
+    "badge": "Profile",
+    "subtitle": "Review your progress, streak, points, and the next lesson in your Loopy journey.",
+    "title": "Your learning profile."
+  },
+  "library": {
+    "cta": {
+      "btn_change": "Choose another path",
+      "btn_next": "Learn the next lesson",
+      "desc": "Do not try to learn many topics at once. Choose the active lesson and complete its flow.",
+      "title": "Move forward with one small lesson."
+    },
+    "feat3": {
+      "desc": "This lesson opens after you finish earlier steps.",
+      "title": "Locked"
+    },
+    "feat2": {
+      "desc": "The lesson you should learn next right now.",
+      "title": "Active"
+    },
+    "feat1": {
+      "desc": "Progress has been saved successfully by the backend.",
+      "title": "Done"
+    },
+    "empty": "There are no published lessons in this path yet.",
+    "loading": "Loading Journey Map..."
   }
 }

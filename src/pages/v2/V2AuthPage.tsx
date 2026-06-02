@@ -8,12 +8,13 @@ import { LoadingScreen } from '../../components/v2/LoadingScreen'
 import { useAuth } from '../../contexts/AuthContext'
 import SEO from '../../components/common/SEO'
 import { pageMetadata } from '../../utils/seo'
+import { api } from '../../lib/api'
 
 const V2AuthPage: React.FC = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, refreshUser } = useAuth()
 
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
@@ -62,7 +63,15 @@ const V2AuthPage: React.FC = () => {
   const feat3 = content['auth.feat3'] || 'Theo dõi streak, điểm và thử thách'
   const feat4 = content['auth.feat4'] || 'Lộ trình cốt lõi miễn phí để bắt đầu'
 
-  const locationState = location.state as { from?: { pathname?: string } | string; intendedLanguage?: string } | null
+  const locationState = location.state as {
+    from?: { pathname?: string } | string
+    intendedLanguage?: string
+    onboardingDraft?: {
+      preferredLanguage?: 'python' | 'javascript' | 'cpp'
+      learningGoal?: string
+      experienceLevel?: string
+    }
+  } | null
   const fromValue = locationState?.from
   const from = typeof fromValue === 'string' ? fromValue : fromValue?.pathname || '/'
 
@@ -74,6 +83,26 @@ const V2AuthPage: React.FC = () => {
     return ctxDefault
   })()
 
+  const finishOnboardingDraft = async () => {
+    const draft = locationState?.onboardingDraft
+    if (!draft?.preferredLanguage || !draft.learningGoal || !draft.experienceLevel) return false
+
+    const response = await api.updateProfile({
+      preferredLanguage: draft.preferredLanguage,
+      learningGoal: draft.learningGoal,
+      experienceLevel: draft.experienceLevel,
+      onboardingCompleted: true,
+    })
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Không lưu được onboarding. Vui lòng thử lại.')
+    }
+
+    await refreshUser()
+    navigate(`/library/${draft.preferredLanguage}`, { replace: true })
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -82,6 +111,9 @@ const V2AuthPage: React.FC = () => {
     try {
       if (isLogin) {
         const res = await signIn(email, password)
+        const savedDraft = await finishOnboardingDraft()
+        if (savedDraft) return
+
         const isCompleted = res.user?.onboardingCompleted
         
         if (isCompleted) {
@@ -99,6 +131,9 @@ const V2AuthPage: React.FC = () => {
           setIsLogin(true)
           setPassword('')
         } else {
+          const savedDraft = await finishOnboardingDraft()
+          if (savedDraft) return
+
           navigate('/onboarding', { 
             state: { intendedLanguage: locationState?.intendedLanguage }
           })
@@ -326,7 +361,21 @@ const V2AuthPage: React.FC = () => {
                       })
                       const data = await res.json()
                       if (data.success) {
-                        window.location.href = from
+                        const draft = locationState?.onboardingDraft
+                        if (draft?.preferredLanguage && draft.learningGoal && draft.experienceLevel) {
+                          const response = await api.updateProfile({
+                            preferredLanguage: draft.preferredLanguage,
+                            learningGoal: draft.learningGoal,
+                            experienceLevel: draft.experienceLevel,
+                            onboardingCompleted: true,
+                          })
+                          if (!response.success) {
+                            throw new Error(response.error?.message || 'Không lưu được onboarding. Vui lòng thử lại.')
+                          }
+                          window.location.href = `/library/${draft.preferredLanguage}`
+                        } else {
+                          window.location.href = from
+                        }
                       } else {
                         setError(data.error || 'Dev login failed')
                       }

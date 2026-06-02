@@ -100,7 +100,7 @@
     "initializing": "Đang khởi tạo..."
   },
   "playground": {
-    "title": "Sân chơi code",
+    "title": "Thử code nhanh, không ảnh hưởng progress.",
     "runCode": "Chạy code",
     "clearOutput": "Xóa output",
     "newFile": "File mới",
@@ -124,7 +124,36 @@
     "languageAutoDetect": "Ngôn ngữ sẽ tự động nhận diện từ extension",
     "supportedExtensions": "Hỗ trợ: .js, .ts, .py, .cpp, .html, .css, .json, .md, .php, .rs, .java, .sql...",
     "createFile": "Tạo file",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "cta": {
+      "btn_path": "Chọn lộ trình",
+      "btn_journey": "Mở Journey Map",
+      "desc": "Mở Journey Map để chọn bài active, được hướng dẫn và lưu progress sau khi hoàn thành.",
+      "title": "Muốn học theo lộ trình?"
+    },
+    "separate": {
+      "desc": "Output có thể nhìn ổn, nhưng lesson cần rule/test case để xác nhận bạn đã làm đúng mục tiêu học.",
+      "title": "Chạy được chưa chắc đã đúng yêu cầu.",
+      "badge": "Run khác Check"
+    },
+    "feat3": {
+      "desc": "Muốn lưu tiến độ, hãy làm bài trong Learn và vượt qua Kiểm tra.",
+      "title": "Quay lại Learn khi sẵn sàng"
+    },
+    "feat2": {
+      "desc": "Playground không chấm đúng/sai. Nó chỉ giúp bạn hiểu code đang chạy thế nào.",
+      "title": "Tách khỏi kiểm tra"
+    },
+    "feat1": {
+      "desc": "Viết vài dòng code và xem output ngay mà không cần mở bài học.",
+      "title": "Thử nhanh"
+    },
+    "sandbox_note": "Sandbox lưu cục bộ trên trình duyệt này và không tính là hoàn thành lesson.",
+    "run_btn": "Chạy thử",
+    "no_input": "Không có input",
+    "runtime_label": "Runtime",
+    "badge": "Code sandbox",
+    "subtitle": "Playground là sandbox để thử ý tưởng, input và output. Muốn hoàn thành bài, hãy quay lại Learn và bấm Kiểm tra."
   },
   "admin": {
     "verifyingAccess": "Đang xác thực quyền truy cập...",
@@ -287,8 +316,8 @@
     "subtitle": "Bắt đầu hành trình học lập trình của bạn"
   },
   "onboarding": {
-    "title": "Mục tiêu của bạn là gì?",
-    "subtitle": "Chọn một con đường phù hợp nhất với bạn lúc này.",
+    "title": "Tạo lộ trình học phù hợp với bạn.",
+    "subtitle": "Trả lời vài câu ngắn để Loopy gợi ý điểm bắt đầu dễ theo nhất.",
     "goals": {
       "python": {
         "title": "Mình chưa biết gì cả",
@@ -306,7 +335,39 @@
         "title": "Mình chỉ muốn thử xem sao",
         "desc": "Vào ngay bài học đầu tiên trong 30 giây"
       }
-    }
+    },
+    "sidebar": {
+      "why": {
+        "desc": "Một điểm bắt đầu rõ ràng giúp bạn học đều hơn và ít bỏ cuộc khi gặp lỗi đầu tiên.",
+        "title": "Vì sao cần onboarding?"
+      },
+      "desc": "Loopy không bắt bạn tự chọn giữa hàng chục chủ đề ngay từ đầu.",
+      "badge": "Newbie-first"
+    },
+    "preview": {
+      "btn_journey": "Lưu và mở Journey Map",
+      "btn_next": "Tiếp tục",
+      "btn_back": "Quay lại",
+      "badge": "Preview",
+      "desc": "Bắt đầu bằng bài nhỏ, có hướng dẫn rõ ràng và kiểm tra bằng code thật.",
+      "title": "Lộ trình đề xuất của bạn"
+    },
+    "exp": {
+      "desc": "Kinh nghiệm hiện tại giúp Loopy chọn bài mở đầu vừa sức hơn.",
+      "title": "Bạn đã từng code chưa?"
+    },
+    "goal": {
+      "hint": "Bạn có thể đổi mục tiêu sau, đừng lo chọn sai.",
+      "desc": "Chọn mục tiêu gần nhất. Loopy sẽ dùng nó để gợi ý lộ trình ban đầu.",
+      "title": "Bạn muốn học để làm gì?"
+    },
+    "step": {
+      "preview": "Xem trước",
+      "exp": "Kinh nghiệm",
+      "goal": "Mục tiêu"
+    },
+    "progress": "Tiến trình thiết lập",
+    "badge": "Journey builder"
   },
   "learn": {
     "title": "Học lập trình",
@@ -549,8 +610,8 @@
     }
   },
   "pvp": {
-    "title": "Chế độ Thử thách",
-    "subtitle": "Rèn luyện kỹ năng qua các bài tập đối kháng thời gian thực",
+    "title": "Thử thách code realtime với bạn học.",
+    "subtitle": "Vào phòng 1v1, giải câu hỏi nhỏ và so sánh cách xử lý. PvP giúp luyện phản xạ, không thay thế lộ trình học chính.",
     "selectMode": "Chọn chế độ thử thách",
     "duel": "Thử thách 1v1",
     "duelDesc": "Thử thách lập trình gay cấn với một đối thủ duy nhất",
@@ -594,53 +655,53 @@
       "waitingRecon": "Đang chờ kết nối lại",
       "reconHint": "Nếu không kết nối lại kịp, người chơi sẽ bị xử thua",
       "notfound": {
-        "desc": "PVP.MATCH.NOTFOUND.DESC VI",
-        "title": "PVP.MATCH.NOTFOUND.TITLE VI"
+        "desc": "Mã phòng có thể sai hoặc trận đã kết thúc. Hãy kiểm tra lại mã hoặc tạo trận mới.",
+        "title": "Không tìm thấy trận đấu"
       }
     },
     "header": {
-      "title": "PVP.HEADER.TITLE VI"
+      "title": "PvP Coding Room"
     },
     "unlock": {
-      "desc": "PVP.UNLOCK.DESC VI",
-      "badge": "PVP.UNLOCK.BADGE VI"
+      "desc": "Hoàn thành lesson trước, rồi dùng PvP để luyện tốc độ và độ chắc tay.",
+      "badge": "Practice mode"
     },
     "feat3": {
-      "desc": "PVP.FEAT3.DESC VI",
-      "title": "PVP.FEAT3.TITLE VI"
+      "desc": "PvP phù hợp để ôn lại kỹ năng đã học trong Journey Map.",
+      "title": "Luyện sau khi học"
     },
     "feat2": {
-      "desc": "PVP.FEAT2.DESC VI",
-      "title": "PVP.FEAT2.TITLE VI"
+      "desc": "Theo dõi trạng thái trận, thời gian và lượt nộp bài trong cùng một phòng.",
+      "title": "Realtime feedback"
     },
     "feat1": {
-      "desc": "PVP.FEAT1.DESC VI",
-      "title": "PVP.FEAT1.TITLE VI"
+      "desc": "Tập trung vào một kỹ năng cụ thể thay vì bài toán quá lớn.",
+      "title": "Câu hỏi nhỏ"
     },
     "input": {
-      "code": "PVP.INPUT.CODE VI"
+      "code": "Nhập mã phòng"
     },
-    "or": "PVP.OR VI",
+    "or": "hoặc",
     "btn": {
-      "start1v1": "PVP.BTN.START1V1 VI"
+      "start1v1": "Bắt đầu 1v1"
     },
     "diff": {
-      "title": "PVP.DIFF.TITLE VI"
+      "title": "Độ khó"
     },
     "mode": {
       "br": {
-        "desc": "PVP.MODE.BR.DESC VI",
-        "title": "PVP.MODE.BR.TITLE VI"
+        "desc": "Chế độ nhiều người đang được chuẩn bị. Hãy bắt đầu với 1v1 trước.",
+        "title": "Battle Royale"
       },
       "1v1": {
-        "desc": "PVP.MODE.1V1.DESC VI"
+        "desc": "Ghép với một người học khác trong trận ngắn, tập trung vào một câu hỏi."
       },
-      "title": "PVP.MODE.TITLE VI"
+      "title": "Chọn chế độ"
     },
     "locked": {
-      "btn": "PVP.LOCKED.BTN VI",
-      "desc": "PVP.LOCKED.DESC VI",
-      "title": "PVP.LOCKED.TITLE VI"
+      "btn": "Quay lại học",
+      "desc": "PvP sẽ dễ hơn khi bạn đã quen flow chạy thử, kiểm tra và đọc output trong Learn.",
+      "title": "Hoàn thành vài bài trước khi vào PvP."
     }
   },
   "grading": {
@@ -752,5 +813,62 @@
   "cta": {
     "secondary": "Xem lộ trình",
     "primary": "Thử bài đầu tiên"
+  },
+  "profile": {
+    "notice": {
+      "desc": "Loopy không celebration trước khi backend xác nhận bài học đã hoàn thành.",
+      "title": "Progress chỉ tăng sau khi lưu thành công."
+    },
+    "notify": {
+      "badge": "Thông báo"
+    },
+    "today": {
+      "progress": "Tiến độ hôm nay",
+      "desc": "Mục tiêu hôm nay: hoàn thành một lesson có kiểm tra thành công.",
+      "title": "Một bài nhỏ là đủ.",
+      "badge": "Today focus"
+    },
+    "next": {
+      "btn_journey": "Vào Journey Map",
+      "btn_path": "Xem lộ trình",
+      "desc": "Tiếp tục bài active thay vì chọn ngẫu nhiên một chủ đề mới.",
+      "headline": "Quay lại đúng bước đang mở.",
+      "badge": "Next lesson",
+      "title": "Bài nên học tiếp theo"
+    },
+    "stats": {
+      "points": "Điểm",
+      "streak": "Streak",
+      "saved": "Progress đã lưu"
+    },
+    "journey": {
+      "lessons_done": "bài đã hoàn thành",
+      "title": "Bạn đang xây thói quen học code từng bước.",
+      "badge": "Journey progress"
+    },
+    "badge": "Profile",
+    "subtitle": "Xem tiến độ, streak, điểm và bài nên học tiếp theo trong hành trình Loopy.",
+    "title": "Hồ sơ học tập của bạn."
+  },
+  "library": {
+    "cta": {
+      "btn_change": "Đổi lộ trình",
+      "btn_next": "Học bài tiếp theo",
+      "desc": "Đừng cố học nhiều chủ đề cùng lúc. Chọn bài active và hoàn thành flow của nó.",
+      "title": "Đi tiếp bằng một bài nhỏ."
+    },
+    "feat3": {
+      "desc": "Bài sẽ mở sau khi bạn hoàn thành các bước trước.",
+      "title": "Locked"
+    },
+    "feat2": {
+      "desc": "Bài nên học tiếp theo ngay bây giờ.",
+      "title": "Active"
+    },
+    "feat1": {
+      "desc": "Bài đã được backend lưu progress thành công.",
+      "title": "Done"
+    },
+    "empty": "Chưa có bài published trong lộ trình này."
   }
 }
