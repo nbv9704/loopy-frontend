@@ -1,0 +1,899 @@
+{
+  "nav": {
+    "home": "Home",
+    "learn": "Learn",
+    "playground": "Playground",
+    "pvp": "Challenges",
+    "docs": "Docs",
+    "settings": "Settings",
+    "admin": "Admin",
+    "practice": "Practice"
+  },
+  "hero": {
+    "titlePrefix": "Learn to code",
+    "titleHighlight": "from scratch,",
+    "titleSuffix": "right in your browser.",
+    "subtitle": "Loopy guides you through a clear flow: observe sample code, edit one line, run output, check with test cases, then debug small errors like real programming.",
+    "cta": "Start from zero",
+    "learnMore": "Learn More",
+    "startLearning": "Start from zero",
+    "viewDocs": "View sample lessons",
+    "stats": {
+      "languages": "3 languages",
+      "lessons": "99+ lessons",
+      "free": "Free"
+    },
+    "code": {
+      "comment": "Learn programming easily",
+      "runInstantly": "Run Instantly",
+      "noInstall": "No installation needed",
+      "executed": "Executed successfully"
+    },
+    "title": "Learn code step by step, not thrown into an IDE alone."
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display Name",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create New Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginNow": "Login",
+    "signupNow": "Sign Up Now",
+    "processing": "Processing...",
+    "checkEmail": "Please check your email to confirm your account",
+    "devLoginOnly": "Only displayed in development environment",
+    "feat4": "AUTH.FEAT4 EN",
+    "feat3": "AUTH.FEAT3 EN",
+    "feat2": "AUTH.FEAT2 EN",
+    "feat1": "AUTH.FEAT1 EN",
+    "title": {
+      "signup2": "AUTH.TITLE.SIGNUP2 EN",
+      "login2": "AUTH.TITLE.LOGIN2 EN",
+      "signup1": "AUTH.TITLE.SIGNUP1 EN",
+      "login1": "AUTH.TITLE.LOGIN1 EN"
+    },
+    "ctx": {
+      "default": "AUTH.CTX.DEFAULT EN",
+      "onboarding2": "AUTH.CTX.ONBOARDING2 EN",
+      "learn": "AUTH.CTX.LEARN EN",
+      "pvp": "AUTH.CTX.PVP EN",
+      "onboarding": "AUTH.CTX.ONBOARDING EN"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "saving": "Saving...",
+    "savedSuccessfully": "Saved successfully!",
+    "clear": "Clear",
+    "clearAll": "Clear All",
+    "autoSaved": "Auto-saved",
+    "ready": "Ready",
+    "noLessons": "No lessons yet",
+    "developing": "Developing",
+    "fileTooLarge": "File too large! Please select an image under 2MB",
+    "enterFileName": "Please enter file name!",
+    "confirmDeleteAll": "Are you sure you want to delete all files and reset to default?",
+    "runSuccessNoOutput": "(Ran successfully but no print statements)",
+    "languageAutoDetect": "Language will be auto-detected from extension",
+    "unexpectedError": "The application encountered an unexpected error. Please reload the page to continue.",
+    "reloadPage": "Reload Page",
+    "initializing": "Initializing..."
+  },
+  "playground": {
+    "title": "Try code quickly without affecting progress.",
+    "runCode": "Run Code",
+    "clearOutput": "Clear Output",
+    "newFile": "New File",
+    "selectLanguage": "Select Language",
+    "fileList": "File List",
+    "filesCount": "{{count}}/{{max}} files",
+    "deleteAll": "Delete All",
+    "maxFilesReached": "Maximum {{max}} files!",
+    "mustKeepOneFile": "Must keep at least 1 file!",
+    "confirmDeleteAll": "Are you sure you want to delete all files and reset to default?",
+    "freePlayground": "Free Playground - Write code and experiment with your ideas",
+    "autoSaved": "Auto-saved",
+    "runSuccessNoOutput": "(Ran successfully but no print statements)",
+    "errorPrefix": "❌ ERROR: ",
+    "terminal": "Terminal",
+    "readyToRun": "Ready to run code...",
+    "createNewFile": "Create New File",
+    "fileName": "File Name",
+    "enterFileName": "Please enter file name!",
+    "fileNamePlaceholder": "example.js, script.py, main.cpp, index.html...",
+    "languageAutoDetect": "Language will be auto-detected from extension",
+    "supportedExtensions": "Supported: .js, .ts, .py, .cpp, .html, .css, .json, .md, .php, .rs, .java, .sql...",
+    "createFile": "Create File",
+    "cancel": "Cancel",
+    "cta": {
+      "btn_path": "Choose a path",
+      "btn_journey": "Open Journey Map",
+      "desc": "Open the Journey Map to choose the active lesson, get guidance, and save progress after completion.",
+      "title": "Want a guided path?"
+    },
+    "separate": {
+      "desc": "Output can look fine, but a lesson needs rules or test cases to confirm the learning goal is met.",
+      "title": "Running code does not always mean it meets the requirement.",
+      "badge": "Run is not Check"
+    },
+    "feat3": {
+      "desc": "To save progress, complete the lesson inside Learn and pass Check.",
+      "title": "Return to Learn when ready"
+    },
+    "feat2": {
+      "desc": "Playground does not grade correctness. It only helps you understand how code runs.",
+      "title": "Separate from grading"
+    },
+    "feat1": {
+      "desc": "Write a few lines of code and inspect the output without opening a lesson.",
+      "title": "Try quickly"
+    },
+    "sandbox_note": "This sandbox is saved locally in this browser and does not count as lesson completion.",
+    "run_btn": "Run",
+    "no_input": "No input",
+    "runtime_label": "Runtime",
+    "badge": "Code sandbox",
+    "subtitle": "Playground is a sandbox for testing ideas, input, and output. To complete a lesson, return to Learn and click Check."
+  },
+  "admin": {
+    "verifyingAccess": "Verifying access...",
+    "loading": "Loading...",
+    "loadingData": "Loading data...",
+    "loadingLinks": "Loading links...",
+    "loadingLogs": "Loading logs...",
+    "contentManagement": "Content Management",
+    "backToSite": "Back to Site",
+    "edit": "Edit",
+    "addNew": "Add New",
+    "saving": "Saving...",
+    "save": "Save",
+    "empty": {
+      "navigation": "No navigation items yet",
+      "stats": "No statistics yet",
+      "languages": "No languages yet",
+      "steps": "No steps yet",
+      "features": "No features yet",
+      "technologies": "No technologies yet",
+      "technologyHint": "Click 'Add Technology' to start",
+      "noTechSelected": "No technology selected",
+      "selectTechHint": "Select a technology from the left list",
+      "links": "No links yet",
+      "linkHint": "Click 'Add Link' to start"
+    },
+    "navigation": {
+      "title": "Navigation Management",
+      "description": "Manage navigation items in header and footer",
+      "addItem": "Add Item",
+      "editItem": "Edit Navigation Item",
+      "newItem": "Add New Navigation Item",
+      "deleteConfirm": "Delete navigation item?",
+      "deleteMessage": "Are you sure you want to delete \"{{label}}\"?",
+      "placeholder": "Example: Home, Docs, Contact",
+      "header": "Header",
+      "footer": "Footer"
+    },
+    "stats": {
+      "title": "Statistics",
+      "description": "Manage statistics displayed on homepage",
+      "addStat": "Add Statistic",
+      "editStat": "Edit Statistic",
+      "newStat": "Add New Statistic"
+    },
+    "languages": {
+      "title": "Programming Languages",
+      "description": "Manage supported programming languages",
+      "addLanguage": "Add Language",
+      "editLanguage": "Edit Language",
+      "newLanguage": "Add New Language"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "description": "Manage steps for platform usage guide",
+      "addStep": "Add Step",
+      "editStep": "Edit Step",
+      "newStep": "Add New Step"
+    },
+    "features": {
+      "title": "Features",
+      "description": "Manage featured features on homepage",
+      "addFeature": "Add Feature",
+      "editFeature": "Edit Feature",
+      "newFeature": "Add New Feature",
+      "deleteConfirm": "Delete feature?",
+      "deleteMessage": "Are you sure you want to delete feature \"{{title}}\"?"
+    },
+    "landingContent": {
+      "title": "Landing Page Content Management",
+      "description": "Manage features, stats, languages and guides on homepage"
+    },
+    "documentation": {
+      "title": "Documentation Management",
+      "description": "Manage programming technologies and related documentation links",
+      "errorLoadingData": "Error loading data",
+      "errorLoadingLinks": "Error loading links",
+      "addTechnology": "Add Technology",
+      "editTechnology": "Edit Technology",
+      "newTechnology": "Add New Technology",
+      "addLink": "Add Link",
+      "editLink": "Edit Link",
+      "newLink": "Add New Link",
+      "technologies": "Technologies",
+      "links": "Links"
+    },
+    "audit": {
+      "title": "Audit Log",
+      "description": "View content change history",
+      "user": "User",
+      "action": "Action",
+      "resource": "Resource",
+      "timestamp": "Timestamp",
+      "filterByUser": "Filter by user",
+      "filterByAction": "Filter by action",
+      "filterByDate": "Filter by date",
+      "clearFilters": "Clear Filters",
+      "exportCSV": "Export CSV"
+    },
+    "bulkImport": {
+      "title": "Bulk Import",
+      "subtitle": "Import lessons and exercises from JSON file",
+      "jsonStructure": "JSON Structure",
+      "startImport": "Start Import",
+      "importError": "Import Error",
+      "importSuccess": "Import Success",
+      "lessons": "Lessons",
+      "exercises": "Exercises",
+      "minorErrors": "Minor errors occurred:",
+      "pasteHint": "Paste JSON code to start the bulk import process."
+    },
+    "lessonEditor": {
+      "title": "Edit Lesson",
+      "newTitle": "Add New Lesson",
+      "subtitle": "Design See-Change-Build experience",
+      "saveLesson": "Save Lesson",
+      "preview": "Preview",
+      "editContent": "Edit Content",
+      "basicInfo": "Basic Information",
+      "chapter": "Chapter",
+      "slug": "Slug (URL)",
+      "lessonTitle": "Lesson Title",
+      "step1See": "Step 1: See (Observe)",
+      "explanation": "Concept Explanation",
+      "starterCode": "Starter Code",
+      "step2Change": "Step 2: Change & Run",
+      "taskDescription": "Task Instructions",
+      "hint": "Hint",
+      "commonMistakes": "Common Mistakes",
+      "step3Build": "Step 3: Build",
+      "solutionCode": "Expected Result (Solution Code)",
+      "advancedSettings": "Advanced Settings",
+      "ahaMoment": "Aha! Moment?",
+      "displayOrder": "Display Order",
+      "advice": "Advice",
+      "adviceText": "Avoid long explanations. Let users learn by seeing and trying. The Change step task should be extremely simple to create a quick sense of success.",
+      "previewNote": "-- This is a preview of the user-facing interface --"
+    }
+  },
+  "sampleLesson": {
+    "title": "Loopy Experience",
+    "preparation": "Preparing experience lesson...",
+    "login": "Login",
+    "discoverAha": "Discover the Aha! Lesson",
+    "mission": "Your Mission:",
+    "consoleOutput": "Console Output",
+    "tryIt": "Try It",
+    "wowTitle": "Wow! You did it!",
+    "successMessage": "You just completed your first coding lesson. Sign up now to save this achievement and continue your journey to becoming a developer!",
+    "saveAndContinue": "Save & Continue",
+    "tryAgain": "I want to try again",
+    "free": "Free",
+    "support": "24/7 Support"
+  },
+  "languageSelector": {
+    "loading": "Loading languages...",
+    "errorTitle": "Unable to load languages",
+    "errorMessage": "Please check backend connection",
+    "title": "Choose Language",
+    "subtitle": "Start your programming journey"
+  },
+  "onboarding": {
+    "title": "Build a learning path that fits you.",
+    "subtitle": "Answer a few short questions so Loopy can suggest the easiest starting point to follow.",
+    "goals": {
+      "python": {
+        "title": "I know nothing",
+        "desc": "Start with programming fundamentals"
+      },
+      "javascript": {
+        "title": "I want to build Websites",
+        "desc": "Learn how to create interactive interfaces"
+      },
+      "cpp": {
+        "title": "I need algorithms",
+        "desc": "For computer science students"
+      },
+      "quick": {
+        "title": "I just want to try it out",
+        "desc": "Jump right into the first lesson in 30 seconds"
+      }
+    },
+    "sidebar": {
+      "why": {
+        "desc": "A clear starting point helps you keep learning and avoid quitting at the first error.",
+        "title": "Why onboarding matters"
+      },
+      "desc": "Loopy does not force you to choose from dozens of topics on day one.",
+      "badge": "Newbie-first"
+    },
+    "preview": {
+      "btn_journey": "Save and open Journey Map",
+      "btn_next": "Continue",
+      "btn_back": "Back",
+      "badge": "Preview",
+      "desc": "Start with a small lesson, clear guidance, and real code checks.",
+      "title": "Your suggested path"
+    },
+    "exp": {
+      "desc": "Your current experience helps Loopy choose a first lesson that is not too hard or too slow.",
+      "title": "Have you coded before?"
+    },
+    "goal": {
+      "hint": "You can change this later, so do not worry about picking perfectly.",
+      "desc": "Choose the nearest goal. Loopy uses it to suggest your starting path.",
+      "title": "Why do you want to learn coding?"
+    },
+    "step": {
+      "preview": "Preview",
+      "exp": "Experience",
+      "goal": "Goal"
+    },
+    "progress": "Setup progress",
+    "badge": "Journey builder"
+  },
+  "learn": {
+    "title": "Learn Programming",
+    "selectLanguage": "Select Programming Language",
+    "lessons": "Lessons",
+    "exercises": "Exercises",
+    "progress": "Progress",
+    "loadingLesson": "Loading lesson...",
+    "readyToRun": "Ready to run code...",
+    "loginToSave": "Please login to save progress",
+    "markedIncomplete": "✓ Marked as incomplete",
+    "lessonCompleted": "✓ Lesson completed!",
+    "updateFailed": "✗ Unable to update progress",
+    "lessonsCount": "{{count}} lessons",
+    "chapter": "Chapter",
+    "comingSoon": "Coming Soon",
+    "noLessonsYet": "No lessons available for this language yet",
+    "developingContent": "Developing {{language}} content",
+    "keyInsight": "Key Insight",
+    "markDone": "Mark Done",
+    "completed": "Completed",
+    "runCode": "Run Code",
+    "theory": "Theory",
+    "example": "Example",
+    "exercise": "Exercise",
+    "summary": "Summary",
+    "getHint": "Get Hint",
+    "readMore": "Read More",
+    "noContent": "No theory content available for this lesson.",
+    "noExample": "No examples available for this lesson.",
+    "closeResults": "Close Results"
+  },
+  "docs": {
+    "title": "Learning Resources",
+    "description": "Explore official documentation for technologies",
+    "searchPlaceholder": "Search documentation...",
+    "allCategories": "All",
+    "noResults": "No matching documentation found",
+    "resources": "resources",
+    "selectDoc": "Select the documentation you want to view:",
+    "loadingDocs": "Loading documentation list...",
+    "noDocsYet": "No documentation available yet",
+    "errorLoading": "Unable to load documentation. Please try again.",
+    "retry": "Retry",
+    "previous": "Previous",
+    "next": {
+      "btn2": "DOCS.NEXT.BTN2 EN",
+      "btn1": "DOCS.NEXT.BTN1 EN",
+      "desc": "DOCS.NEXT.DESC EN",
+      "title": "DOCS.NEXT.TITLE EN",
+      "badge": "DOCS.NEXT.BADGE EN"
+    },
+    "bottom": {
+      "btn2": "DOCS.BOTTOM.BTN2 EN",
+      "btn1": "DOCS.BOTTOM.BTN1 EN",
+      "desc": "DOCS.BOTTOM.DESC EN",
+      "title": "DOCS.BOTTOM.TITLE EN"
+    },
+    "toc": {
+      "items": "DOCS.TOC.ITEMS EN",
+      "title": "DOCS.TOC.TITLE EN"
+    },
+    "terminal": {
+      "desc": "DOCS.TERMINAL.DESC EN",
+      "badge": "DOCS.TERMINAL.BADGE EN"
+    },
+    "tips": {
+      "desc": "DOCS.TIPS.DESC EN",
+      "title": "DOCS.TIPS.TITLE EN"
+    },
+    "check": {
+      "desc": "DOCS.CHECK.DESC EN",
+      "badge": "DOCS.CHECK.BADGE EN"
+    },
+    "play": {
+      "desc": "DOCS.PLAY.DESC EN",
+      "badge": "DOCS.PLAY.BADGE EN"
+    },
+    "ref": {
+      "desc": "DOCS.REF.DESC EN",
+      "title": "DOCS.REF.TITLE EN",
+      "badge": "DOCS.REF.BADGE EN"
+    },
+    "group3": {
+      "items": "DOCS.GROUP3.ITEMS EN",
+      "title": "DOCS.GROUP3.TITLE EN"
+    },
+    "group2": {
+      "items": "DOCS.GROUP2.ITEMS EN",
+      "title": "DOCS.GROUP2.TITLE EN"
+    },
+    "group1": {
+      "items": "DOCS.GROUP1.ITEMS EN",
+      "title": "DOCS.GROUP1.TITLE EN"
+    },
+    "topic": {
+      "title": "DOCS.TOPIC.TITLE EN"
+    },
+    "search": {
+      "hint": "DOCS.SEARCH.HINT EN",
+      "quick": "DOCS.SEARCH.QUICK EN"
+    },
+    "sandbox": {
+      "badge": "DOCS.SANDBOX.BADGE EN"
+    },
+    "code": {
+      "output": "DOCS.CODE.OUTPUT EN"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "progress": "Progress",
+    "language": "Language",
+    "personalProfile": "Personal Profile",
+    "avatar": "Avatar",
+    "uploadPhoto": "Upload Photo",
+    "photoFormat": "JPG, PNG or GIF (max 2MB)",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Enter display name",
+    "email": "Email",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself...",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "savedSuccessfully": "Saved successfully!",
+    "progressTitle": "Learning Progress",
+    "learningStreak": "Learning Streak: {{count}} days",
+    "longestStreak": "Longest Streak: {{count}} days",
+    "completedLessons": "Completed Lessons",
+    "totalLessonsOf": "{{count}} lessons in total",
+    "completionRate": "Completion Rate",
+    "keepItUp": "Great job! Keep it up.",
+    "overallProgress": "Overall Progress",
+    "learningPoints": "Learning Points",
+    "achievements": "Achievements",
+    "notifications": "Notifications",
+    "customize": "Customize",
+    "editorFontSize": "Editor font size: {{size}}px",
+    "fontSizeHint": "Adjust code editor font size for better readability",
+    "preview": "Preview"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "madeWith": "Made with",
+    "description": "A modern coding learning platform with AI support and competitive mode. Learn to code through practice and competition.",
+    "copyright": "© {{year}} Loopy. Interactive coding learning platform.",
+    "aboutLoopy": "About Loopy",
+    "about": "About",
+    "team": "Team",
+    "contact": "Contact",
+    "resources": "Resources",
+    "docs": "Docs",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "terms": "Terms",
+    "privacy": "Privacy"
+  },
+  "landing": {
+    "whyChoose": "Why choose",
+    "modernPlatform": "Modern programming learning platform with the best hands-on experience",
+    "supportedLanguages": "Supported Languages",
+    "learnPopularLanguages": "Learn popular programming languages with detailed roadmap",
+    "howItWorks": "How It Works",
+    "howItWorksDescription": "Just a few simple steps to start your programming journey",
+    "impressiveNumbers": "Impressive Numbers",
+    "communityGrowing": "Student community growing strong every day",
+    "readyToStart": "Ready to start?",
+    "joinThousands": "Join thousands of students learning programming every day",
+    "startLearningFree": "Start Learning Free",
+    "lessonsCount": "{{count}} lessons",
+    "bottom": {
+      "btn": "LANDING.BOTTOM.BTN EN",
+      "desc": "LANDING.BOTTOM.DESC EN",
+      "title": "LANDING.BOTTOM.TITLE EN"
+    },
+    "faq3": {
+      "a": "LANDING.FAQ3.A EN",
+      "q": "LANDING.FAQ3.Q EN"
+    },
+    "faq2": {
+      "a": "LANDING.FAQ2.A EN",
+      "q": "LANDING.FAQ2.Q EN"
+    },
+    "faq1": {
+      "a": "LANDING.FAQ1.A EN",
+      "q": "LANDING.FAQ1.Q EN"
+    },
+    "faq": {
+      "title": "LANDING.FAQ.TITLE EN",
+      "badge": "LANDING.FAQ.BADGE EN"
+    },
+    "journey": {
+      "desc": "LANDING.JOURNEY.DESC EN",
+      "title": "LANDING.JOURNEY.TITLE EN",
+      "badge": "LANDING.JOURNEY.BADGE EN",
+      "node5": "LANDING.JOURNEY.NODE5 EN",
+      "node4": "LANDING.JOURNEY.NODE4 EN",
+      "node3": "LANDING.JOURNEY.NODE3 EN",
+      "node2": "LANDING.JOURNEY.NODE2 EN",
+      "node1": "LANDING.JOURNEY.NODE1 EN"
+    },
+    "step3": {
+      "desc": "LANDING.STEP3.DESC EN",
+      "title": "LANDING.STEP3.TITLE EN"
+    },
+    "step2": {
+      "desc": "LANDING.STEP2.DESC EN",
+      "title": "LANDING.STEP2.TITLE EN"
+    },
+    "step1": {
+      "desc": "LANDING.STEP1.DESC EN",
+      "title": "LANDING.STEP1.TITLE EN"
+    },
+    "learn": {
+      "title": "tyess",
+      "badge": "LANDING.LEARN.BADGE EN"
+    },
+    "hero": {
+      "badge": "LANDING.HERO.BADGE EN"
+    },
+    "pmock": {
+      "checkbtn": "LANDING.PMOCK.CHECKBTN EN",
+      "item4": "LANDING.PMOCK.ITEM4 EN",
+      "item3": "LANDING.PMOCK.ITEM3 EN",
+      "item2": "LANDING.PMOCK.ITEM2 EN",
+      "item1": "LANDING.PMOCK.ITEM1 EN",
+      "desc": "LANDING.PMOCK.DESC EN",
+      "title": "LANDING.PMOCK.TITLE EN",
+      "role": "LANDING.PMOCK.ROLE EN",
+      "status": "LANDING.PMOCK.STATUS EN"
+    }
+  },
+  "pvp": {
+    "title": "Code in real-time challenges with other learners.",
+    "subtitle": "Join a 1v1 room, solve a small question, and compare how you handled it. PvP helps you practice reactions; it does not replace the main learning path.",
+    "selectMode": "Select Challenge Mode",
+    "duel": "1v1 Challenge",
+    "duelDesc": "Intense coding duel with a single opponent",
+    "battleRoyale": "Battle Royale",
+    "battleRoyaleDesc": "Coming soon - Compete with multiple players",
+    "selectDifficulty": "Select Difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "quickMatch": "Quick Start",
+    "searching": "Searching for player...",
+    "joinRoom": "Join Room",
+    "joinRoomDesc": "Join using a private room code",
+    "enterRoomCode": "Enter Room Code",
+    "joining": "Joining...",
+    "matchFound": "Challenge found!",
+    "invalidRoomCode": "Invalid or non-existent room code",
+    "loginToPlay": "Please login to join challenges",
+    "completeOnboardingFirst": "Please complete your first lesson to join challenges!",
+    "realtime": "Real-time",
+    "realtimeDesc": "Compete live with instant feedback and scores",
+    "skillBased": "Skill-based",
+    "skillBasedDesc": "Fair matchmaking based on your skill level",
+    "ranked": "Ranked",
+    "rankedDesc": "Climb the leaderboard and prove your skills",
+    "match": {
+      "started": "Match started!",
+      "newQuestion": "New question!",
+      "completed": "Match completed!",
+      "playerJoined": "{{name}} joined!",
+      "playerLeft": "{{name}} left",
+      "playerReady": "{{name}} is ready!",
+      "paused": "⏸️ {{name}} disconnected. Waiting {{seconds}}s...",
+      "resumed": "🔄 {{name}} reconnected! Resuming match.",
+      "forfeit": "🏳️ {{name}} forfeited due to disconnection.",
+      "notFound": "Match not found",
+      "backToLobby": "Back to Lobby",
+      "preparingNext": "Preparing next question...",
+      "summarizing": "Summarizing final results...",
+      "pausedTitle": "Match Paused",
+      "waitingRecon": "Waiting for reconnection",
+      "reconHint": "If not reconnected in time, player will forfeit",
+      "notfound": {
+        "desc": "The room code may be wrong or the match may have ended. Check the code or create a new match.",
+        "title": "Match not found"
+      }
+    },
+    "header": {
+      "title": "PvP Coding Room"
+    },
+    "unlock": {
+      "desc": "Complete lessons first, then use PvP to improve speed and confidence.",
+      "badge": "Practice mode"
+    },
+    "feat3": {
+      "desc": "PvP works best for reviewing skills you have already practiced in the Journey Map.",
+      "title": "Practice after learning"
+    },
+    "feat2": {
+      "desc": "Track match state, time, and submissions inside the same room.",
+      "title": "Realtime feedback"
+    },
+    "feat1": {
+      "desc": "Focus on one specific skill instead of a problem that is too large.",
+      "title": "Small questions"
+    },
+    "input": {
+      "code": "Enter room code"
+    },
+    "or": "or",
+    "btn": {
+      "start1v1": "Start 1v1"
+    },
+    "diff": {
+      "title": "Difficulty"
+    },
+    "mode": {
+      "br": {
+        "desc": "The multi-player mode is being prepared. Start with 1v1 first.",
+        "title": "Battle Royale"
+      },
+      "1v1": {
+        "desc": "Match with one learner in a short round focused on a single question."
+      },
+      "title": "Choose a mode"
+    },
+    "locked": {
+      "btn": "Back to learning",
+      "desc": "PvP is easier after you are comfortable with Run, Check, and reading output inside Learn.",
+      "title": "Complete a few lessons before entering PvP."
+    }
+  },
+  "grading": {
+    "title": "Grading",
+    "processing": "Grading ({{depth}})...",
+    "complete": "✅ Grading complete — {{score}}/100 ({{grade}})",
+    "failed": "❌ Grading failed: {{error}}",
+    "error": "❌ Error: {{message}}",
+    "history": "Submission History",
+    "attempts": "{{count}} attempts",
+    "bestScore": "Best Score",
+    "average": "Average",
+    "passed": "{{passed}}/{{total}} passed",
+    "selectLesson": "Select a lesson before grading"
+  },
+  "heatmap": {
+    "title": "Learning Activity",
+    "completedInYear": "{{count}} lessons completed in the past year",
+    "less": "Less",
+    "more": "More",
+    "countLessons": "{{count}} lessons"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "retry": "Try Again",
+    "details": "Error Details (Development Mode)"
+  },
+  "gradingUI": {
+    "result": "Grading Result",
+    "regrade": "Re-grade",
+    "grading": "Grading...",
+    "grade": "Grade",
+    "quick": "Quick Grade",
+    "careful": "Careful Grade",
+    "thorough": "Thorough Grade",
+    "analyzing": "AI is analyzing code...",
+    "codeQuality": "Code Quality",
+    "complexity": "Complexity",
+    "security": "Security",
+    "strengths": "Strengths",
+    "improvements": "Needs Improvement",
+    "suggestions": "Suggestions",
+    "overallFeedback": "Overall Feedback",
+    "noSubmissions": "No submissions yet",
+    "previous": "← Previous",
+    "next": "Next →",
+    "pageOf": "Page {{page}} / {{total}}",
+    "submissionCount": "{{count}} submissions"
+  },
+  "pvpQuestion": {
+    "selectAndSubmit": "Select your answer then press Submit below"
+  },
+  "bottom": {
+    "btn": "Find your learning path",
+    "desc": "If this v2 direction works, we'll continue building `/v2/library` and `/v2/learn` before changing the real UI.",
+    "title": "Start with one small lesson."
+  },
+  "faq3": {
+    "a": "After landing, we'll build v2 library/journey map before polishing Learn.",
+    "q": "What's the next priority?"
+  },
+  "faq2": {
+    "a": "No. We only use the structure as reference. Copy, assets and messaging are rewritten for Loopy.",
+    "q": "Are you copying Coddy?"
+  },
+  "faq1": {
+    "a": "No. This is a separate sandbox to test visuals before changing the real route.",
+    "q": "Will this replace the current landing?"
+  },
+  "faq": {
+    "title": "What is V2 testing?",
+    "badge": "FAQ"
+  },
+  "pmock": {
+    "item4": "Debug real errors",
+    "item3": "Check with rules",
+    "item2": "Edit small requirement",
+    "item1": "Observe sample code",
+    "desc": "Loopy doesn't make you read all theory first. You observe, edit small code, run it, then check with clear tests.",
+    "title": "Change one line, see output instantly",
+    "status": "Learning",
+    "badge": "Lesson 03"
+  },
+  "journey": {
+    "node5": "Loops",
+    "node4": "Conditions",
+    "node3": "Print output",
+    "node2": "Variables",
+    "node1": "Hello code",
+    "desc": "V2 prioritizes clear journey over catalog: done, active, locked are separated so beginners don't have to guess the next step.",
+    "title": "Know where you are, which lesson opens next.",
+    "badge": "Journey map"
+  },
+  "step3": {
+    "desc": "Hit small intentional errors, read the terminal and debug step by step like real programming.",
+    "title": "Debug"
+  },
+  "step2": {
+    "desc": "Edit a small part in the editor. Loopy checks your work with clear rules and test cases.",
+    "title": "Change"
+  },
+  "step1": {
+    "desc": "Read a short example, run sample code and understand output before writing your own.",
+    "title": "Observe"
+  },
+  "cta": {
+    "secondary": "View learning path",
+    "primary": "Try first lesson"
+  },
+  "profile": {
+    "notice": {
+      "desc": "Loopy does not celebrate before the backend confirms the lesson is complete.",
+      "title": "Progress only increases after a successful save."
+    },
+    "notify": {
+      "badge": "Notice"
+    },
+    "today": {
+      "progress": "Today’s progress",
+      "desc": "Today’s goal: complete one lesson with a successful Check.",
+      "title": "One small lesson is enough.",
+      "badge": "Today focus"
+    },
+    "next": {
+      "btn_journey": "Go to Journey Map",
+      "btn_path": "View paths",
+      "desc": "Continue the active lesson instead of picking a random new topic.",
+      "headline": "Return to the step that is already open.",
+      "badge": "Next lesson",
+      "title": "Recommended next lesson"
+    },
+    "stats": {
+      "points": "Points",
+      "streak": "Streak",
+      "saved": "Progress saved"
+    },
+    "journey": {
+      "lessons_done": "lessons completed",
+      "title": "You are building a coding habit one step at a time.",
+      "badge": "Journey progress"
+    },
+    "badge": "Profile",
+    "subtitle": "Review your progress, streak, points, and the next lesson in your Loopy journey.",
+    "title": "Your learning profile."
+  },
+  "library": {
+    "cta": {
+      "btn_change": "Choose another path",
+      "btn_next": "Learn the next lesson",
+      "desc": "Do not try to learn many topics at once. Choose the active lesson and complete its flow.",
+      "title": "Move forward with one small lesson."
+    },
+    "feat3": {
+      "desc": "This lesson opens after you finish earlier steps.",
+      "title": "Locked"
+    },
+    "feat2": {
+      "desc": "The lesson you should learn next right now.",
+      "title": "Active"
+    },
+    "feat1": {
+      "desc": "Progress has been saved successfully by the backend.",
+      "title": "Done"
+    },
+    "empty": "There are no published lessons in this path yet.",
+    "loading": "Loading Journey Map..."
+  },
+  "practice": {
+    "title": "Practice after learning.",
+    "subtitle": "Choose how to review: compete in realtime for speed, or work through practice sets to reinforce each topic.",
+    "compete": {
+      "title": "Compete",
+      "desc": "Join a realtime 1v1 room and practice reactions with short questions after learning.",
+      "cta": "Enter compete mode"
+    },
+    "sets": {
+      "title": "Practice sets",
+      "desc": "Work through prepared question sets or create your own set with up to 30 questions.",
+      "cta": "Browse sets",
+      "badge": "Practice setss",
+      "create": "Create set",
+      "start": "Start",
+      "locked": "Locked",
+      "page": {
+        "title": "Practice sets",
+        "subtitle": "Browse official sets or public learner-created sets to review by topic."
+      },
+      "empty": {
+        "title": "No public practice sets yet",
+        "desc": "The backend is ready for practice sets. Public sets will appear here after the team or learners publish them."
+      }
+    },
+    "official": {
+      "title": "Official sets",
+      "desc": "The team can publish sets by language, difficulty, and topic."
+    },
+    "user": {
+      "title": "Personal sets",
+      "desc": "Learners can create private practice sets with a title, topic, unlock requirement, and up to 30 questions."
+    }
+  }
+}

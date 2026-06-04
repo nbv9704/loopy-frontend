@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
