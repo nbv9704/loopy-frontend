@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, Menu, Settings, X, User } from 'lucide-react'
+import { Flame, LogOut, Menu, Settings, Star, X, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 import LanguageSwitcher from '../common/LanguageSwitcher'
@@ -121,6 +121,29 @@ const V2Header: React.FC<V2HeaderProps> = ({ headerContent = {} }) => {
           {/* Right: Language Switcher + User Menu */}
           <div className="flex items-center gap-4">
             <LanguageSwitcher variant="light" />
+
+            {user && (
+              <div className="hidden md:flex items-center gap-2">
+                <div
+                  id="v2-header-streak-count"
+                  className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-black text-orange-600 shadow-sm shadow-orange-100/70"
+                  title="Streak học theo ngày"
+                  aria-label={`Streak học theo ngày: ${user.currentStreak || 0}`}
+                >
+                  <Flame className="h-4 w-4" />
+                  <span>{user.currentStreak || 0}</span>
+                </div>
+                <div
+                  id="v2-header-points-count"
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-black text-amber-600 shadow-sm shadow-amber-100/70"
+                  title="Points từ lesson đã hoàn thành"
+                  aria-label={`Points từ lesson đã hoàn thành: ${user.points || 0}`}
+                >
+                  <Star className="h-4 w-4" />
+                  <span>{user.points || 0}</span>
+                </div>
+              </div>
+            )}
 
             {/* User Menu */}
             {user ? (
