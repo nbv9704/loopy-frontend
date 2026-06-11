@@ -53,7 +53,6 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   const [submissionResult, setSubmissionResult] = useState<{
     isCorrect: boolean
     points: number
-    correctAnswerId?: string
   } | null>(null)
 
   // Shuffle options client-side for fairness (different for each player)
@@ -121,31 +120,22 @@ const MatchArena: React.FC<MatchArenaProps> = ({
       // No longer show rank toast, only points toast from submission received
     }
 
-    const handleSubmissionFeedback = (payload: { questionId: string, correctAnswerId?: string }) => {
-      // Update submissionResult with correctAnswerId if it's the current question
-      if (payload.questionId === match.question_ids[match.current_question_index]) {
-        setSubmissionResult(prev => prev ? { ...prev, correctAnswerId: payload.correctAnswerId } : null)
-      }
-    }
-
     const handleReactionReceived = (reaction: any) => {
-      setReactions(prev => [...prev, { emoji: reaction.emoji, userId: reaction.user_id }])
+      setReactions((prev: any) => [...prev, { emoji: reaction.emoji, userId: reaction.user_id }])
       setTimeout(() => {
-        setReactions(prev => prev.filter(r => r.userId !== reaction.user_id))
+        setReactions((prev: any) => prev.filter((r: any) => r.userId !== reaction.user_id))
       }, 3000)
     }
 
     const cleanup1 = socket.onSubmissionReceived(handleSubmissionReceived)
     const cleanup2 = socket.onSubmissionRanked(handleSubmissionRanked)
     const cleanup3 = socket.onReactionReceived(handleReactionReceived)
-    const cleanup4 = socket.onSubmissionFeedback(handleSubmissionFeedback)
 
     // Cleanup
     return () => {
       cleanup1()
       cleanup2()
       cleanup3()
-      cleanup4()
     }
   }, [socket.socket, currentUserId]) // Only re-run if socket or currentUserId changes
 
@@ -196,17 +186,17 @@ const MatchArena: React.FC<MatchArenaProps> = ({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl shadow-sm ${
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl ${
               timeRemaining <= 30
-                ? 'bg-red-50 border border-red-200'
-                : 'bg-white border border-slate-200'
+                ? 'bg-red-500/20 border-2 border-red-500'
+                : 'bg-white/5 border border-white/10'
             }`}
           >
             <Clock
-              className={`w-6 h-6 ${timeRemaining <= 30 ? 'text-red-500' : 'text-brand-teal'}`}
+              className={`w-6 h-6 ${timeRemaining <= 30 ? 'text-red-400' : 'text-brand-teal'}`}
             />
             <span
-              className={`text-2xl font-bold ${timeRemaining <= 30 ? 'text-red-600' : 'text-slate-900'}`}
+              className={`text-2xl font-bold ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}
             >
               {formatTime(timeRemaining)}
             </span>
@@ -214,8 +204,8 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 
           {/* Question Progress */}
           <div className="text-center">
-            <p className="text-slate-500 text-sm mb-1">Câu hỏi</p>
-            <p className="text-slate-900 font-bold text-lg">
+            <p className="text-slate-400 text-sm mb-1">Câu hỏi</p>
+            <p className="text-white font-bold text-lg">
               {match.current_question_index + 1} / {match.question_ids.length}
             </p>
           </div>
@@ -224,7 +214,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowReactionPicker(!showReactionPicker)}
-              className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+              className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
             >
               <Smile className="w-6 h-6 text-brand-teal" />
             </button>
@@ -240,13 +230,13 @@ const MatchArena: React.FC<MatchArenaProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Participants Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Người chơi</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Người chơi</h3>
             {match.participants?.map(participant => (
               <ParticipantCard
                 key={participant.user_id}
                 participant={participant}
                 isCurrentUser={participant.user_id === currentUserId}
-                reactions={reactions.filter(r => r.userId === participant.user_id).map(r => r.emoji)}
+                reactions={reactions.filter((r: any) => r.userId === participant.user_id).map((r: any) => r.emoji)}
               />
             ))}
           </div>
@@ -256,7 +246,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm"
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8"
             >
               {/* True/False Question - Special UI with large buttons */}
               {question.type === 'true_false' && (
@@ -284,23 +274,19 @@ const MatchArena: React.FC<MatchArenaProps> = ({
               {/* Multiple Choice Question - List UI */}
               {question.type === 'multiple_choice' && (
                 <>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">{question.question_text}</h2>
+                  <h2 className="text-2xl font-bold text-white mb-6">{question.question_text}</h2>
 
                   <div className="space-y-3 mb-6">
-                    {shuffledOptions.map(option => {
+                    {shuffledOptions.map((option: any) => {
                       const isSelected = selectedAnswer === option.id
                       const showResult = hasSubmitted && isSelected && submissionResult
-                      const isActualCorrectAnswer = hasSubmitted && submissionResult?.correctAnswerId === option.id
-
                       const borderColor = showResult
                         ? submissionResult.isCorrect
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-red-500 bg-red-50'
-                        : isActualCorrectAnswer
-                          ? 'border-green-500 bg-green-50'
-                          : isSelected
-                            ? 'border-brand-teal bg-brand-teal/5'
-                            : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
+                          ? 'border-green-500'
+                          : 'border-red-500'
+                        : isSelected
+                          ? 'border-brand-teal'
+                          : 'border-white/10'
 
                       return (
                         <button
@@ -309,12 +295,14 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                             !hasSubmitted && timeRemaining > 0 && setSelectedAnswer(option.id)
                           }
                           disabled={hasSubmitted || timeRemaining <= 0}
-                          className={`w-full p-4 rounded-xl text-left transition-all duration-300 border-2 ${borderColor} ${
-                            hasSubmitted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                          }`}
+                          className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
+                            isSelected
+                              ? `bg-brand-teal/20 border-2 ${borderColor}`
+                              : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          } ${hasSubmitted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         >
-                          <span className="text-slate-900 font-semibold">{option.id}.</span>{' '}
-                          <span className="text-slate-700">{option.text}</span>
+                          <span className="text-white font-semibold">{option.id}.</span>{' '}
+                          <span className="text-slate-300">{option.text}</span>
                         </button>
                       )
                     })}
@@ -334,13 +322,13 @@ const MatchArena: React.FC<MatchArenaProps> = ({
               {/* Code Challenge */}
               {question.type === 'code_challenge' && (
                 <>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{question.problem_title}</h2>
-                  <p className="text-slate-600 mb-6">{question.problem_description}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">{question.problem_title}</h2>
+                  <p className="text-slate-400 mb-6">{question.problem_description}</p>
 
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Code className="w-5 h-5 text-brand-teal" />
-                      <h3 className="text-lg font-bold text-slate-900">Lời giải của bạn</h3>
+                      <h3 className="text-lg font-bold text-white">Lời giải của bạn</h3>
                     </div>
                     <CodeMirror
                       value={code}
@@ -349,7 +337,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                       extensions={[getLanguageExtension()]}
                       onChange={value => !hasSubmitted && setCode(value)}
                       editable={!hasSubmitted}
-                      className="rounded-xl overflow-hidden border border-slate-200"
+                      className="rounded-xl overflow-hidden border border-white/10"
                     />
                   </div>
 

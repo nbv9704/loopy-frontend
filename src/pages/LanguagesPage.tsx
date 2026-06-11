@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiCheckCircle, FiCode, FiCompass, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiHelpCircle, FiLayers, FiPlay, FiTerminal } from 'react-icons/fi'
-import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
-import { api } from '../../lib/api'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
+import { PressedButton, PublicShell } from '../components/PublicShell'
+import { api } from '../lib/api'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 
 type LanguageCard = {
   name: string
@@ -120,7 +120,7 @@ function LanguageCard({ language }: { language: LanguageCard }) {
   )
 }
 
-const V2LanguagesPage: React.FC = () => {
+const LanguagesPage: React.FC = () => {
   const { i18n } = useTranslation()
   const [languages, setLanguages] = useState<LanguageCard[]>([])
   const [apiLoading, setApiLoading] = useState(true)
@@ -264,7 +264,7 @@ const V2LanguagesPage: React.FC = () => {
   const ctaBtn2 = content['languages.cta.btn2'] || 'Bỏ qua, học thử ngay'
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main>
         <section className="relative overflow-hidden px-4 py-16 md:px-6 md:py-20">
           <div className="absolute right-0 top-8 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
@@ -280,8 +280,8 @@ const V2LanguagesPage: React.FC = () => {
                 {pageSubtitle}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to="/onboarding"><FiPlay /> {btnFirst}</V2PressedButton>
-                <V2PressedButton to="/onboarding" variant="secondary">{btnFind}</V2PressedButton>
+                <PressedButton to="/onboarding"><FiPlay /> {btnFirst}</PressedButton>
+                <PressedButton to="/onboarding" variant="secondary">{btnFind}</PressedButton>
               </div>
             </div>
 
@@ -370,15 +370,15 @@ const V2LanguagesPage: React.FC = () => {
                 <span className="font-mono text-sm">recommend --for beginner</span>
               </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to="/onboarding">{ctaBtn1}</V2PressedButton>
-                <V2PressedButton to="/onboarding" variant="secondary">{ctaBtn2}</V2PressedButton>
+                <PressedButton to="/onboarding">{ctaBtn1}</PressedButton>
+                <PressedButton to="/onboarding" variant="secondary">{ctaBtn2}</PressedButton>
               </div>
             </div>
           </div>
         </section>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2LanguagesPage
+export default LanguagesPage

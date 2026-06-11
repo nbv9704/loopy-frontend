@@ -18,9 +18,9 @@ interface MatchLobbyProps {
 const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }) => {
   const navigate = useNavigate()
 
-  const currentParticipant = match.participants?.find(p => p.user_id === currentUserId)
+  const currentParticipant = match.participants?.find((p: any) => p.user_id === currentUserId)
   const isReady = currentParticipant?.is_ready || false
-  const allReady = match.participants?.every(p => p.is_ready) || false
+  const allReady = match.participants?.every((p: any) => p.is_ready) || false
   const participantCount = match.participants?.length || 0
   const copyRoomCode = async () => {
     if (!match.room_code) return
@@ -31,8 +31,8 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
       {/* Back button */}
       <button
-        onClick={() => navigate('/practice/compete')}
-        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+        onClick={() => navigate('/pvp')}
+        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
       >
         <ArrowLeft className="w-5 h-5" />
         Rời phòng
@@ -47,26 +47,26 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
         >
           <div className="inline-flex items-center gap-3 mb-4">
             <Users className="w-10 h-10 text-brand-teal" />
-              <h1 className="text-4xl font-black text-slate-950">Phòng chờ thử thách</h1>
+              <h1 className="text-4xl font-black text-white">Phòng chờ thử thách</h1>
           </div>
           <div className="mb-6">
-            <p className="text-slate-500 text-sm mb-2 uppercase tracking-wider font-semibold">
+            <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider font-semibold">
               Mã phòng
             </p>
-            <div className="inline-flex items-center gap-4 bg-white border border-slate-200 px-8 py-4 rounded-2xl shadow-sm">
+            <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-4 rounded-2xl">
               <span className="text-4xl font-mono font-bold tracking-[0.2em] text-brand-teal">
                 {match.room_code || '------'}
               </span>
               <button
                 onClick={copyRoomCode}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-500 transition-colors hover:border-brand-teal/40 hover:text-brand-teal"
+                className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition-colors hover:border-brand-teal/40 hover:text-brand-teal"
                 title="Copy mã phòng"
               >
                 <Copy className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <p className="text-slate-600 text-lg">
+          <p className="text-slate-400 text-lg">
             Chia sẻ mã phòng cho bạn bè. Đủ người thì bấm sẵn sàng. ({participantCount}/{match.max_players})
           </p>
         </motion.div>
@@ -84,12 +84,12 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
             return (
               <div
                 key={index}
-                className={`p-8 rounded-2xl border-2 transition-all duration-300 shadow-sm ${
+                className={`p-8 rounded-2xl border-2 transition-all duration-300 ${
                   participant
                     ? participant.is_ready
-                      ? 'bg-brand-teal/5 border-brand-teal'
-                      : 'bg-white border-slate-200'
-                    : 'bg-slate-50 border-slate-200 border-dashed'
+                      ? 'bg-brand-teal/10 border-brand-teal'
+                      : 'bg-white/5 border-white/20'
+                    : 'bg-white/5 border-white/10 border-dashed'
                 }`}
               >
                 {participant ? (
@@ -109,7 +109,7 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
 
                     {/* Info */}
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-slate-900 mb-1">
+                      <h3 className="text-xl font-bold text-white mb-1">
                         {participant.display_name || 'Anonymous'}
                         {participant.user_id === currentUserId && (
                           <span className="ml-2 text-sm text-brand-teal">(Bạn)</span>
@@ -123,8 +123,8 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
                           </>
                         ) : (
                           <>
-                            <Clock className="w-4 h-4 text-slate-500" />
-                            <span className="text-slate-500 text-sm">Đang chờ...</span>
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <span className="text-slate-400 text-sm">Đang chờ...</span>
                           </>
                         )}
                       </div>
@@ -132,7 +132,7 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-16">
-                    <span className="text-slate-400 text-sm">Đang chờ người chơi...</span>
+                    <span className="text-slate-500 text-sm">Đang chờ người chơi...</span>
                   </div>
                 )}
               </div>
@@ -180,29 +180,29 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-12 p-6 bg-white border border-slate-200 shadow-sm rounded-xl"
+          className="mt-12 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl"
         >
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Thiết lập trận</h3>
+          <h3 className="text-lg font-bold text-white mb-4">Thiết lập trận</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div>
-              <p className="text-slate-500 text-sm mb-1">Chế độ</p>
-              <p className="text-slate-900 font-semibold">{match.mode.toUpperCase()}</p>
+              <p className="text-slate-400 text-sm mb-1">Chế độ</p>
+              <p className="text-white font-semibold">{match.mode.toUpperCase()}</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm mb-1">Độ khó</p>
-              <p className="text-slate-900 font-semibold">{(match.difficulty || 'medium').toUpperCase()}</p>
+              <p className="text-slate-400 text-sm mb-1">Độ khó</p>
+              <p className="text-white font-semibold">{(match.difficulty || 'medium').toUpperCase()}</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm mb-1">Câu hỏi</p>
-              <p className="text-slate-900 font-semibold">{match.question_ids.length}</p>
+              <p className="text-slate-400 text-sm mb-1">Câu hỏi</p>
+              <p className="text-white font-semibold">{match.question_ids.length}</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm mb-1">Thời gian/câu</p>
-              <p className="text-slate-900 font-semibold">{match.time_per_question}s</p>
+              <p className="text-slate-400 text-sm mb-1">Thời gian/câu</p>
+              <p className="text-white font-semibold">{match.time_per_question}s</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm mb-1">Ngôn ngữ</p>
-              <p className="text-slate-900 font-semibold">{match.language_id || 'Mixed'}</p>
+              <p className="text-slate-400 text-sm mb-1">Ngôn ngữ</p>
+              <p className="text-white font-semibold">{match.language_id || 'Mixed'}</p>
             </div>
           </div>
         </motion.div>

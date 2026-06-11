@@ -3,15 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { BookOpenCheck, Edit, Lock, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import SEO from '../../components/common/SEO'
-import { V2PublicShell } from '../../components/v2/V2PublicShell'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
-import { useAuth } from '../../contexts/AuthContext'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { practiceService } from '../../services/practice.service'
-import type { PracticeSet } from '../../types/practice.types'
+import SEO from '../components/common/SEO'
+import { PublicShell } from '../components/PublicShell'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { useAuth } from '../contexts/AuthContext'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { practiceService } from '../services/practice.service'
+import type { PracticeSet } from '../types/practice.types'
 
-const V2MyPracticeSetsPage: React.FC = () => {
+const MyPracticeSetsPage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
@@ -108,7 +108,7 @@ const V2MyPracticeSetsPage: React.FC = () => {
   }
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <SEO title="My Sets | Loopy" description="Manage your practice sets" />
       <main className="flex-grow pb-16 pt-8 md:pt-10">
         <section className="mx-auto max-w-6xl px-6">
@@ -199,8 +199,8 @@ const V2MyPracticeSetsPage: React.FC = () => {
           )}
         </section>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2MyPracticeSetsPage
+export default MyPracticeSetsPage

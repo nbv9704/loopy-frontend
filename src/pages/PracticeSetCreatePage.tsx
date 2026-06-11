@@ -17,14 +17,14 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import SEO from '../../components/common/SEO'
-import { V2PublicShell } from '../../components/v2/V2PublicShell'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
-import { useAuth } from '../../contexts/AuthContext'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { api } from '../../lib/api'
-import { practiceService } from '../../services/practice.service'
-import type { PracticeQuestion, PracticeSet } from '../../types/practice.types'
+import SEO from '../components/common/SEO'
+import { PublicShell } from '../components/PublicShell'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { useAuth } from '../contexts/AuthContext'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { api } from '../lib/api'
+import { practiceService } from '../services/practice.service'
+import type { PracticeQuestion, PracticeSet } from '../types/practice.types'
 
 type QuestionType = 'true_false' | 'multiple_choice' | 'multiple_select' | 'fill_blank'
 type BuilderMode = 'preview' | 'editor'
@@ -128,7 +128,7 @@ const fromPracticeQuestion = (question: PracticeQuestion): QuestionDraft => ({
   points: question.points || 1,
 })
 
-const V2PracticeSetCreatePage: React.FC = () => {
+const PracticeSetCreatePage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { setId } = useParams<{ setId: string }>()
@@ -551,7 +551,7 @@ const V2PracticeSetCreatePage: React.FC = () => {
   if (contentLoading || initialLoading) return <LoadingScreen message="Loading set builder..." />
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <SEO title="Create Practice Set | Loopy" />
       <main className="flex-grow bg-[#f7fbff]">
         {mode === 'editor' ? (
@@ -969,8 +969,8 @@ const V2PracticeSetCreatePage: React.FC = () => {
           </div>
         )}
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2PracticeSetCreatePage
+export default PracticeSetCreatePage

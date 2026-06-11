@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiActivity, FiAward, FiBell, FiCheckCircle, FiCompass, FiGlobe, FiPlay, FiRefreshCw, FiSave, FiSettings, FiTarget, FiUser, FiZap } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
-import { useAuth } from '../../contexts/AuthContext'
-import { api } from '../../lib/api'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
+import { PressedButton, PublicShell } from '../components/PublicShell'
+import { useAuth } from '../contexts/AuthContext'
+import { api } from '../lib/api'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 
 type ProfileTab = 'overview' | 'journey' | 'goals' | 'settings'
 
@@ -76,7 +76,7 @@ const NoticeCard = ({ hasProgressData, text }: { hasProgressData: boolean; text:
   </div>
 )
 
-const V2ProfilePage: React.FC = () => {
+const ProfilePage: React.FC = () => {
   const { user } = useAuth()
   const { i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
@@ -347,8 +347,8 @@ const V2ProfilePage: React.FC = () => {
             <h2 className="mt-2 text-3xl font-black text-slate-950">{text('profile.next.headline', 'Return to the step that is already open.')}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">{text('profile.next.desc', 'Continue the active lesson instead of picking a random new topic.')}</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to="/languages">{text('profile.next.btn_path', 'View paths')}</V2PressedButton>
-              <V2PressedButton to={journeyHref} variant="secondary">{text('profile.next.btn_journey', 'Go to Journey Map')}</V2PressedButton>
+              <PressedButton to="/languages">{text('profile.next.btn_path', 'View paths')}</PressedButton>
+              <PressedButton to={journeyHref} variant="secondary">{text('profile.next.btn_journey', 'Go to Journey Map')}</PressedButton>
             </div>
           </div>
           <div className="mt-6 grid gap-3">
@@ -386,7 +386,7 @@ const V2ProfilePage: React.FC = () => {
       <div className="rounded-[2rem] border border-brand-teal/30 bg-brand-teal/10 p-6">
         <h3 className="text-2xl font-black text-slate-950">{text('profile.journey.tab.card1', 'Continue from the Journey Map')}</h3>
         <p className="mt-3 text-sm leading-6 text-slate-600">{text('profile.journey.tab.card2', 'The library page separates completed, current, next, and locked lessons so you do not have to guess.')}</p>
-        <div className="mt-5"><V2PressedButton to={journeyHref}>{text('profile.journey.tab.card3', 'Open Journey Map')}</V2PressedButton></div>
+        <div className="mt-5"><PressedButton to={journeyHref}>{text('profile.journey.tab.card3', 'Open Journey Map')}</PressedButton></div>
       </div>
     </TabPanel>
   )
@@ -401,7 +401,7 @@ const V2ProfilePage: React.FC = () => {
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-2xl font-black">Newbie-first path</h3>
         <p className="mt-3 text-sm leading-6 text-slate-600">Loopy ưu tiên một bước tiếp theo rõ ràng thay vì bắt bạn tự chọn giữa nhiều chủ đề.</p>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row"><V2PressedButton to="/onboarding">{text('profile.goals.update_btn', 'Update my path')}</V2PressedButton><V2PressedButton to="/languages" variant="secondary">View all paths</V2PressedButton></div>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row"><PressedButton to="/onboarding">{text('profile.goals.update_btn', 'Update my path')}</PressedButton><PressedButton to="/languages" variant="secondary">View all paths</PressedButton></div>
       </div>
     </TabPanel>
   )
@@ -560,7 +560,7 @@ const V2ProfilePage: React.FC = () => {
           <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
             <h3 className="font-black text-slate-700">Cập nhật onboarding</h3>
             <p className="mt-2 text-sm text-slate-500">Chạy lại onboarding để Loopy gợi ý lại lộ trình phù hợp nhất với bạn.</p>
-            <div className="mt-4"><V2PressedButton to="/onboarding" variant="secondary"><FiRefreshCw /> Chạy lại onboarding</V2PressedButton></div>
+            <div className="mt-4"><PressedButton to="/onboarding" variant="secondary"><FiRefreshCw /> Chạy lại onboarding</PressedButton></div>
           </div>
         </div>
       )}
@@ -579,7 +579,7 @@ const V2ProfilePage: React.FC = () => {
   const activeTabLabel = sideNav.find(item => item.id === activeTab)?.fallback || 'Overview'
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main className="px-4 py-10 md:px-6">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[260px,1fr]">
           <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -628,8 +628,8 @@ const V2ProfilePage: React.FC = () => {
           </section>
         </div>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2ProfilePage
+export default ProfilePage

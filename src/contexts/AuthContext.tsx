@@ -12,7 +12,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { LoadingScreen } from '../components/v2/LoadingScreen'
+import { LoadingScreen } from '../components/LoadingScreen'
 
 interface User {
   id: string

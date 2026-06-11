@@ -48,18 +48,13 @@ const ProfileSettings = () => {
         bio,
       })
 
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to save profile')
-      }
-
       if (response.success) {
         await refreshUser()
         setSaveSuccess(true)
         setTimeout(() => setSaveSuccess(false), 3000)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to save profile:', error)
-      toast.error(error.message || t('common.errorOccurred') || 'Failed to save profile')
     } finally {
       setSaving(false)
     }

@@ -3,10 +3,10 @@ import type { IconType } from 'react-icons'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiCheckCircle, FiCode, FiCpu, FiDatabase, FiGitBranch, FiGlobe, FiLayers, FiPlay, FiTerminal } from 'react-icons/fi'
-import { V2PressedButton, V2PublicShell } from '../../components/v2/V2PublicShell'
-import { api } from '../../lib/api'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
+import { PressedButton, PublicShell } from '../components/PublicShell'
+import { api } from '../lib/api'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 
 type LessonTag = 'Quan sát' | 'Thực hành' | 'Kiểm tra' | 'Debug'
 
@@ -151,7 +151,7 @@ function CodePreview({ detail }: { detail: LanguageDetail }) {
   )
 }
 
-const V2LanguageDetailPage: React.FC = () => {
+const LanguageDetailPage: React.FC = () => {
   const { language } = useParams<{ language: string }>()
   const { i18n } = useTranslation()
   const slug = language || 'javascript'
@@ -321,7 +321,7 @@ const V2LanguageDetailPage: React.FC = () => {
   const syllabusToDisplay = chapters.length > 0 ? chapters : []
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main>
         <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute left-0 top-16 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
@@ -352,8 +352,8 @@ const V2LanguageDetailPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> {startBtn}</V2PressedButton>
-                <V2PressedButton to="#syllabus" variant="secondary">{syllabusBtn}</V2PressedButton>
+                <PressedButton to={`/library/${detail.slug}`}><FiPlay /> {startBtn}</PressedButton>
+                <PressedButton to="#syllabus" variant="secondary">{syllabusBtn}</PressedButton>
               </div>
             </div>
             <CodePreview detail={detail} />
@@ -427,14 +427,14 @@ const V2LanguageDetailPage: React.FC = () => {
               {ctaDesc}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <V2PressedButton to={`/library/${detail.slug}`}><FiPlay /> {ctaBtn1}</V2PressedButton>
-              <V2PressedButton to="/languages" variant="secondary">{ctaBtn2}</V2PressedButton>
+              <PressedButton to={`/library/${detail.slug}`}><FiPlay /> {ctaBtn1}</PressedButton>
+              <PressedButton to="/languages" variant="secondary">{ctaBtn2}</PressedButton>
             </div>
           </div>
         </section>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2LanguageDetailPage
+export default LanguageDetailPage

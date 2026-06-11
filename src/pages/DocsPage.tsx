@@ -1,337 +1,302 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Search,
-  ExternalLink,
-  X,
-  FileText,
-  Video,
-  BookOpen as BookIcon,
-  AlertCircle,
-  ArrowRight,
-} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import Header from '../components/common/Header'
-import Footer from '../components/common/Footer'
-import SEO from '../components/common/SEO'
-import { pageMetadata } from '../utils/seo'
-import { useDocumentationTechnologies, useDocumentationLinks } from '../hooks/useContent'
-import { getIconComponent } from '../utils/iconMapper'
-import type { DocumentationTechnology } from '../types/content.types'
-import { DocCardSkeleton } from '../components/common/SkeletonLoader'
+import { FiBookOpen, FiCode, FiCompass, FiFileText, FiHash, FiPlay, FiSearch, FiTerminal } from 'react-icons/fi'
+import { PressedButton, PublicShell } from '../components/PublicShell'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 
-const DocsPage: React.FC = () => {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  // Fetch documentation technologies from API
-  const { data: technologies, isLoading, isError, refetch } = useDocumentationTechnologies()
-
-  const [search, setSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedDoc, setSelectedDoc] = useState<DocumentationTechnology | null>(null)
-  const itemsPerPage = 6
-
-  // Fetch links for selected technology
-  const { data: links, isLoading: linksLoading } = useDocumentationLinks(selectedDoc?.id || '')
-
-  const filteredDocs = (technologies || []).filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(search.toLowerCase())
-    return matchesSearch
-  })
-
-  // Pagination
-  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentDocs = filteredDocs.slice(startIndex, endIndex)
-
-  // Reset to page 1 when filters change
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [search])
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'docs':
-        return FileText
-      case 'video':
-        return Video
-      case 'article':
-        return BookIcon
-      default:
-        return FileText
-    }
-  }
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'docs':
-        return 'text-brand-teal'
-      case 'video':
-        return 'text-red-400'
-      case 'article':
-        return 'text-brand-cyan'
-      default:
-        return 'text-slate-400'
-    }
-  }
+function CodeBlock({ codeOutput }: { codeOutput: string | null }) {
+  const lines = ['const name = "Loopy"', 'console.log(`Xin chào ${name}`)']
 
   return (
-    <>
-      <SEO {...pageMetadata.docs} />
-      <div className="min-h-screen bg-[#0a0e1a] flex flex-col relative overflow-hidden">
-        {/* Ambient background */}
-        <div className="absolute inset-0 pointer-events-none opacity-40">
-          <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-cyan/10 rounded-full blur-[120px] animate-pulse" />
-          <div
-            className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-brand-ocean/10 rounded-full blur-[100px] animate-pulse"
-            style={{ animationDelay: '1.5s' }}
-          />
-        </div>
-
-        <Header />
-
-        <main className="flex-grow pt-32 pb-8 relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="mb-12 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 text-center md:p-10">
-              <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-sm font-bold text-brand-teal">
-                <BookIcon className="h-4 w-4" /> Resource Shelf
-              </div>
-              <h1 className="text-4xl font-black text-white mb-4 md:text-6xl">Tài nguyên khi bạn bị kẹt.</h1>
-              <p className="mx-auto max-w-3xl text-slate-400 text-lg leading-8">
-                Docs là kệ tham khảo, không phải lộ trình chính. Khi chưa biết bắt đầu từ đâu, hãy quay lại Journey Map để học từng bước.
-              </p>
-              <button
-                onClick={() => navigate('/languages')}
-                className="mx-auto mt-6 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-bold text-white transition-colors hover:border-brand-teal/40 hover:text-brand-teal"
-              >
-                Quay lại lộ trình <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Loading State */}
-            {isLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <DocCardSkeleton key={index} />
-                ))}
-              </div>
-            )}
-
-            {/* Error State */}
-            {isError && (
-              <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-                <p className="text-slate-400 mb-4">{t('docs.errorLoading')}</p>
-                <button
-                  onClick={() => refetch()}
-                  className="px-6 py-3 bg-brand-teal text-[#0a0e1a] rounded-lg font-semibold hover:bg-brand-cyan transition-colors"
-                >
-                  {t('docs.retry')}
-                </button>
-              </div>
-            )}
-
-            {/* Content */}
-            {!isLoading && !isError && technologies && (
-              <>
-                {/* Search Bar */}
-                <div className="mb-8">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/20 rounded-2xl p-5 flex items-center gap-4 hover:border-brand-teal/50 transition-all duration-300">
-                      <Search className="w-6 h-6 text-brand-teal" />
-                      <input
-                        type="text"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder={t('docs.searchPlaceholder')}
-                        className="flex-1 bg-transparent text-white text-base focus:outline-none placeholder:text-slate-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-8 text-center text-sm text-slate-500">
-                  Gợi ý: ưu tiên tài liệu chính thức và bài beginner-friendly trước khi đào sâu.
-                </div>
-
-                {/* Documentation Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {currentDocs.map((doc, index) => {
-                    const Icon = getIconComponent(doc.icon)
-                    return (
-                      <motion.div
-                        key={doc.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{
-                          opacity: 1,
-                          y: 0,
-                          transition: { delay: index * 0.05, duration: 0.4 },
-                        }}
-                        whileHover={{ y: -8, scale: 1.02 }}
-                        onClick={() => setSelectedDoc(doc)}
-                        className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 cursor-pointer hover:border-brand-teal/50 hover:bg-white/10 hover:shadow-lg hover:shadow-brand-teal/20 transition-all duration-300 group"
-                      >
-                        <Icon className="text-5xl text-brand-teal mb-6 group-hover:scale-110 transition-transform duration-300" />
-                        <h3 className="text-white font-bold text-xl mb-2">{doc.name}</h3>
-                        <p className="text-slate-400 text-sm mb-4">{doc.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 text-sm">
-                            {doc.linkCount} {t('docs.resources')}
-                          </span>
-                          <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-brand-teal transition-colors duration-300" />
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-
-                {filteredDocs.length === 0 && (
-                  <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-12 text-center">
-                    <p className="text-slate-400">{t('docs.noResults')}</p>
-                    <button
-                      onClick={() => setSearch('')}
-                      className="mt-4 rounded-xl bg-brand-teal px-5 py-2 font-bold text-[#0a0e1a]"
-                    >
-                      Xóa tìm kiếm
-                    </button>
-                  </div>
-                )}
-
-                {/* Pagination */}
-                {filteredDocs.length > 0 && totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      {t('docs.previous')}
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                            currentPage === page
-                              ? 'bg-brand-teal text-[#0a0e1a]'
-                              : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      {t('docs.next')}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </main>
-
-        {/* Links Modal */}
-        <AnimatePresence>
-          {selectedDoc && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setSelectedDoc(null)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="bg-[#0a0e1a] border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
-              >
-                {/* Modal Header */}
-                <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {React.createElement(getIconComponent(selectedDoc.icon), {
-                      className: 'text-4xl text-brand-teal',
-                    })}
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">{selectedDoc.name}</h2>
-                      <p className="text-slate-400 text-sm">{selectedDoc.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedDoc(null)}
-                    className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Content */}
-                <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
-                  {linksLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <div className="w-8 h-8 border-2 border-brand-teal border-t-transparent rounded-full animate-spin mb-4" />
-                      <p className="text-slate-400">{t('docs.loadingDocs')}</p>
-                    </div>
-                  ) : links && links.length > 0 ? (
-                    <>
-                      <p className="text-slate-300 text-sm mb-6">{t('docs.selectDoc')}</p>
-                      <div className="space-y-3">
-                        {links.map((link, index) => {
-                          const TypeIcon = getTypeIcon(link.type || 'docs')
-                          const typeColor = getTypeColor(link.type || 'docs')
-                          return (
-                            <motion.a
-                              key={link.id}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0, transition: { delay: index * 0.1 } }}
-                              className="block p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-brand-teal/50 rounded-xl transition-all duration-200 group"
-                            >
-                              <div className="flex items-start gap-3">
-                                <TypeIcon className={`w-5 h-5 mt-0.5 ${typeColor}`} />
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="text-white font-semibold mb-1 group-hover:text-brand-teal transition-colors">
-                                    {link.title}
-                                  </h3>
-                                  {link.description && (
-                                    <p className="text-slate-400 text-sm">{link.description}</p>
-                                  )}
-                                </div>
-                                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-brand-teal transition-colors flex-shrink-0" />
-                              </div>
-                            </motion.a>
-                          )
-                        })}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-12">
-                      <p className="text-slate-400">{t('docs.noDocsYet')}</p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <Footer />
+    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white">
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <div className="flex items-center gap-2 font-mono text-xs text-slate-400"><FiCode /> main.js</div>
+        <div className="rounded-full bg-brand-teal/15 px-3 py-1 text-xs font-black text-brand-teal">example</div>
       </div>
-    </>
+      <div className="bg-[#020617] p-5 font-mono text-sm leading-8">
+        {lines.map((line, index) => (
+          <div key={line}><span className="select-none pr-4 text-slate-600">{index + 1}</span>{line}</div>
+        ))}
+      </div>
+      <div className="border-t border-white/10 bg-black/30 p-4 font-mono text-sm text-slate-300">
+        Output: {codeOutput || 'Xin chào Loopy'}
+      </div>
+    </div>
+  )
+}
+
+const DocsPage: React.FC = () => {
+  const { i18n } = useTranslation()
+
+  // Define all content keys needed for this page (including header)
+  const contentKeys = [
+    // Header content
+    'nav.learn',
+    'nav.playground',
+    'nav.practice',
+    'nav.docs',
+    'nav.settings',
+    'nav.logout',
+    // Docs page content
+    'docs.code.output',
+    'docs.title',
+    'docs.subtitle',
+    'docs.sandbox.badge',
+    'docs.search.quick',
+    'docs.search.hint',
+    'docs.topic.title',
+    'docs.group1.title',
+    'docs.group1.items',
+    'docs.group2.title',
+    'docs.group2.items',
+    'docs.group3.title',
+    'docs.group3.items',
+    'docs.ref.badge',
+    'docs.ref.title',
+    'docs.ref.desc',
+    'docs.play.badge',
+    'docs.play.desc',
+    'docs.check.badge',
+    'docs.check.desc',
+    'docs.tips.title',
+    'docs.tips.desc',
+    'docs.terminal.badge',
+    'docs.terminal.desc',
+    'docs.toc.title',
+    'docs.toc.items',
+    'docs.next.badge',
+    'docs.next.title',
+    'docs.next.desc',
+    'docs.next.btn1',
+    'docs.next.btn2',
+    'docs.bottom.title',
+    'docs.bottom.desc',
+    'docs.bottom.btn1',
+    'docs.bottom.btn2',
+    // Footer content
+    'footer.aboutLoopy',
+    'footer.about',
+    'footer.team',
+    'footer.contact',
+    'footer.resources',
+    'footer.docs',
+    'footer.blog',
+    'footer.faq',
+    'footer.description',
+    'footer.allRightsReserved',
+    'footer.privacy',
+    'footer.terms',
+  ]
+
+  // Preload all content at once
+  const { content, loading } = useContentPreloader(contentKeys, i18n.language)
+
+  // Show loading screen while content is being fetched
+  if (loading) {
+    return <LoadingScreen message="Loading docs page..." />
+  }
+
+  // Extract header content
+  const headerContent = {
+    'nav.learn': content['nav.learn'],
+    'nav.playground': content['nav.playground'],
+    'nav.practice': content['nav.practice'],
+    'nav.docs': content['nav.docs'],
+    'nav.settings': content['nav.settings'],
+    'nav.logout': content['nav.logout'],
+  }
+
+  // Extract footer content
+  const footerContent = {
+    'footer.aboutLoopy': content['footer.aboutLoopy'],
+    'footer.about': content['footer.about'],
+    'footer.team': content['footer.team'],
+    'footer.contact': content['footer.contact'],
+    'footer.resources': content['footer.resources'],
+    'footer.docs': content['footer.docs'],
+    'footer.blog': content['footer.blog'],
+    'footer.faq': content['footer.faq'],
+    'footer.description': content['footer.description'],
+    'footer.allRightsReserved': content['footer.allRightsReserved'],
+    'footer.privacy': content['footer.privacy'],
+    'footer.terms': content['footer.terms'],
+  }
+
+  // Extract content values with fallbacks
+  const codeOutput = content['docs.code.output'] || 'Xin chào Loopy'
+  const docsTitle = content['docs.title'] || 'Docs là kệ tham khảo, không phải lộ trình chính.'
+  const docsSubtitle = content['docs.subtitle'] || 'Người mới cần docs để tra cứu khi bị kẹt, nhưng vẫn nên quay lại Journey Map để học có thứ tự và lưu progress đúng cách.'
+  const sandboxBadge = content['docs.sandbox.badge'] || 'Docs v2 sandbox'
+  const searchQuick = content['docs.search.quick'] || 'Tìm nhanh'
+  const searchHint = content['docs.search.hint'] || 'Thử tìm: `console.log`, `input`, `đọc error`'
+  const topicTitle = content['docs.topic.title'] || 'Chủ đề'
+  const group1Title = content['docs.group1.title'] || 'JavaScript cơ bản'
+  const group1Items = content['docs.group1.items'] || 'Console log|Biến|String template|Function|Điều kiện'
+  const group2Title = content['docs.group2.title'] || 'Python cơ bản'
+  const group2Items = content['docs.group2.items'] || 'print()|input()|Biến|f-string|Lỗi thường gặp'
+  const group3Title = content['docs.group3.title'] || 'Khi bị kẹt'
+  const group3Items = content['docs.group3.items'] || 'Đọc error|So sánh output|Dùng Playground'
+  const refBadge = content['docs.ref.badge'] || 'JavaScript reference'
+  const refTitle = content['docs.ref.title'] || 'console.log dùng để xem output nhanh.'
+  const refDesc = content['docs.ref.desc'] || 'Khi mới học, `console.log` là cách đơn giản nhất để kiểm tra một giá trị đang là gì. Nó phù hợp cho Playground và bước `Chạy thử` trong lesson.'
+  const playBadge = content['docs.play.badge'] || 'Khi dùng Chạy thử'
+  const playDesc = content['docs.play.desc'] || 'Dùng khi bạn muốn xem output thật. Đây là execute code, không phải validation.'
+  const checkBadge = content['docs.check.badge'] || 'Khi cần Kiểm tra'
+  const checkDesc = content['docs.check.desc'] || 'Quay lại lesson để Loopy chấm bằng rule/test case và lưu progress sau khi hoàn thành.'
+  const tipsTitle = content['docs.tips.title'] || 'Mẹo đọc output'
+  const tipsDesc = content['docs.tips.desc'] || 'Nếu output không giống bạn nghĩ, hãy đổi từng biến nhỏ, chạy lại, rồi so sánh. Đừng sửa nhiều dòng cùng lúc khi mới học.'
+  const terminalBadge = content['docs.terminal.badge'] || 'Từ docs sang thực hành'
+  const terminalDesc = content['docs.terminal.desc'] || 'Docs giúp hiểu khái niệm. Playground giúp thử nhanh. Learn giúp hoàn thành bài có kiểm tra.'
+  const tocTitle = content['docs.toc.title'] || 'Trong trang'
+  const tocItems = content['docs.toc.items'] || 'Khi nào dùng docs?|Ví dụ console.log|Run khác Check|Đi tiếp ở đâu?'
+  const nextBadge = content['docs.next.badge'] || 'Next step'
+  const nextTitle = content['docs.next.title'] || 'Đọc xong thì code thử.'
+  const nextDesc = content['docs.next.desc'] || 'Dùng Playground để thử khái niệm, hoặc vào Learn để được kiểm tra và lưu tiến độ.'
+  const nextBtn1 = content['docs.next.btn1'] || 'Mở Playground'
+  const nextBtn2 = content['docs.next.btn2'] || 'Vào Journey Map'
+  const bottomTitle = content['docs.bottom.title'] || 'Docs hỗ trợ journey, không thay journey.'
+  const bottomDesc = content['docs.bottom.desc'] || 'Khi chưa biết học tiếp gì, hãy quay lại Library thay vì lạc trong tài liệu tham khảo.'
+  const bottomBtn1 = content['docs.bottom.btn1'] || 'Quay lại Journey Map'
+  const bottomBtn2 = content['docs.bottom.btn2'] || 'Tìm lộ trình'
+
+  const navGroups = [
+    {
+      title: group1Title,
+      items: group1Items.split('|'),
+    },
+    {
+      title: group2Title,
+      items: group2Items.split('|'),
+    },
+    {
+      title: group3Title,
+      items: group3Items.split('|'),
+    },
+  ]
+
+  const toc = tocItems.split('|')
+
+  return (
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
+      <main>
+        <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
+          <div className="absolute left-1/2 top-10 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-teal/20 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr,1.1fr] lg:items-end">
+              <div>
+                <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
+                  {sandboxBadge}
+                </div>
+                <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                  {docsTitle}
+                </h1>
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                  {docsSubtitle}
+                </p>
+              </div>
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+                <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-slate-400"><FiSearch /> {searchQuick}</div>
+                <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-4 text-sm font-bold text-slate-500">
+                  {searchHint}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-16 md:px-6">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px,1fr,280px]">
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBookOpen /> {topicTitle}</div>
+                <div className="grid gap-5">
+                  {navGroups.map(group => (
+                    <div key={group.title}>
+                      <div className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">{group.title}</div>
+                      <div className="grid gap-1">
+                        {group.items.map((item, index) => (
+                          <button key={item} className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition ${index === 0 ? 'bg-brand-teal/15 text-brand-ocean' : 'text-slate-600 hover:bg-slate-100'}`}>
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean"><FiFileText /> {refBadge}</div>
+              <h2 className="text-4xl font-black tracking-tight text-slate-950 md:text-5xl">{refTitle}</h2>
+              <p className="mt-5 text-base leading-8 text-slate-600">
+                {refDesc}
+              </p>
+
+              <div className="my-8">
+                <CodeBlock codeOutput={codeOutput} />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
+                  <div className="mb-2 flex items-center gap-2 font-black text-slate-950"><FiPlay /> {playBadge}</div>
+                  <p className="text-sm leading-6 text-slate-600">{playDesc}</p>
+                </div>
+                <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/10 p-5">
+                  <div className="mb-2 flex items-center gap-2 font-black text-brand-ocean"><FiCompass /> {checkBadge}</div>
+                  <p className="text-sm leading-6 text-slate-600">{checkDesc}</p>
+                </div>
+              </div>
+
+              <h3 className="mt-10 text-2xl font-black text-slate-950">{tipsTitle}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                {tipsDesc}
+              </p>
+
+              <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-950 p-5 text-white">
+                <div className="flex items-center gap-2 text-sm font-black text-brand-teal"><FiTerminal /> {terminalBadge}</div>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{terminalDesc}</p>
+              </div>
+            </article>
+
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiHash /> {tocTitle}</div>
+                <div className="grid gap-2">
+                  {toc.map(item => (
+                    <a key={item} href="#" className="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-950">{item}</a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-teal">{nextBadge}</div>
+                <h3 className="mt-3 text-2xl font-black">{nextTitle}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{nextDesc}</p>
+                <div className="mt-5 grid gap-3">
+                  <PressedButton to="/playground">{nextBtn1}</PressedButton>
+                  <PressedButton to="/library/javascript" variant="secondary">{nextBtn2}</PressedButton>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
+          <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
+            <FiBookOpen className="mb-4 h-10 w-10 text-brand-teal" />
+            <h2 className="text-4xl font-black tracking-tight">{bottomTitle}</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+              {bottomDesc}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <PressedButton to="/library/javascript">{bottomBtn1}</PressedButton>
+              <PressedButton to="/onboarding" variant="secondary">{bottomBtn2}</PressedButton>
+            </div>
+          </div>
+        </section>
+      </main>
+    </PublicShell>
   )
 }
 

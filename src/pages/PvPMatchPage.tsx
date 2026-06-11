@@ -1,5 +1,5 @@
 /**
- * PvP Match Page
+ * V2 PvP Match Page - Light Theme
  * Real-time match interface
  */
 
@@ -11,19 +11,33 @@ import { usePvPSocket } from '../hooks/usePvPSocket'
 import { pvpService } from '../services/pvp.service'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
+import { useContentPreloader } from '../hooks/useContentPreloader'
 import type { PvPMatch, PvPQuestion, FinalScore, MatchPausedPayload } from '../types/pvp.types'
 
 // Components
 import MatchLobby from '../components/pvp/MatchLobby'
 import MatchArena from '../components/pvp/MatchArena'
 import MatchResults from '../components/pvp/MatchResults'
-import LoadingSpinner from '../components/common/LoadingSpinner'
+import LoadingScreen from '../components/LoadingScreen'
 
 const PvPMatchPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+
+  // Define all content keys needed for this page
+  const contentKeys = [
+    'pvp.match.notfound.title',
+    'pvp.match.notfound.desc',
+  ]
+
+  // Preload all content at once
+  const { content } = useContentPreloader(contentKeys, i18n.language)
+
+  // Extract content values with fallbacks
+  const pvpNotFoundTitle = content['pvp.match.notfound.title'] || 'Không tìm thấy phòng đấu'
+  const pvpNotFoundDesc = content['pvp.match.notfound.desc'] || 'Phòng có thể đã kết thúc hoặc mã phòng không đúng. Hãy quay lại Challenge Hub để tạo trận mới.'
 
   const [match, setMatch] = useState<PvPMatch | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState<PvPQuestion | null>(null)
@@ -79,7 +93,7 @@ const PvPMatchPage: React.FC = () => {
 
         // Navigate away after showing error
         setTimeout(() => {
-          navigate('/pvp')
+          navigate('/practice/compete')
         }, 2000)
       }
     }
@@ -137,10 +151,10 @@ const PvPMatchPage: React.FC = () => {
     // Participant events
     const cleanupJoined = socket.onParticipantJoined(participant => {
       toast.success(t('pvp.match.playerJoined', { name: participant.display_name || 'Player' }))
-      setMatch(prev => {
+      setMatch((prev: PvPMatch | null) => {
         if (!prev) return prev
         const existingParticipants = prev.participants || []
-        const index = existingParticipants.findIndex(p => p.user_id === participant.user_id)
+        const index = existingParticipants.findIndex((p: any) => p.user_id === participant.user_id)
         
         let newParticipants
         if (index >= 0) {
@@ -160,25 +174,25 @@ const PvPMatchPage: React.FC = () => {
       // Data might be { user_id } or full participant
       const leftUserId = (data as any).user_id || (data as any).id
       
-      setMatch(prev => {
+      setMatch((prev: PvPMatch | null) => {
         if (!prev) return prev
-        const player = prev.participants?.find(p => p.user_id === leftUserId)
+        const player = prev.participants?.find((p: any) => p.user_id === leftUserId)
         if (player) {
           toast(t('pvp.match.playerLeft', { name: player.display_name || 'Player' }), { icon: '👋' })
         }
         return {
           ...prev,
-          participants: prev.participants?.filter(p => p.user_id !== leftUserId) || [],
+          participants: prev.participants?.filter((p: any) => p.user_id !== leftUserId) || [],
         }
       })
     })
 
     const cleanupDisc = socket.onParticipantDisconnected(userId => {
-      setMatch(prev => {
+      setMatch((prev: PvPMatch | null) => {
         if (!prev) return prev
         return {
           ...prev,
-          participants: prev.participants?.map(p => 
+          participants: prev.participants?.map((p: any) => 
             p.user_id === userId ? { ...p, is_connected: false } : p
           ) || [],
         }
@@ -186,11 +200,11 @@ const PvPMatchPage: React.FC = () => {
     })
 
     const cleanupReconn = socket.onParticipantReconnected(userId => {
-      setMatch(prev => {
+      setMatch((prev: PvPMatch | null) => {
         if (!prev) return prev
         return {
           ...prev,
-          participants: prev.participants?.map(p => 
+          participants: prev.participants?.map((p: any) => 
             p.user_id === userId ? { ...p, is_connected: true } : p
           ) || [],
         }
@@ -199,11 +213,11 @@ const PvPMatchPage: React.FC = () => {
 
     const cleanupReady = socket.onParticipantReady(participant => {
       toast(t('pvp.match.playerReady', { name: participant.display_name || 'Player' }), { icon: '✅' })
-      setMatch(prev => {
+      setMatch((prev: PvPMatch | null) => {
         if (!prev) return prev
         return {
           ...prev,
-          participants: prev.participants?.map(p => 
+          participants: prev.participants?.map((p: any) => 
             p.user_id === participant.user_id ? { ...p, ...participant, is_ready: true } : p
           ),
         }
@@ -288,21 +302,17 @@ const PvPMatchPage: React.FC = () => {
   }, [isPaused, pauseCountdown])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
+    return <LoadingScreen message={t('common.loading')} className="bg-[#f7fbff] text-slate-900" />
   }
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center gap-4">
-        <p className="text-white text-2xl font-black">Không tìm thấy phòng đấu</p>
-        <p className="text-slate-400 text-sm max-w-md text-center">Phòng có thể đã kết thúc hoặc mã phòng không đúng. Hãy quay lại Challenge Hub để tạo trận mới.</p>
+      <div className="min-h-screen bg-[#f7fbff] flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-900 text-2xl font-black">{pvpNotFoundTitle}</p>
+        <p className="text-slate-600 text-sm max-w-md text-center">{pvpNotFoundDesc}</p>
         <button
-          onClick={() => navigate('/pvp')}
-          className="px-4 py-2 bg-brand-teal text-[#0a0e1a] rounded-lg hover:bg-brand-cyan transition-colors"
+          onClick={() => navigate('/practice/compete')}
+          className="px-4 py-2 bg-brand-teal text-white rounded-lg hover:bg-brand-cyan transition-colors"
         >
           {t('pvp.match.backToLobby')}
         </button>
@@ -311,12 +321,11 @@ const PvPMatchPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] relative overflow-hidden">
-      {/* Ambient background */}
-      <div className="absolute inset-0 pointer-events-none opacity-30">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-brand-teal/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-brand-cyan/10 rounded-full blur-[100px]" />
-      </div>
+    <div className="min-h-screen bg-[#f7fbff] relative overflow-hidden text-slate-900">
+      {/* Subtle background texture */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      <div className="absolute top-0 right-0 -mr-[200px] -mt-[200px] w-[600px] h-[600px] rounded-full bg-brand-teal/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 -ml-[200px] -mb-[200px] w-[500px] h-[500px] rounded-full bg-brand-cyan/10 blur-[100px] pointer-events-none" />
 
       <AnimatePresence mode="wait">
         {match.status === 'waiting' && (

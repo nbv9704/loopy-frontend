@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Flame, LogOut, Menu, Settings, Star, X, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../../contexts/AuthContext'
-import LanguageSwitcher from '../common/LanguageSwitcher'
-import headerLogo from '../../assets/images/logos/header/logo-w256.png'
+import { useAuth } from '../contexts/AuthContext'
+import LanguageSwitcher from './common/LanguageSwitcher'
+import headerLogo from '../assets/images/logos/header/logo-w256.png'
 
 // Static navigation items — labels resolved via props
 const NAV_ITEMS = [
@@ -21,13 +21,13 @@ const goalToLang: Record<string, string> = {
   explore: 'python',
 }
 
-export interface V2HeaderProps {
+export interface HeaderProps {
   headerContent?: {
     [key: string]: string | null
   }
 }
 
-const V2Header: React.FC<V2HeaderProps> = ({ headerContent = {} }) => {
+const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
   const { user, signOut } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -239,4 +239,4 @@ const V2Header: React.FC<V2HeaderProps> = ({ headerContent = {} }) => {
   )
 }
 
-export default V2Header
+export default Header

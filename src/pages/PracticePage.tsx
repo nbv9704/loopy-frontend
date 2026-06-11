@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BookOpenCheck, Swords, Users, Library, Lock, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import SEO from '../../components/common/SEO'
-import { V2PublicShell } from '../../components/v2/V2PublicShell'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
-import { useAuth } from '../../contexts/AuthContext'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
+import SEO from '../components/common/SEO'
+import { PublicShell } from '../components/PublicShell'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { useAuth } from '../contexts/AuthContext'
+import { useContentPreloader } from '../hooks/useContentPreloader'
 
-const V2PracticePage: React.FC = () => {
+const PracticePage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
@@ -105,7 +105,7 @@ const V2PracticePage: React.FC = () => {
   ]
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <SEO title="Practice | Loopy" description={content['practice.subtitle'] || undefined} />
       <main className="flex-grow pb-16 pt-8 md:pt-10">
         <section className="mx-auto max-w-6xl px-6">
@@ -198,8 +198,8 @@ const V2PracticePage: React.FC = () => {
           </div>
         </section>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2PracticePage
+export default PracticePage

@@ -1,388 +1,349 @@
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { FiAlertCircle, FiArrowRight, FiCheckCircle, FiCode, FiCompass, FiCpu, FiGlobe, FiMap, FiPlay, FiSave, FiTarget } from 'react-icons/fi'
+import { PublicShell } from '../components/PublicShell'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
-import { ArrowLeft, CheckCircle2, Compass, Cpu, Globe, Map, Play, Rocket } from 'lucide-react'
 
-import SEO from '../components/common/SEO'
-import { pageMetadata } from '../utils/seo'
+type GoalId = 'zero' | 'web' | 'school' | 'try'
+type ExperienceId = 'new' | 'some' | 'basic'
 
-const goals = [
-  {
-    id: 'start_from_zero',
-    langId: 'python',
-    icon: Compass,
-    color: 'cyan',
-    title: 'Tôi chưa biết gì, muốn học lập trình từ đầu',
-    desc: 'Bắt đầu với những khái niệm cơ bản nhất qua ngôn ngữ Python dễ hiểu.'
-  },
-  {
-    id: 'build_web',
-    langId: 'javascript',
-    icon: Globe,
-    color: 'teal',
-    title: 'Tôi muốn học làm website',
-    desc: 'Làm quen với JavaScript - ngôn ngữ chính để tạo nên các trang web hiện đại.'
-  },
-  {
-    id: 'school_work',
-    langId: 'cpp',
-    icon: Cpu,
-    color: 'ocean',
-    title: 'Tôi cần học để phục vụ việc trên trường',
-    desc: 'Nắm vững tư duy lập trình và cấu trúc dữ liệu với C++.'
-  },
-  {
-    id: 'explore',
-    langId: 'python',
-    icon: Play,
-    color: 'pink',
-    title: 'Tôi chỉ muốn học thử xem mình có hợp không',
-    desc: 'Trải nghiệm nhanh các bài học thú vị để khám phá tiềm năng bản thân.'
-  },
+type GoalOption = {
+  id: GoalId
+  title: string
+  description: string
+  language: 'python' | 'javascript' | 'cpp'
+  languageLabel: string
+  learningGoal: string
+  icon: typeof FiCompass
+}
+
+const goals: GoalOption[] = [
+  { id: 'zero', title: 'Tôi bắt đầu từ số 0', description: 'Ưu tiên Python và bài đầu thật nhỏ để hiểu output.', language: 'python', languageLabel: 'Python', learningGoal: 'start_from_zero', icon: FiCompass },
+  { id: 'web', title: 'Tôi muốn làm web', description: 'Bắt đầu với JavaScript và tương tác trong trình duyệt.', language: 'javascript', languageLabel: 'JavaScript', learningGoal: 'build_web', icon: FiGlobe },
+  { id: 'school', title: 'Tôi học cho trường/lớp', description: 'Đi theo nền tảng input/output và tư duy giải bài.', language: 'cpp', languageLabel: 'C++', learningGoal: 'school_work', icon: FiCpu },
+  { id: 'try', title: 'Tôi chỉ muốn thử trước', description: 'Vào lesson mẫu ngắn để xem mình có hợp không.', language: 'python', languageLabel: 'Python', learningGoal: 'explore', icon: FiPlay },
 ]
 
-// Map goal ID → language ID for routing
-const goalToLang: Record<string, string> = {
-  start_from_zero: 'python',
-  build_web: 'javascript',
-  school_work: 'cpp',
-  explore: 'python',
-}
-
-const supportedLanguages = new Set(['javascript', 'python', 'cpp'])
-
-interface OnboardingLocationState {
-  intendedLanguage?: string
-}
-
-const experienceLevels = [
-  { id: 'never_coded', title: 'Tôi chưa bao giờ lập trình', desc: 'Sẽ bắt đầu từ những thứ nhỏ nhất.' },
-  { id: 'watched_some', title: 'Tôi đã xem/đọc qua nhưng chưa tự làm được', desc: 'Cần thực hành để hiểu rõ hơn.' },
-  { id: 'know_basics', title: 'Tôi đã biết một vài kiến thức cơ bản', desc: 'Muốn hệ thống lại và nâng cao kỹ năng.' },
+const experiences: Array<{ id: ExperienceId; title: string; description: string }> = [
+  { id: 'new', title: 'Chưa từng code', description: 'Loopy sẽ giải thích bằng ví dụ nhỏ và ít thuật ngữ.' },
+  { id: 'some', title: 'Đã xem qua nhưng chưa tự làm', description: 'Ưu tiên thực hành và debug lỗi dễ hiểu.' },
+  { id: 'basic', title: 'Biết chút cơ bản', description: 'Đi nhanh hơn qua phần quan sát, tập trung kiểm tra.' },
 ]
 
-const languageLabels: Record<string, { name: string; firstLesson: string; milestone: string }> = {
-  python: {
-    name: 'Python Foundations',
-    firstLesson: 'In dòng chữ đầu tiên',
-    milestone: 'Hiểu biến, output và điều kiện cơ bản',
-  },
-  javascript: {
-    name: 'JavaScript Web Starter',
-    firstLesson: 'Thay đổi nội dung trên trang',
-    milestone: 'Tạo tương tác đầu tiên trong trình duyệt',
-  },
-  cpp: {
-    name: 'C++ School Foundations',
-    firstLesson: 'Chạy chương trình C++ đầu tiên',
-    milestone: 'Nắm input/output và tư duy giải bài',
-  },
+const languageToGoal: Partial<Record<string, GoalId>> = {
+  python: 'zero',
+  javascript: 'web',
+  cpp: 'school',
 }
 
-const colorMapClasses: Record<string, { border: string; text: string; glow: string }> = {
-  teal: {
-    border: 'hover:border-brand-teal/50',
-    text: 'text-brand-teal',
-    glow: 'group-hover:shadow-brand-teal/20',
-  },
-  cyan: {
-    border: 'hover:border-brand-cyan/50',
-    text: 'text-brand-cyan',
-    glow: 'group-hover:shadow-brand-cyan/20',
-  },
-  ocean: {
-    border: 'hover:border-brand-ocean/50',
-    text: 'text-brand-ocean',
-    glow: 'group-hover:shadow-brand-ocean/20',
-  },
-  pink: {
-    border: 'hover:border-pink-500/50',
-    text: 'text-pink-400',
-    glow: 'group-hover:shadow-pink-500/20',
-  },
+function StepBar({ step }: { step: number }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {[1, 2, 3].map(item => (
+        <div key={item} className={`h-2 rounded-full ${step >= item ? 'bg-brand-teal' : 'bg-slate-200'}`} />
+      ))}
+    </div>
+  )
 }
 
 const OnboardingPage: React.FC = () => {
+  const { i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, refreshUser } = useAuth()
-  const locationState = location.state as OnboardingLocationState | null
-  const intendedLanguage = locationState?.intendedLanguage
-  const safeIntendedLanguage = intendedLanguage && supportedLanguages.has(intendedLanguage)
-    ? intendedLanguage
-    : undefined
-  
-  const [step, setStep] = useState(1)
-  const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
-  const [selectedLang, setSelectedLang] = useState<string | null>(null)
-  const [selectedExperience, setSelectedExperience] = useState<string | null>(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { user, loading: authLoading, refreshUser } = useAuth()
+  const locationState = location.state as { intendedLanguage?: string; onboardingDraft?: { selectedGoal?: GoalId; selectedExperience?: ExperienceId } } | null
+  const initialGoal = languageToGoal[locationState?.intendedLanguage || ''] || 'web'
 
-  useEffect(() => {
-    // If not logged in, redirect to auth page
+  const [step, setStep] = useState(1)
+  const [selectedGoal, setSelectedGoal] = useState<GoalId>(locationState?.onboardingDraft?.selectedGoal || initialGoal)
+  const [selectedExperience, setSelectedExperience] = useState<ExperienceId>(locationState?.onboardingDraft?.selectedExperience || 'new')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const goal = goals.find(item => item.id === selectedGoal) || goals[1]
+  const experience = experiences.find(item => item.id === selectedExperience) || experiences[0]
+
+  // Define all content keys needed for this page (including header)
+  const contentKeys = [
+    // Header content
+    'nav.learn',
+    'nav.playground',
+    'nav.practice',
+    'nav.docs',
+    'nav.settings',
+    'nav.logout',
+    // Onboarding page content
+    'onboarding.title',
+    'onboarding.subtitle',
+    'onboarding.badge',
+    'onboarding.progress',
+    'onboarding.step.goal',
+    'onboarding.step.exp',
+    'onboarding.step.preview',
+    'onboarding.goal.title',
+    'onboarding.goal.desc',
+    'onboarding.goal.hint',
+    'onboarding.exp.title',
+    'onboarding.exp.desc',
+    'onboarding.preview.title',
+    'onboarding.preview.desc',
+    'onboarding.preview.badge',
+    'onboarding.preview.btn_back',
+    'onboarding.preview.btn_next',
+    'onboarding.preview.btn_journey',
+    'onboarding.sidebar.badge',
+    'onboarding.sidebar.desc',
+    'onboarding.sidebar.why.title',
+    'onboarding.sidebar.why.desc',
+    // Footer content
+    'footer.aboutLoopy',
+    'footer.about',
+    'footer.team',
+    'footer.contact',
+    'footer.resources',
+    'footer.docs',
+    'footer.blog',
+    'footer.faq',
+    'footer.description',
+    'footer.allRightsReserved',
+    'footer.privacy',
+    'footer.terms',
+  ]
+
+  // Preload all content at once
+  const { content, loading } = useContentPreloader(contentKeys, i18n.language)
+
+  if (loading || authLoading) {
+    return <LoadingScreen message="Loading onboarding..." />
+  }
+
+  // Extract header content
+  const headerContent = {
+    'nav.learn': content['nav.learn'],
+    'nav.playground': content['nav.playground'],
+    'nav.practice': content['nav.practice'],
+    'nav.docs': content['nav.docs'],
+    'nav.settings': content['nav.settings'],
+    'nav.logout': content['nav.logout'],
+  }
+
+  // Extract footer content
+  const footerContent = {
+    'footer.aboutLoopy': content['footer.aboutLoopy'],
+    'footer.about': content['footer.about'],
+    'footer.team': content['footer.team'],
+    'footer.contact': content['footer.contact'],
+    'footer.resources': content['footer.resources'],
+    'footer.docs': content['footer.docs'],
+    'footer.blog': content['footer.blog'],
+    'footer.faq': content['footer.faq'],
+    'footer.description': content['footer.description'],
+    'footer.allRightsReserved': content['footer.allRightsReserved'],
+    'footer.privacy': content['footer.privacy'],
+    'footer.terms': content['footer.terms'],
+  }
+
+  // Extract content values with fallbacks
+  const onboardingTitle = content['onboarding.title'] || 'Chọn một lộ trình đầu tiên để bắt đầu đúng bước.'
+  const onboardingSubtitle = content['onboarding.subtitle'] || 'Loopy dùng mục tiêu và kinh nghiệm của bạn để lưu hồ sơ học, rồi đưa bạn vào Journey Map phù hợp. Nếu lưu thất bại, bạn sẽ ở lại trang này để thử lại.'
+  const badge = content['onboarding.badge'] || 'Journey Builder v2'
+  const progressLabel = content['onboarding.progress'] || 'Tiến trình'
+  const stepGoal = content['onboarding.step.goal'] || 'Mục tiêu'
+  const stepExp = content['onboarding.step.exp'] || 'Kinh nghiệm'
+  const stepPreview = content['onboarding.step.preview'] || 'Xác nhận lộ trình'
+  const goalTitle = content['onboarding.goal.title'] || 'Bạn muốn Loopy giúp đạt điều gì trước?'
+  const goalDesc = content['onboarding.goal.desc'] || 'Chọn mục tiêu gần nhất. Đây là cách Loopy gợi ý lộ trình đầu tiên.'
+  const goalHint = content['onboarding.goal.hint'] || 'Gợi ý'
+  const expTitle = content['onboarding.exp.title'] || 'Bạn đã từng code đến đâu?'
+  const expDesc = content['onboarding.exp.desc'] || 'Câu trả lời này chỉ dùng để điều chỉnh tốc độ giải thích, không khóa lộ trình.'
+  const previewTitle = content['onboarding.preview.title'] || 'Lộ trình đầu tiên đã sẵn sàng.'
+  const previewDesc = content['onboarding.preview.desc'] || 'Bấm lưu để cập nhật hồ sơ học. Loopy chỉ chuyển vào Journey Map sau khi backend xác nhận thành công.'
+  const previewBadge = content['onboarding.preview.badge'] || 'Recommended path'
+  const btnBack = content['onboarding.preview.btn_back'] || 'Quay lại'
+  const btnNext = content['onboarding.preview.btn_next'] || 'Tiếp tục'
+  const btnJourney = user
+    ? content['onboarding.preview.btn_journey'] || 'Lưu và mở Journey Map'
+    : 'Đăng nhập để lưu lộ trình'
+  const sidebarBadge = content['onboarding.sidebar.badge'] || 'Lộ trình đầu tiên'
+  const sidebarDesc = content['onboarding.sidebar.desc'] || 'Loopy sẽ mở bài đầu phù hợp, thay vì đưa bạn vào catalog tự chọn.'
+  const sidebarWhyTitle = content['onboarding.sidebar.why.title'] || 'Vì sao cần onboarding?'
+  const sidebarWhyDesc = content['onboarding.sidebar.why.desc'] || 'Người mới không cần thấy toàn bộ catalog ngay. Họ cần một bài đầu rõ ràng và một đường quay lại nếu bị kẹt.'
+
+  const handleFinish = async () => {
+    setSaveError('')
+
     if (!user) {
       navigate('/auth', {
         state: {
-          from: { pathname: '/onboarding' },
-          intendedLanguage: safeIntendedLanguage,
+          from: '/onboarding',
+          intendedLanguage: goal.language,
+          onboardingDraft: {
+            selectedGoal,
+            selectedExperience,
+            preferredLanguage: goal.language,
+            learningGoal: goal.learningGoal,
+            experienceLevel: selectedExperience,
+          },
         },
       })
       return
     }
 
-    // If user has already completed onboarding, redirect to their course
-    if (user.onboardingCompleted) {
-      const lang = safeIntendedLanguage || goalToLang[user.learningGoal || ''] || 'javascript'
-      navigate(`/library/${lang}`, { replace: true })
-    }
-  }, [safeIntendedLanguage, user, navigate])
+    setSaving(true)
 
-  const handleGoalSelect = (goalId: string, langId: string) => {
-    setSelectedGoal(goalId)
-    setSelectedLang(safeIntendedLanguage || langId)
-    setStep(2)
-  }
-
-  const handleExperienceSelect = (levelId: string) => {
-    setSelectedExperience(levelId)
-    setStep(3)
-  }
-
-  const handleComplete = async () => {
-    if (!selectedGoal || !selectedLang || !selectedExperience || loading) return
-
-    setError('')
-    setLoading(true)
     try {
-      let currentPathId: string | undefined
-      const pathsResponse = await api.getPathsByGoal(selectedGoal)
-      if (pathsResponse.success && pathsResponse.data) {
-        const paths = ((pathsResponse.data as { paths?: any[] }).paths || [])
-        const matchingPath = paths.find(path => path.languageId === selectedLang)
-        currentPathId = matchingPath?.id
-      }
-
-      // Save everything to backend before navigating away.
-      const updateResponse = await api.updateProfile({
-        learningGoal: selectedGoal,
+      const response = await api.updateProfile({
+        preferredLanguage: goal.language,
+        learningGoal: goal.learningGoal,
         experienceLevel: selectedExperience,
         onboardingCompleted: true,
-        currentPathId,
-        preferredLanguage: selectedLang,
       })
 
-      if (!updateResponse.success) {
-        throw new Error(updateResponse.error?.message || 'Profile update failed')
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Không lưu được onboarding. Vui lòng thử lại.')
       }
-      
+
       await refreshUser()
-      navigate(`/library/${selectedLang}`, { replace: true })
-    } catch (error: any) {
-      console.error('Failed to complete onboarding:', error)
-      setError(error.message || 'Chưa lưu được lộ trình. Vui lòng thử lại để Loopy lưu đúng tiến độ của bạn.')
+      navigate(`/library/${goal.language}`, { replace: true })
+    } catch (err: any) {
+      setSaveError(err.message || 'Không lưu được onboarding. Vui lòng thử lại.')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const selectedGoalData = goals.find(goal => goal.id === selectedGoal)
-  const selectedExperienceData = experienceLevels.find(level => level.id === selectedExperience)
-  const pathPreview = languageLabels[selectedLang || 'python'] || languageLabels.python
-
   return (
-    <>
-      <SEO {...pageMetadata.learn} />
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0e1a] p-4 py-24">
-        {/* Ambient background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-brand-teal/10 rounded-full blur-[120px] animate-pulse" />
-          <div
-            className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-brand-cyan/10 rounded-full blur-[100px] animate-pulse"
-            style={{ animationDelay: '1s' }}
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-sm font-bold text-brand-teal">
-              <Map className="h-4 w-4" />
-              Journey Builder
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
+      <main className="px-4 py-12 md:px-6 md:py-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 grid gap-8 lg:grid-cols-[0.9fr,1.1fr] lg:items-end">
+            <div>
+              <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
+                {badge}
+              </div>
+              <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                {onboardingTitle}
+              </h1>
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                {onboardingSubtitle}
+              </p>
             </div>
-            <div className="mx-auto grid max-w-xl grid-cols-3 gap-2">
-              {[1, 2, 3].map(item => (
-                <div key={item} className={`h-2 rounded-full ${step >= item ? 'bg-brand-teal' : 'bg-white/10'}`} />
-              ))}
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+              <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiMap /> {progressLabel}</div>
+              <StepBar step={step} />
+              <div className="mt-4 text-sm font-bold text-slate-500">Bước {step}/3 · {step === 1 ? stepGoal : step === 2 ? stepExp : stepPreview}</div>
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full"
-              >
-                <div className="mb-12 text-center">
-                  <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
-                    Bạn muốn Loopy giúp bạn đạt điều gì trước?
-                  </h1>
-                  <p className="text-slate-400 text-lg">Chọn mục tiêu gần nhất. Bạn có thể đổi sau.</p>
+          <div className="grid gap-8 lg:grid-cols-[1fr,380px]">
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              {step === 1 && (
+                <div>
+                  <h2 className="text-3xl font-black tracking-tight md:text-4xl">{goalTitle}</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{goalDesc}</p>
+                  <div className="mt-6 grid gap-3 md:grid-cols-2">
+                    {goals.map(item => {
+                      const Icon = item.icon
+                      const active = selectedGoal === item.id
+                      return (
+                        <button key={item.id} onClick={() => setSelectedGoal(item.id)} className={`rounded-[1.5rem] border p-5 text-left transition ${active ? 'border-brand-teal bg-brand-teal/10 shadow-[0_4px_0_rgba(11,136,156,0.2)]' : 'border-slate-200 bg-[#f8fafc] hover:border-brand-teal'}`}>
+                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal"><Icon /></div>
+                          <h3 className="text-xl font-black">{item.title}</h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                          <div className="mt-4 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-500">{goalHint}: {item.languageLabel}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                  {goals.map((goal, index) => {
-                    const Icon = goal.icon
-                    const classes = colorMapClasses[goal.color] || colorMapClasses.teal
-
-                    return (
-                      <motion.button
-                        key={goal.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ y: -4, scale: 1.01 }}
-                        onClick={() => handleGoalSelect(goal.id, goal.langId)}
-                        className={`group relative rounded-3xl w-full bg-white/5 backdrop-blur-sm border border-white/10 ${classes.border} hover:bg-white/10 transition-all duration-300 cursor-pointer text-left overflow-hidden`}
-                      >
-                        <div className="relative z-10 flex items-center p-6 gap-5">
-                          <div className={`p-3 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors ${classes.text}`}>
-                            <Icon className="w-7 h-7" />
+              {step === 2 && (
+                <div>
+                  <h2 className="text-3xl font-black tracking-tight md:text-4xl">{expTitle}</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{expDesc}</p>
+                  <div className="mt-6 grid gap-3">
+                    {experiences.map(item => {
+                      const active = selectedExperience === item.id
+                      return (
+                        <button key={item.id} onClick={() => setSelectedExperience(item.id)} className={`flex items-start gap-4 rounded-[1.5rem] border p-5 text-left transition ${active ? 'border-brand-teal bg-brand-teal/10' : 'border-slate-200 bg-[#f8fafc] hover:border-brand-teal'}`}>
+                          <div className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-brand-teal text-slate-950' : 'bg-white text-slate-400'}`}>
+                            {active ? <FiCheckCircle /> : <FiCode />}
                           </div>
                           <div>
-                            <h2 className="text-white font-bold text-lg mb-0.5">{goal.title}</h2>
-                            <p className="text-slate-500 text-sm">{goal.desc}</p>
+                            <h3 className="text-xl font-black">{item.title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
                           </div>
-                        </div>
-                      </motion.button>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            ) : step === 2 ? (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full max-w-2xl mx-auto"
-              >
-                <div className="mb-12">
-                  <button 
-                    onClick={() => setStep(1)}
-                    className="text-brand-teal hover:text-brand-cyan transition-colors flex items-center gap-2 mx-auto mb-6 cursor-pointer font-medium"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Quay lại chọn mục tiêu
-                  </button>
-                  <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
-                    Bạn đang ở vạch xuất phát nào?
-                  </h1>
-                  <p className="text-slate-400 text-lg">Điều này giúp chúng mình chọn điểm bắt đầu phù hợp.</p>
-                </div>
-
-                <div className="space-y-4">
-                  {experienceLevels.map((level, index) => (
-                    <motion.button
-                      key={level.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ x: 8 }}
-                      onClick={() => handleExperienceSelect(level.id)}
-                      disabled={loading}
-                      className="group relative rounded-3xl w-full bg-white/5 backdrop-blur-sm border border-white/10 hover:border-brand-teal/50 hover:bg-white/10 transition-all duration-300 cursor-pointer text-left p-6 flex items-center justify-between disabled:opacity-50"
-                    >
-                      <div>
-                        <h2 className="text-white font-bold text-xl mb-1 group-hover:text-brand-teal transition-colors">
-                          {level.title}
-                        </h2>
-                        <p className="text-slate-500 text-sm">{level.desc}</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-[#0a0e1a] transition-all">
-                        <Play className="w-5 h-5" />
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="mx-auto w-full max-w-4xl"
-              >
-                <div className="mb-10 text-center">
-                  <button
-                    onClick={() => setStep(2)}
-                    className="mx-auto mb-6 flex cursor-pointer items-center gap-2 font-medium text-brand-teal transition-colors hover:text-brand-cyan"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Quay lại mức kinh nghiệm
-                  </button>
-                  <h1 className="mb-4 text-4xl font-black tracking-tight text-white md:text-5xl">
-                    Đây là lộ trình khởi đầu của bạn.
-                  </h1>
-                  <p className="text-lg text-slate-400">Nếu ổn, Loopy sẽ lưu lộ trình và đưa bạn tới bài đầu tiên.</p>
-                </div>
-
-                <div className="grid gap-6 lg:grid-cols-[1fr,1.2fr]">
-                  <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-left">
-                    <div className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-brand-teal">Bạn chọn</div>
-                    <div className="space-y-4">
-                      <div className="rounded-2xl bg-black/20 p-4">
-                        <div className="text-sm text-slate-500">Mục tiêu</div>
-                        <div className="mt-1 font-bold text-white">{selectedGoalData?.title}</div>
-                      </div>
-                      <div className="rounded-2xl bg-black/20 p-4">
-                        <div className="text-sm text-slate-500">Kinh nghiệm</div>
-                        <div className="mt-1 font-bold text-white">{selectedExperienceData?.title}</div>
-                      </div>
-                    </div>
+                        </button>
+                      )
+                    })}
                   </div>
+                </div>
+              )}
 
-                  <div className="rounded-[2rem] border border-brand-teal/25 bg-brand-teal/[0.06] p-6 text-left">
-                    <div className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-brand-teal">
-                      <Rocket className="h-4 w-4" /> Lộ trình đề xuất
-                    </div>
-                    <h2 className="text-3xl font-black text-white">{pathPreview.name}</h2>
-                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                      {[
-                        { label: 'Bài đầu tiên', value: pathPreview.firstLesson },
-                        { label: 'Phiên đầu', value: 'Khoảng 5 phút' },
-                        { label: 'Cột mốc đầu', value: pathPreview.milestone },
-                      ].map(item => (
-                        <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <div className="text-xs font-bold uppercase tracking-widest text-slate-500">{item.label}</div>
-                          <div className="mt-2 text-sm font-bold leading-6 text-white">{item.value}</div>
-                        </div>
+              {step === 3 && (
+                <div>
+                  <h2 className="text-3xl font-black tracking-tight md:text-4xl">{previewTitle}</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{previewDesc}</p>
+                  <div className="mt-6 rounded-[1.5rem] border border-brand-teal/30 bg-brand-teal/10 p-6">
+                    <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">{previewBadge}</div>
+                    <h3 className="mt-3 text-4xl font-black">{goal.languageLabel} Starter</h3>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{stepGoal}: {goal.title}. {stepExp}: {experience.title}.</p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      {['Bài đầu: chạy code mẫu', 'Flow: quan sát -> sửa -> kiểm tra', 'Progress: lưu sau completeLesson'].map(item => (
+                        <div key={item} className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-700">{item}</div>
                       ))}
                     </div>
-                    {error && (
-                      <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-                        {error}
-                      </div>
-                    )}
-                    <button
-                      onClick={handleComplete}
-                      disabled={loading}
-                      className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-teal px-6 py-4 text-lg font-black text-[#0a0e1a] shadow-lg shadow-brand-teal/20 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {loading ? 'Đang tạo lộ trình...' : 'Bắt đầu hành trình'}
-                      {!loading && <CheckCircle2 className="h-5 w-5" />}
-                    </button>
                   </div>
+                  {saveError && (
+                    <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
+                      <FiAlertCircle className="mt-0.5 shrink-0" />
+                      <span>{saveError}</span>
+                    </div>
+                  )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+
+              <div className="mt-8 flex flex-col justify-between gap-3 border-t border-slate-200 pt-6 sm:flex-row">
+                <button onClick={() => setStep(prev => Math.max(1, prev - 1))} className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-[0_4px_0_#cbd5e1] disabled:opacity-40" disabled={step === 1 || saving}>
+                  {btnBack}
+                </button>
+                {step < 3 ? (
+                  <button onClick={() => setStep(prev => Math.min(3, prev + 1))} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-teal px-5 py-3 text-sm font-black text-slate-950 shadow-[0_5px_0_#0b889c]">
+                    {btnNext} <FiArrowRight />
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleFinish} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-teal px-5 py-3 text-sm font-black text-slate-950 shadow-[0_5px_0_#0b889c] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+                    <FiSave /> {saving ? 'Đang lưu...' : btnJourney}
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <aside className="grid gap-4 lg:self-start">
+              <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-xl shadow-slate-200/70">
+                <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiTarget /> {sidebarBadge}</div>
+                <h2 className="text-3xl font-black">{goal.languageLabel} Starter</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{sidebarDesc}</p>
+                <div className="mt-5 grid gap-2">
+                  {['Không celebration trước khi lưu', 'Không navigate nếu save profile fail', 'CTA đầu tiên là bài học thật'].map(item => (
+                    <div key={item} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-300"><FiCheckCircle className="text-brand-teal" /> {item}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6">
+                <div className="mb-3 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiPlay /> {sidebarWhyTitle}</div>
+                <p className="text-sm leading-6 text-slate-600">{sidebarWhyDesc}</p>
+              </div>
+            </aside>
+          </div>
         </div>
-      </div>
-    </>
+      </main>
+    </PublicShell>
   )
 }
 

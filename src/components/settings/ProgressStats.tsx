@@ -135,7 +135,7 @@ const ProgressStats = () => {
             <h3 className="text-white font-semibold">{t('settings.achievements')}</h3>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {progressStats.badges.map((badge) => (
+            {progressStats.badges.map((badge: any) => (
               <div 
                 key={badge.id}
                 className="bg-white/3 border border-white/5 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/5 transition-colors cursor-help group relative"

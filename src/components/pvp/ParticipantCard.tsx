@@ -47,8 +47,8 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className={`p-4 rounded-xl border transition-all shadow-sm ${
-          isCurrentUser ? 'bg-brand-teal/5 border-brand-teal' : 'bg-white border-slate-200'
+        className={`p-4 rounded-xl border transition-all ${
+          isCurrentUser ? 'bg-brand-teal/10 border-brand-teal' : 'bg-white/5 border-white/10'
         } ${!participant.is_connected ? 'opacity-50' : ''}`}
       >
         <div className="flex items-center gap-3 mb-3">
@@ -67,30 +67,30 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({
 
           {/* Name */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-slate-900 font-semibold truncate">
+            <h4 className="text-white font-semibold truncate">
               {participant.display_name || 'Anonymous'}
               {isCurrentUser && <span className="text-brand-teal ml-1">(You)</span>}
             </h4>
-            {!participant.is_connected && <p className="text-red-500 text-xs">Disconnected</p>}
+            {!participant.is_connected && <p className="text-red-400 text-xs">Disconnected</p>}
           </div>
         </div>
 
         {/* Stats */}
-        <div className="space-y-2 mt-4 pt-4 border-t border-slate-100">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-brand-teal" />
-              <span className="text-slate-500 text-sm">Score</span>
+              <span className="text-slate-400 text-sm">Score</span>
             </div>
-            <span className="text-slate-900 font-bold">{participant.total_score}</span>
+            <span className="text-white font-bold">{participant.total_score}</span>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-brand-teal" />
-              <span className="text-slate-500 text-sm">Correct</span>
+              <span className="text-slate-400 text-sm">Correct</span>
             </div>
-            <span className="text-slate-900 font-bold">
+            <span className="text-white font-bold">
               {participant.correct_answers}/{participant.questions_answered}
             </span>
           </div>

@@ -75,22 +75,22 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
       case 2:
         return <Medal className="w-8 h-8 text-slate-400" />
       case 3:
-        return <Award className="w-8 h-8 text-orange-500" />
+        return <Award className="w-8 h-8 text-orange-400" />
       default:
-        return <span className="text-2xl font-bold text-slate-500">#{rank}</span>
+        return <span className="text-2xl font-bold text-slate-400">#{rank}</span>
     }
   }
 
   const getRankColor = (rank: number) => {
     switch (rank) {
       case 1:
-        return 'from-yellow-50 to-yellow-100/50 border-yellow-300'
+        return 'from-yellow-500/20 to-yellow-600/20 border-yellow-500'
       case 2:
-        return 'from-slate-50 to-slate-100/50 border-slate-300'
+        return 'from-slate-500/20 to-slate-600/20 border-slate-400'
       case 3:
-        return 'from-orange-50 to-orange-100/50 border-orange-300'
+        return 'from-orange-500/20 to-orange-600/20 border-orange-500'
       default:
-        return 'from-white to-slate-50 border-slate-200'
+        return 'from-white/5 to-white/10 border-white/10'
     }
   }
 
@@ -118,14 +118,14 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
             )}
           </motion.div>
 
-          <h1 className="text-5xl font-black text-slate-900 mb-4">
+          <h1 className="text-5xl font-black text-white mb-4">
             {isWinner && !isDraw
               ? 'Bạn thắng vòng này!'
               : isWinner && isDraw
                 ? 'Hòa ở hạng nhất!'
                 : 'Trận đấu hoàn thành'}
           </h1>
-          <p className="text-slate-600 text-xl">
+          <p className="text-slate-400 text-xl">
             {isWinner && !isDraw
               ? 'Tốt lắm. Hãy xem lại câu nào giúp bạn ghi điểm nhanh nhất.'
               : isWinner && isDraw
@@ -148,7 +148,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
-                className={`p-6 rounded-2xl border bg-gradient-to-r shadow-sm ${getRankColor(score.rank)} ${
+                className={`p-6 rounded-2xl border-2 bg-gradient-to-r ${getRankColor(score.rank)} ${
                   score.userId === currentUserId ? 'ring-2 ring-brand-teal' : ''
                 }`}
               >
@@ -160,19 +160,19 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
 
                   {/* Player Info */}
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900 mb-1">
+                    <h3 className="text-xl font-bold text-white mb-1">
                       {score.displayName}
                       {score.userId === currentUserId && (
                         <span className="ml-2 text-sm text-brand-teal">(Bạn)</span>
                       )}
                     </h3>
-                    <p className="text-slate-500 text-sm">Hạng #{score.rank}</p>
+                    <p className="text-slate-400 text-sm">Hạng #{score.rank}</p>
                   </div>
 
                   {/* Score */}
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-brand-teal">{score.score}</p>
-                    <p className="text-slate-500 text-sm">điểm</p>
+                    <p className="text-3xl font-bold text-white">{score.score}</p>
+                    <p className="text-slate-400 text-sm">điểm</p>
                   </div>
                 </div>
               </motion.div>
@@ -192,7 +192,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
           className="flex gap-4 justify-center"
         >
           <button
-            onClick={() => navigate('/practice/compete')}
+            onClick={() => navigate('/pvp')}
             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all"
           >
             <RotateCcw className="w-5 h-5" />
@@ -201,7 +201,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
 
           <button
             onClick={() => navigate('/languages')}
-            className="flex items-center gap-2 px-8 py-4 bg-white border border-slate-200 shadow-sm text-slate-900 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all"
+            className="flex items-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
           >
             <Home className="w-5 h-5" />
             Về lộ trình

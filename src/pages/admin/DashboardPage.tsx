@@ -334,7 +334,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="space-y-3">
             {stats.recentLessons?.length > 0 ? (
-              stats.recentLessons.map(lesson => (
+              stats.recentLessons.map((lesson: any) => (
                 <button
                   key={lesson.id}
                   onClick={() => navigate(`/admin/lessons/${lesson.id}`)}
@@ -370,7 +370,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="space-y-3">
             {stats.recentFailedSubmissions?.length > 0 ? (
-              stats.recentFailedSubmissions.map(sub => (
+              stats.recentFailedSubmissions.map((sub: any) => (
                 <div
                   key={sub.id}
                   className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50 p-4 text-left"

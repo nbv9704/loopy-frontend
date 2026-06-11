@@ -14,7 +14,7 @@ interface TrueFalseQuestionProps {
   selectedAnswer: string
   onSelectAnswer: (answer: string) => void
   hasSubmitted: boolean
-  submissionResult?: { isCorrect: boolean; points: number; correctAnswerId?: string } | null
+  submissionResult?: { isCorrect: boolean; points: number } | null
 }
 
 const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
@@ -34,53 +34,43 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   const getButtonStyle = (optionId: string) => {
     const isSelected = selectedAnswer === optionId
     const showResult = hasSubmitted && isSelected && submissionResult
-    const isActualCorrectAnswer = hasSubmitted && submissionResult?.correctAnswerId === optionId
 
     if (showResult) {
       return submissionResult.isCorrect
-        ? 'bg-green-50 border-green-500 hover:bg-green-100'
-        : 'bg-red-50 border-red-500 hover:bg-red-100'
-    }
-
-    if (isActualCorrectAnswer) {
-      return 'bg-green-50 border-green-500 hover:bg-green-100'
+        ? 'bg-green-500/20 border-green-500 hover:bg-green-500/30'
+        : 'bg-red-500/20 border-red-500 hover:bg-red-500/30'
     }
 
     if (isSelected) {
-      return 'bg-brand-teal/5 border-brand-teal hover:bg-brand-teal/10'
+      return 'bg-brand-teal/20 border-brand-teal hover:bg-brand-teal/30'
     }
 
-    return 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+    return 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
   }
 
   const getIconColor = (optionId: string) => {
     const isSelected = selectedAnswer === optionId
     const showResult = hasSubmitted && isSelected && submissionResult
-    const isActualCorrectAnswer = hasSubmitted && submissionResult?.correctAnswerId === optionId
 
     if (showResult) {
-      return submissionResult.isCorrect ? 'text-green-500' : 'text-red-500'
-    }
-
-    if (isActualCorrectAnswer) {
-      return 'text-green-500'
+      return submissionResult.isCorrect ? 'text-green-400' : 'text-red-400'
     }
 
     if (isSelected) {
       return 'text-brand-teal'
     }
 
-    return 'text-slate-500'
+    return 'text-slate-400'
   }
 
   return (
     <div className="space-y-6">
       {/* Question */}
-      <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">{question.question_text}</h2>
+      <h2 className="text-2xl font-bold text-white mb-8 text-center">{question.question_text}</h2>
 
       {/* True/False Buttons - Fixed order (TRUE left, FALSE right) */}
       <div className="grid grid-cols-2 gap-6">
-        {options.map(option => {
+        {options.map((option: any) => {
           const isTrue = option.id === 'true'
           const Icon = isTrue ? Check : X
           const label = isTrue ? 'TRUE' : 'FALSE'
@@ -100,7 +90,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
             >
               <div className="flex flex-col items-center gap-4">
                 <Icon className={`w-16 h-16 ${getIconColor(option.id)}`} />
-                <span className="text-3xl font-bold text-slate-900">{label}</span>
+                <span className="text-3xl font-bold text-white">{label}</span>
               </div>
 
               {/* Selection indicator */}
@@ -110,7 +100,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
                   animate={{ scale: 1 }}
                   className="absolute top-4 right-4 w-6 h-6 bg-brand-teal rounded-full flex items-center justify-center"
                 >
-                  <Check className="w-4 h-4 text-white" />
+                  <Check className="w-4 h-4 text-[#0a0e1a]" />
                 </motion.div>
               )}
             </motion.button>
@@ -120,7 +110,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
 
       {/* Hint */}
       {!hasSubmitted && (
-        <p className="text-center text-slate-500 text-sm mt-4">
+        <p className="text-center text-slate-400 text-sm mt-4">
           {t('pvpQuestion.selectAndSubmit')}
         </p>
       )}

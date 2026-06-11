@@ -57,8 +57,8 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
   )
 
   const toggleChapter = (chapterId: string) => {
-    setOpenChapters(prev => {
-      const newSet = new Set(prev)
+    setOpenChapters((prev: any) => {
+      const newSet = new Set<string>(prev)
       if (newSet.has(chapterId)) {
         newSet.delete(chapterId)
       } else {

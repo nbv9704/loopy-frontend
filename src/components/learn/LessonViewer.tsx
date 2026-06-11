@@ -270,7 +270,7 @@ const LessonViewer: React.FC<LessonViewerProps> = ({ language, initialLessonId }
           setOutputLogs([completeResponse.error?.message || 'Bài đã xong nhưng chưa lưu được tiến độ. Vui lòng thử lại.'])
           return
         }
-        setCompletedLessons(prev => new Set(prev).add(lessonId))
+        setCompletedLessons((prev: any) => new Set<string>(prev).add(lessonId))
         await refreshUser()
       }
 

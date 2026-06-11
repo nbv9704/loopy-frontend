@@ -1,466 +1,462 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { motion, AnimatePresence } from 'framer-motion'
-import { FiBookOpen, FiCheckCircle, FiLock, FiPlay, FiArrowLeft, FiClock, FiStar, FiChevronDown, FiChevronRight, FiZap, FiTarget, FiAward } from 'react-icons/fi'
-import { useLessonData } from '../hooks/useLessonData'
-import { useAuth } from '../contexts/AuthContext'
-import Header from '../components/common/Header'
-import SEO from '../components/common/SEO'
-import LoadingSpinner from '../components/common/LoadingSpinner'
-import { getLanguageMetadata } from '../utils/seo'
+import { FiBookOpen, FiCheckCircle, FiClock, FiCode, FiCompass, FiLock, FiPlay, FiTarget, FiZap } from 'react-icons/fi'
+import { PressedButton, PublicShell } from '../components/PublicShell'
+import { api } from '../lib/api'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { LoadingScreen } from '../components/LoadingScreen'
 
-const pathLabels: Record<string, { title: string; subtitle: string; destination: string }> = {
-  javascript: {
-    title: 'JavaScript Web Starter',
-    subtitle: 'Học từng bước để tạo tương tác đầu tiên trên web.',
-    destination: 'Xây dựng một ứng dụng web nhỏ có tương tác thật.',
-  },
-  python: {
-    title: 'Python Foundations',
-    subtitle: 'Bắt đầu nhẹ với logic, biến và output dễ hiểu.',
-    destination: 'Viết chương trình Python giải quyết vấn đề nhỏ trong đời thực.',
-  },
-  cpp: {
-    title: 'C++ School Foundations',
-    subtitle: 'Xây nền tư duy lập trình và giải bài theo từng bước.',
-    destination: 'Nắm input/output, điều kiện, vòng lặp và tư duy thuật toán cơ bản.',
-  },
+type LessonState = 'done' | 'current' | 'next' | 'locked'
+
+type JourneyLesson = {
+  id: string
+  title: string
+  time: string
+  state: LessonState
+  tags: string[]
+}
+
+type JourneyChapter = {
+  id: string
+  title: string
+  description: string
+  lessons: JourneyLesson[]
+}
+
+const stateStyles: Record<LessonState, string> = {
+  done: 'border-brand-teal bg-brand-teal/15 text-brand-ocean',
+  current: 'border-slate-950 bg-white text-slate-950 shadow-[0_5px_0_rgba(15,23,42,0.18)]',
+  next: 'border-slate-300 bg-white text-slate-800',
+  locked: 'border-slate-200 bg-slate-100 text-slate-400',
+}
+
+function JourneyNode({ lesson, index }: { lesson: JourneyLesson; index: number }) {
+  const isLocked = lesson.state === 'locked'
+  const isDone = lesson.state === 'done'
+  const isCurrent = lesson.state === 'current'
+
+  return (
+    <div className={`relative rounded-[1.5rem] border p-4 transition ${stateStyles[lesson.state]}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${isDone ? 'bg-brand-teal text-slate-950' : isCurrent ? 'bg-slate-950 text-brand-teal' : 'bg-white text-slate-500'}`}>
+            {isLocked ? <FiLock /> : isDone ? <FiCheckCircle /> : index + 1}
+          </div>
+          <div>
+            <div className="font-black text-slate-900">{lesson.title}</div>
+            <div className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500"><FiClock /> {lesson.time}</div>
+          </div>
+        </div>
+        {isCurrent && <div className="rounded-full bg-brand-teal px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">Bước tiếp theo</div>}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {lesson.tags.map(tag => (
+          <span key={tag} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-500">{tag}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ProgressRing({ progress }: { progress: number }) {
+  const circumference = 264
+  const offset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="relative h-28 w-28">
+      <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth="9" />
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#54d9c4" strokeWidth="9" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-2xl font-black">{progress}%</div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Done</div>
+      </div>
+    </div>
+  )
 }
 
 const LibraryPage: React.FC = () => {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const { user, loading: authLoading } = useAuth()
-  const { language = 'javascript' } = useParams<{ language: string }>()
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set())
+  const { language } = useParams<{ language: string }>()
+  const { i18n } = useTranslation()
+  const slug = language || 'javascript'
+  
+  const [chapters, setChapters] = useState<JourneyChapter[]>([])
+  const [progress, setProgress] = useState(0)
+  const [apiLoading, setApiLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Auth guard: redirect guests to auth, unboarded users to onboarding
+  // Define all content keys needed for this page (including header)
+  const contentKeys = [
+    // Header content
+    'nav.learn',
+    'nav.playground',
+    'nav.practice',
+    'nav.docs',
+    'nav.settings',
+    'nav.logout',
+    // Library page content
+    'library.title',
+    'library.subtitle',
+    'library.badge',
+    'library.back_btn',
+    'library.progress.label',
+    'library.progress.done',
+    'library.next.badge',
+    'library.next.empty',
+    'library.next.active_desc',
+    'library.next.locked_desc',
+    'library.next.goal_badge',
+    'library.next.goal_desc',
+    'library.next.btn',
+    'library.lock_rule.badge',
+    'library.lock_rule.desc',
+    'library.loading',
+    'library.empty',
+    'library.feat1.title',
+    'library.feat1.desc',
+    'library.feat2.title',
+    'library.feat2.desc',
+    'library.feat3.title',
+    'library.feat3.desc',
+    'library.cta.title',
+    'library.cta.desc',
+    'library.cta.btn_next',
+    'library.cta.btn_change',
+    // Footer content
+    'footer.aboutLoopy',
+    'footer.about',
+    'footer.team',
+    'footer.contact',
+    'footer.resources',
+    'footer.docs',
+    'footer.blog',
+    'footer.faq',
+    'footer.description',
+    'footer.allRightsReserved',
+    'footer.privacy',
+    'footer.terms',
+  ]
+
+  // Preload all content at once
+  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
+
+  // Fetch curriculum from API (must be called before early return)
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        navigate('/auth', { state: { from: { pathname: `/library/${language}` } } })
-      } else if (!user.onboardingCompleted) {
-        navigate('/onboarding')
+    const fetchData = async () => {
+      try {
+        setApiLoading(true)
+        setError(null)
+
+        const [curriculumRes, progressRes] = await Promise.all([
+          api.getCurriculum(slug),
+          api.getUserProgress().catch(() => ({ data: { progress: [] } }))
+        ])
+
+        const responseData = curriculumRes.data as any
+        const progressRecords = (progressRes.data as any)?.progress || []
+        
+        const apiChapters = Array.isArray(responseData)
+          ? responseData
+          : Array.isArray(responseData?.chapters)
+            ? responseData.chapters
+            : []
+        const apiLessons = Array.isArray(responseData?.lessons) ? responseData.lessons : []
+        
+        if (curriculumRes.success && apiChapters.length > 0) {
+          // Flatten and sort all lessons to easily find current/next
+          const allLessonsSorted = [...apiLessons].sort((a: any, b: any) => (a.orderIndex ?? a.order_index ?? 0) - (b.orderIndex ?? b.order_index ?? 0))
+          
+          let foundCurrent = false
+          const lessonStates = new Map<string, LessonState>()
+          
+          for (let i = 0; i < allLessonsSorted.length; i++) {
+            const lesson = allLessonsSorted[i]
+            const lessonId = lesson.id // This is the UUID
+            
+            const progress = progressRecords.find((p: any) => 
+              p.lessonId === lessonId || p.lesson_id === lessonId
+            )
+            
+            if (progress?.status === 'completed') {
+              lessonStates.set(lessonId, 'done')
+            } else if (!foundCurrent) {
+              lessonStates.set(lessonId, 'current')
+              foundCurrent = true
+              
+              // Set the next one if it exists
+              if (i + 1 < allLessonsSorted.length) {
+                lessonStates.set(allLessonsSorted[i + 1].id, 'next')
+              }
+            } else {
+              if (!lessonStates.has(lessonId)) {
+                lessonStates.set(lessonId, 'locked')
+              }
+            }
+          }
+
+          const chaptersData: JourneyChapter[] = apiChapters.map((chapter: any) => {
+            const lessons = apiLessons
+              .filter((lesson: any) => lesson.chapterId === chapter.id || lesson.chapter_id === chapter.id)
+              .sort((a: any, b: any) => (a.orderIndex ?? a.order_index ?? 0) - (b.orderIndex ?? b.order_index ?? 0))
+
+            return {
+              id: chapter.id,
+              title: chapter.title || chapter.name || 'Untitled Chapter',
+              description: chapter.description || 'Học các bài trong chương này.',
+              lessons: lessons.map((lesson: any) => {
+                const id = lesson.lessonId || lesson.lesson_id || lesson.id
+                return {
+                  id,
+                  title: lesson.title || 'Untitled Lesson',
+                  time: `${lesson.estimatedTime || lesson.estimated_time || 10} phút`,
+                  state: lessonStates.get(lesson.id) || 'locked',
+                  tags: ['Quan sát', 'Thực hành'],
+                }
+              }),
+            }
+          })
+          
+          setChapters(chaptersData as any)
+          
+          const totalLessons = chaptersData.reduce((sum, ch) => sum + ch.lessons.length, 0)
+          const doneLessons = chaptersData.reduce((sum, ch) => sum + ch.lessons.filter(l => l.state === 'done').length, 0)
+          setProgress(totalLessons > 0 ? Math.round((doneLessons / totalLessons) * 100) : 0)
+        } else {
+          setChapters([])
+          setProgress(0)
+        }
+      } catch (err) {
+        console.error('Error fetching curriculum:', err)
+        setError('Lỗi khi tải danh sách bài học')
+      } finally {
+        setApiLoading(false)
       }
     }
-  }, [user, authLoading, navigate, language])
 
-  const { lessons, chapters, loading, completedLessons } = useLessonData(language, undefined, user?.id)
+    fetchData()
+  }, [slug])
 
-  const metadata = getLanguageMetadata(language)
-  const pathLabel = pathLabels[language] || {
-    title: `${language.toUpperCase()} Journey`,
-    subtitle: 'Học theo từng bước nhỏ và thực hành ngay trong trình duyệt.',
-    destination: 'Hoàn thành các bài học nền tảng đầu tiên.',
+  // Show loading screen while content is being fetched
+  if (contentLoading) {
+    return <LoadingScreen message="Loading library..." />
   }
 
-  const totalLessons = lessons.length
-  const completedCount = completedLessons.size
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
-
-  // Find the first incomplete lesson for "Resume" CTA
-  const sortedLessons = useMemo(() => {
-    return [...lessons].sort((a, b) => a.orderIndex - b.orderIndex)
-  }, [lessons])
-
-  const nextLesson = useMemo(() => {
-    return sortedLessons.find(l => !completedLessons.has(l.id))
-  }, [sortedLessons, completedLessons])
-
-  const nextLessonChapter = useMemo(() => {
-    if (!nextLesson) return null
-    return chapters.find(c => c.id === nextLesson.chapterId)
-  }, [nextLesson, chapters])
-
-  // Auto-expand the chapter containing the next lesson
-  useEffect(() => {
-    if (nextLesson && nextLessonChapter) {
-      setExpandedChapters(prev => new Set(prev).add(nextLessonChapter.id))
-    }
-  }, [nextLesson, nextLessonChapter])
-
-  const toggleChapter = (chapterId: string) => {
-    setExpandedChapters(prev => {
-      const next = new Set(prev)
-      if (next.has(chapterId)) {
-        next.delete(chapterId)
-      } else {
-        next.add(chapterId)
-      }
-      return next
-    })
+  // Extract header content
+  const headerContent = {
+    'nav.learn': content['nav.learn'],
+    'nav.playground': content['nav.playground'],
+    'nav.practice': content['nav.practice'],
+    'nav.docs': content['nav.docs'],
+    'nav.settings': content['nav.settings'],
+    'nav.logout': content['nav.logout'],
   }
 
-  // Determine if a lesson is locked (must complete previous lessons first)
-  const isLessonLocked = (lessonIndex: number): boolean => {
-    if (lessonIndex === 0) return false
-    const prevLesson = sortedLessons[lessonIndex - 1]
-    return prevLesson ? !completedLessons.has(prevLesson.id) : false
+  // Extract footer content
+  const footerContent = {
+    'footer.aboutLoopy': content['footer.aboutLoopy'],
+    'footer.about': content['footer.about'],
+    'footer.team': content['footer.team'],
+    'footer.contact': content['footer.contact'],
+    'footer.resources': content['footer.resources'],
+    'footer.docs': content['footer.docs'],
+    'footer.blog': content['footer.blog'],
+    'footer.faq': content['footer.faq'],
+    'footer.description': content['footer.description'],
+    'footer.allRightsReserved': content['footer.allRightsReserved'],
+    'footer.privacy': content['footer.privacy'],
+    'footer.terms': content['footer.terms'],
   }
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0e1a] flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <LoadingSpinner size="lg" />
-        </div>
-      </div>
-    )
-  }
+  // Extract content values with fallbacks
+  const libraryTitle = content['library.title'] || 'Library không chỉ là danh sách bài. Nó là bản đồ bước tiếp theo.'
+  const librarySubtitle = content['library.subtitle'] || 'Bạn có thể thấy bài nào đã xong, bài nào đang học và vì sao bài sau đang bị khóa.'
+  const libraryBadge = content['library.badge'] || 'Journey Map'
+  const backBtn = content['library.back_btn'] || 'Quay lại danh sách lộ trình'
+  const progressLabel = content['library.progress.label'] || 'Tiến độ'
+  const progressDone = content['library.progress.done'] || 'bài đã hoàn thành.'
+  const nextBadge = content['library.next.badge'] || 'Bước tiếp theo'
+  const nextEmpty = content['library.next.empty'] || 'Chưa có bài'
+  const nextActiveDesc = content['library.next.active_desc'] || 'Bài này mở vì bạn đã hoàn thành bài trước. Học, chạy thử, kiểm tra, rồi lưu progress.'
+  const nextLockedDesc = content['library.next.locked_desc'] || 'Hoàn thành bài hiện tại để mở bài tiếp theo.'
+  const nextGoalBadge = content['library.next.goal_badge'] || 'Mục tiêu'
+  const nextGoalDesc = content['library.next.goal_desc'] || 'Sửa code theo yêu cầu và pass rule kiểm tra.'
+  const nextBtn = content['library.next.btn'] || 'Vào lesson'
+  const lockRuleBadge = content['library.lock_rule.badge'] || 'Quy tắc khóa bài'
+  const lockRuleDesc = content['library.lock_rule.desc'] || 'Bài tiếp theo chỉ mở sau khi bài hiện tại hoàn thành thành công. Không celebration trước khi progress lưu xong.'
+  const loadingText = content['library.loading'] || 'Đang tải danh sách chương...'
+  const emptyText = content['library.empty'] || 'Chưa có chương nào cho lộ trình này.'
+  const feat1Title = content['library.feat1.title'] || 'Rõ bài hiện tại'
+  const feat1Desc = content['library.feat1.desc'] || 'Người mới không phải tự đoán học tiếp ở đâu.'
+  const feat2Title = content['library.feat2.title'] || 'Liên kết với Learn'
+  const feat2Desc = content['library.feat2.desc'] || 'Library chỉ chọn bài, Learn mới là nơi chạy và kiểm tra code.'
+  const feat3Title = content['library.feat3.title'] || 'Progress đáng tin'
+  const feat3Desc = content['library.feat3.desc'] || 'Chỉ mở khóa sau khi backend xác nhận hoàn thành.'
+  const ctaTitle = content['library.cta.title'] || 'Sẵn sàng bắt đầu?'
+  const ctaDesc = content['library.cta.desc'] || 'Bài đầu tiên sẽ dạy bạn quan sát code mẫu, chạy thử output, rồi sửa một dòng nhỏ.'
+  const ctaNextBtn = content['library.cta.btn_next'] || 'Vào bài tiếp theo'
+  const ctaChangeBtn = content['library.cta.btn_change'] || 'Đổi lộ trình'
 
-  // Don't render content if user isn't properly authenticated
-  if (!user || !user.onboardingCompleted) return null
-
-  const sortedChapters = [...chapters].sort((a, b) => a.orderIndex - b.orderIndex)
+  const nextLesson = chapters
+    .flatMap(ch => ch.lessons)
+    .find(l => l.state === 'current')
 
   return (
-    <>
-      <SEO {...metadata} title={`${t('learn.curriculum')} - ${language.toUpperCase()}`} />
-      <div className="min-h-screen bg-[#0a0e1a] flex flex-col pb-20">
-        <Header />
-
-        <div className="relative pt-28 px-4 sm:px-6 lg:px-8 overflow-hidden flex-1">
-          {/* Ambient background */}
-          <div className="absolute inset-0 pointer-events-none opacity-20">
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-brand-teal/10 rounded-full blur-[120px]" />
-            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-brand-cyan/10 rounded-full blur-[100px]" />
-          </div>
-
-          <div className="max-w-7xl mx-auto relative z-10">
-            {/* Back button */}
-            <button
-              onClick={() => navigate('/languages')}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 cursor-pointer group text-sm"
-            >
-              <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
-              <span>Đổi ngôn ngữ</span>
-            </button>
-
-            <div className="mb-8 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 md:p-8">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-brand-teal">
-                    <FiTarget className="h-3.5 w-3.5" /> Journey Map
-                  </div>
-                  <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
-                    Bạn đang học: {pathLabel.title}
-                  </h1>
-                  <p className="mt-3 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
-                    {pathLabel.subtitle}
-                  </p>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
+      <main>
+        <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
+          <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
+              <FiCompass /> {backBtn}
+            </Link>
+            <div className="grid gap-8 lg:grid-cols-[1fr,380px] lg:items-start">
+              <div>
+                <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
+                  {libraryBadge}
                 </div>
-
-                <div className="grid grid-cols-3 gap-3 rounded-3xl border border-white/10 bg-black/20 p-4 text-center">
-                  <div>
-                    <div className="text-2xl font-black text-white">{progressPercent}%</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tiến độ</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-white">{user.currentStreak || 0}</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Streak</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-white">{user.points || completedCount * 10}</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Điểm</div>
-                  </div>
-                </div>
+                <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                  {libraryTitle}
+                </h1>
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                  {librarySubtitle}
+                </p>
               </div>
-            </div>
-
-            {/* ============ 2-COLUMN LAYOUT (Mimo-inspired) ============ */}
-            <div className="flex flex-col lg:flex-row gap-8">
-
-              {/* ─── LEFT COLUMN: Sticky Summary + Resume ─── */}
-              <div className="lg:w-[380px] lg:shrink-0">
-                <div className="lg:sticky lg:top-24 space-y-6">
-
-                  {/* Progress Ring Card */}
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8">
-                    <div className="flex items-center gap-6">
-                      {/* Circular Progress */}
-                      <div className="relative w-24 h-24 shrink-0">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                          <motion.circle
-                            cx="50" cy="50" r="42" fill="none"
-                            stroke="url(#progressGradient)" strokeWidth="8" strokeLinecap="round"
-                            strokeDasharray={`${2 * Math.PI * 42}`}
-                            initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
-                            animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - progressPercent / 100) }}
-                            transition={{ duration: 1, ease: 'easeOut' }}
-                          />
-                          <defs>
-                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="var(--color-brand-teal, #54d9c4)" />
-                              <stop offset="100%" stopColor="var(--color-brand-cyan, #22d3ee)" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-black text-white">{progressPercent}%</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h1 className="text-2xl font-extrabold text-white tracking-tight mb-1">
-                          {pathLabel.title}
-                        </h1>
-                        <p className="text-slate-500 text-sm">
-                          {completedCount}/{totalLessons} bài hoàn thành
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stats row */}
-                    <div className="flex items-center gap-4 mt-6 pt-6 border-t border-white/5">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                        <FiBookOpen className="w-3.5 h-3.5" /> {chapters.length} chương
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                        <FiStar className="w-3.5 h-3.5 text-yellow-400" /> {user.points || completedCount * 10} điểm
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                        <FiZap className="w-3.5 h-3.5 text-orange-400" /> {user.currentStreak || 0} ngày
-                      </div>
-                    </div>
+              <aside className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+                <div className="flex items-center gap-5">
+                  <ProgressRing progress={progress} />
+                  <div>
+                    <div className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">{progressLabel}</div>
+                    <h2 className="mt-2 text-2xl font-black">{slug.charAt(0).toUpperCase() + slug.slice(1)} Starter</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{progress}% {progressDone}</p>
                   </div>
+                </div>
+                <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+                  {[
+                    [chapters.length.toString(), 'Chương'],
+                    [chapters.reduce((sum, ch) => sum + ch.lessons.length, 0).toString(), 'Bài'],
+                    ['1', 'Next'],
+                  ].map(([value, label]) => (
+                    <div key={label} className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-3">
+                      <div className="text-xl font-black">{value}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
 
-                  {/* ─── RESUME CTA (Codecademy-inspired giant button) ─── */}
+        <section className="px-4 pb-16 md:px-6">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[380px,1fr]">
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-xl shadow-slate-200/80">
+                <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal">
+                  <FiPlay /> {nextBadge}
+                </div>
+                <h2 className="text-3xl font-black">{nextLesson?.title || nextEmpty}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  {nextLesson ? nextActiveDesc : nextLockedDesc}
+                </p>
+                {nextLesson && (
+                  <div className="mt-5 rounded-2xl border border-brand-teal/30 bg-brand-teal/10 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-brand-teal">{nextGoalBadge}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{nextGoalDesc}</p>
+                  </div>
+                )}
+                <div className="mt-6">
                   {nextLesson && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => navigate(`/learn/${language}/${nextLesson.lessonId}`)}
-                      className="w-full bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] rounded-3xl p-6 cursor-pointer text-left group relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-teal opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">
-                          <FiPlay className="w-3 h-3" /> Bước tiếp theo
-                        </div>
-                        <h3 className="text-xl font-extrabold mb-1">{nextLesson.title}</h3>
-                        <p className="text-sm opacity-70 line-clamp-1">
-                          {nextLessonChapter?.title && `${nextLessonChapter.title} · `}
-                          {nextLesson.estimated_time || 5} phút
-                        </p>
-                        <div className="mt-4 rounded-2xl bg-[#0a0e1a]/15 px-4 py-3 text-sm font-bold">
-                          Học 5 phút, chạy code thật, mở khóa bài tiếp theo.
-                        </div>
-                      </div>
-                      <div className="absolute right-6 top-8 z-10">
-                        <div className="w-12 h-12 rounded-full bg-[#0a0e1a]/20 flex items-center justify-center group-hover:bg-[#0a0e1a]/30 transition-all">
-                          <FiPlay className="w-6 h-6 ml-0.5" />
-                        </div>
-                      </div>
-                    </motion.button>
+                    <PressedButton to={`/learn/${slug}/${nextLesson.id}`}>{nextBtn}</PressedButton>
                   )}
-
-                  {/* All complete state */}
-                  {!nextLesson && totalLessons > 0 && (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-3xl p-6 text-center">
-                      <FiAward className="w-10 h-10 text-green-400 mx-auto mb-3" />
-                      <h3 className="text-lg font-bold text-green-400 mb-1">Hoàn thành xuất sắc! 🎉</h3>
-                      <p className="text-slate-400 text-sm">Bạn đã chinh phục toàn bộ lộ trình {language}.</p>
-                    </div>
-                  )}
-
-                  {/* Target Project Preview (Mimo-inspired) */}
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                    <div className="flex items-center gap-2 text-brand-teal font-bold text-sm mb-3">
-                      <FiTarget className="w-4 h-4" /> Đích đến của bạn
-                    </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">{pathLabel.destination}</p>
-                  </div>
-
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                    <div className="flex items-center gap-2 text-brand-teal font-bold text-sm mb-3">
-                      <FiLock className="w-4 h-4" /> Vì sao có bài bị khóa?
-                    </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">
-                      Loopy mở từng bài theo thứ tự để bạn không bị nhảy cóc. Hoàn thành bài trước để mở khóa bài tiếp theo.
-                    </p>
-                  </div>
                 </div>
               </div>
 
-              {/* ─── RIGHT COLUMN: Chapters & Lessons (Progressive Disclosure) ─── */}
-              <div className="flex-1 min-w-0">
-                <div className="space-y-4">
-                  {sortedChapters.length === 0 && (
-                    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center">
-                      <FiBookOpen className="mx-auto mb-4 h-12 w-12 text-brand-teal" />
-                      <h2 className="text-2xl font-black text-white">Lộ trình này chưa có bài học</h2>
-                      <p className="mx-auto mt-3 max-w-md text-slate-400">
-                        Nội dung đang được chuẩn bị. Bạn có thể đổi ngôn ngữ hoặc quay lại sau.
-                      </p>
-                      <button
-                        onClick={() => navigate('/languages')}
-                        className="mt-6 rounded-2xl bg-brand-teal px-6 py-3 font-black text-[#0a0e1a]"
-                      >
-                        Chọn lộ trình khác
-                      </button>
-                    </div>
-                  )}
-                  {sortedChapters.map((chapter, chapterIdx) => {
-                    const chapterLessons = sortedLessons.filter(l => l.chapterId === chapter.id)
-                    const chapterCompleted = chapterLessons.filter(l => completedLessons.has(l.id)).length
-                    const chapterTotal = chapterLessons.length
-                    const isChapterDone = chapterCompleted === chapterTotal && chapterTotal > 0
-                    const isExpanded = expandedChapters.has(chapter.id)
-
-                    return (
-                      <div key={chapter.id} className="relative">
-                        {/* Chapter Header (Clickable - Progressive Disclosure) */}
-                        <button
-                          onClick={() => toggleChapter(chapter.id)}
-                          className={`w-full flex items-center gap-4 p-5 rounded-2xl border transition-all cursor-pointer group text-left ${isChapterDone
-                            ? 'bg-green-500/5 border-green-500/20 hover:border-green-500/40'
-                            : 'bg-white/5 border-white/10 hover:border-brand-teal/30 hover:bg-white/[0.07]'
-                            }`}
-                        >
-                          {/* Chapter number badge */}
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-lg shrink-0 ${isChapterDone
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-brand-teal/10 border border-brand-teal/20 text-brand-teal'
-                            }`}>
-                            {isChapterDone ? <FiCheckCircle className="w-5 h-5" /> : chapterIdx + 1}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <h2 className="text-lg font-bold text-white group-hover:text-brand-teal transition-colors truncate">
-                              {chapter.title}
-                            </h2>
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className="text-xs text-slate-500">{chapterCompleted}/{chapterTotal} bài</span>
-                              {/* Mini progress bar */}
-                              <div className="flex-1 max-w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${isChapterDone ? 'bg-green-500' : 'bg-brand-teal'}`}
-                                  style={{ width: `${chapterTotal > 0 ? (chapterCompleted / chapterTotal) * 100 : 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Expand/Collapse icon */}
-                          <div className="text-slate-500 group-hover:text-white transition-colors">
-                            {isExpanded ? <FiChevronDown className="w-5 h-5" /> : <FiChevronRight className="w-5 h-5" />}
-                          </div>
-                        </button>
-
-                        {/* Lesson List (Collapsible) */}
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.25, ease: 'easeInOut' }}
-                              className="overflow-hidden"
-                            >
-                              <div className="pl-6 pt-2 pb-2 space-y-1.5">
-                                {chapterLessons.map((lesson) => {
-                                  const globalIndex = sortedLessons.findIndex(l => l.id === lesson.id)
-                                  const isCompleted = completedLessons.has(lesson.id)
-                                  const isLocked = isLessonLocked(globalIndex)
-                                  const isCurrent = nextLesson?.id === lesson.id
-                                  const isAha = lesson.isAhaLesson
-
-                                  return (
-                                    <motion.button
-                                      key={lesson.id}
-                                      whileHover={isLocked ? {} : { x: 4 }}
-                                      disabled={isLocked}
-                                      onClick={() => !isLocked && navigate(`/learn/${language}/${lesson.lessonId}`)}
-                                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${isLocked
-                                        ? 'opacity-40 cursor-not-allowed'
-                                        : isCurrent
-                                          ? 'bg-brand-teal/10 border border-brand-teal/30 cursor-pointer'
-                                          : 'hover:bg-white/5 cursor-pointer'
-                                        }`}
-                                    >
-                                      {/* Status icon */}
-                                      <div className="shrink-0">
-                                        {isCompleted ? (
-                                          <div className="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
-                                            <FiCheckCircle className="w-4 h-4" />
-                                          </div>
-                                        ) : isLocked ? (
-                                          <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
-                                            <FiLock className="w-3.5 h-3.5" />
-                                          </div>
-                                        ) : isCurrent ? (
-                                          <div className="w-7 h-7 rounded-full bg-brand-teal flex items-center justify-center text-[#0a0e1a]">
-                                            <FiPlay className="w-3.5 h-3.5 ml-0.5" />
-                                          </div>
-                                        ) : (
-                                          <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500">
-                                            <FiPlay className="w-3 h-3 ml-0.5" />
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Content */}
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <span className={`font-semibold text-sm truncate ${isCompleted ? 'text-slate-400' : isCurrent ? 'text-brand-teal' : 'text-white'
-                                            }`}>
-                                            {lesson.title}
-                                          </span>
-                                          {isAha && (
-                                            <span className="px-1.5 py-0.5 bg-brand-cyan/20 text-brand-cyan text-[9px] font-black uppercase tracking-widest rounded shrink-0">
-                                              AHA
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-0.5">
-                                          <span className="text-[11px] text-slate-600 flex items-center gap-1">
-                                            <FiClock className="w-3 h-3" /> {lesson.estimated_time || 5}m
-                                          </span>
-                                          <span className={`text-[11px] font-bold uppercase ${lesson.difficulty === 'beginner' ? 'text-green-500/60' :
-                                            lesson.difficulty === 'intermediate' ? 'text-yellow-500/60' : 'text-red-500/60'
-                                            }`}>
-                                            {lesson.difficulty}
-                                          </span>
-                                          {isLocked && (
-                                            <span className="text-[11px] text-slate-600">Hoàn thành bài trước để mở khóa</span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Right arrow for current */}
-                                      {isCurrent && !isLocked && (
-                                        <FiChevronRight className="w-4 h-4 text-brand-teal shrink-0" />
-                                      )}
-                                    </motion.button>
-                                  )
-                                })}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
-                        {/* Milestone marker between chapters */}
-                        {chapterIdx < sortedChapters.length - 1 && isChapterDone && (
-                          <div className="flex items-center gap-3 py-3 pl-6">
-                            <div className="w-px h-6 bg-green-500/30" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-green-500/50">
-                              ✓ Checkpoint hoàn thành
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+              <div className="mt-4 rounded-[2rem] border border-slate-200 bg-white p-5">
+                <div className="flex items-center gap-2 text-sm font-black text-brand-ocean"><FiTarget /> {lockRuleBadge}</div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {lockRuleDesc}
+                </p>
               </div>
+            </aside>
+
+            <div className="grid gap-5">
+              {apiLoading && (
+                <div className="text-center text-slate-600">
+                  {loadingText}
+                </div>
+              )}
+              
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+                  {error}
+                </div>
+              )}
+              
+              {!apiLoading && chapters.length > 0 && ((chapters as any) || []).map((chapter: JourneyChapter, chapterIndex: number) => (
+                <section key={chapter.id} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Chapter {chapterIndex + 1}</div>
+                      <h2 className="mt-2 text-2xl font-black text-slate-950">{chapter.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{chapter.description}</p>
+                    </div>
+                    <div className="rounded-full border border-slate-200 bg-[#f8fafc] px-3 py-1 text-xs font-black text-slate-500">{chapter.lessons.length} bài</div>
+                  </div>
+                  <div className="grid gap-3">
+                    {chapter.lessons.map((lesson: JourneyLesson, lessonIndex: number) => (
+                      <JourneyNode key={lesson.id} lesson={lesson} index={lessonIndex} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+              
+              {!apiLoading && chapters.length === 0 && !error && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
+                  {emptyText}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </div>
-    </>
+        </section>
+
+        <section className="bg-white px-4 py-16 md:px-6">
+          <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
+            {[
+              [FiBookOpen, feat1Title, feat1Desc],
+              [FiCode, feat2Title, feat2Desc],
+              [FiZap, feat3Title, feat3Desc],
+            ].map(([Icon, title, description]) => {
+              const CardIcon = Icon as typeof FiBookOpen
+              return (
+                <div key={title as string} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-6">
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><CardIcon /></div>
+                  <h3 className="text-2xl font-black">{title as string}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{description as string}</p>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
+          <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
+            <FiCheckCircle className="mb-4 h-10 w-10 text-brand-teal" />
+            <h2 className="text-4xl font-black tracking-tight">{ctaTitle}</h2>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+              {ctaDesc}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              {nextLesson && (
+                <PressedButton to={`/learn/${slug}/${nextLesson.id}`}><FiPlay /> {ctaNextBtn}</PressedButton>
+              )}
+              <PressedButton to="/languages" variant="secondary">{ctaChangeBtn}</PressedButton>
+            </div>
+          </div>
+        </section>
+      </main>
+    </PublicShell>
   )
 }
 

@@ -1,15 +1,15 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Code2, BookOpen } from 'lucide-react'
-import headerLogo from '../../assets/images/logos/header/logo-w256.png'
+import headerLogo from '../assets/images/logos/header/logo-w256.png'
 
-export interface V2FooterProps {
+export interface FooterProps {
   footerContent?: {
     [key: string]: string | null
   }
 }
 
-const V2Footer: React.FC<V2FooterProps> = ({ footerContent = {} }) => {
+const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
   const currentYear = new Date().getFullYear()
 
   // Helper to get footer content with fallback
@@ -123,4 +123,4 @@ const V2Footer: React.FC<V2FooterProps> = ({ footerContent = {} }) => {
   )
 }
 
-export default V2Footer
+export default Footer

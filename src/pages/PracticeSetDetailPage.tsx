@@ -12,13 +12,13 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import SEO from '../../components/common/SEO'
-import { V2PublicShell } from '../../components/v2/V2PublicShell'
-import { LoadingScreen } from '../../components/v2/LoadingScreen'
-import { useAuth } from '../../contexts/AuthContext'
-import { useContentPreloader } from '../../hooks/useContentPreloader'
-import { practiceService } from '../../services/practice.service'
-import type { PracticeAttempt, PracticeQuestion, PracticeSet } from '../../types/practice.types'
+import SEO from '../components/common/SEO'
+import { PublicShell } from '../components/PublicShell'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { useAuth } from '../contexts/AuthContext'
+import { useContentPreloader } from '../hooks/useContentPreloader'
+import { practiceService } from '../services/practice.service'
+import type { PracticeAttempt, PracticeQuestion, PracticeSet } from '../types/practice.types'
 
 type SubmissionState = {
   isCorrect: boolean
@@ -41,7 +41,7 @@ const getSelectedAnswers = (value?: string) => {
   }
 }
 
-const V2PracticeSetDetailPage: React.FC = () => {
+const PracticeSetDetailPage: React.FC = () => {
   const { setId } = useParams<{ setId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -113,7 +113,7 @@ const V2PracticeSetDetailPage: React.FC = () => {
   const submittedCount = Object.keys(submissions).length
   const totalQuestions = questions.length
   const earnedPoints = Object.values(submissions).reduce((sum, submission) => sum + submission.pointsEarned, 0)
-  const maxPoints = attempt?.maxScore || questions.reduce((sum, question) => sum + question.points, 0)
+  const maxPoints = attempt?.maxScore || questions.reduce((sum: number, question: PracticeQuestion) => sum + question.points, 0)
   const isAttemptComplete = Boolean(attempt && totalQuestions > 0 && submittedCount >= totalQuestions)
 
   const headerContent = {
@@ -207,7 +207,7 @@ const V2PracticeSetDetailPage: React.FC = () => {
   }
 
   return (
-    <V2PublicShell headerContent={headerContent} footerContent={footerContent}>
+    <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <SEO title={`${set?.title || 'Practice Set'} | Loopy`} description={set?.description || undefined} />
       <main className="flex-grow bg-[#f7fbff] pb-16 pt-8 md:pt-10">
         <section className="mx-auto max-w-6xl px-6">
@@ -255,7 +255,7 @@ const V2PracticeSetDetailPage: React.FC = () => {
 
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="space-y-2">
-                    {questions.map((question, index) => {
+                    {questions.map((question: PracticeQuestion, index: number) => {
                       const submission = submissions[question.id]
                       const isActive = index === activeIndex
                       return (
@@ -333,7 +333,7 @@ const V2PracticeSetDetailPage: React.FC = () => {
                         </label>
                       ) : (
                         <div className="mt-5 grid gap-3 md:grid-cols-2">
-                          {getQuestionOptions(activeQuestion).map(option => {
+                          {getQuestionOptions(activeQuestion).map((option: string) => {
                             const selectedAnswers = getSelectedAnswers(answers[activeQuestion.id])
                             const selected = activeQuestion.type === 'multiple_select'
                               ? selectedAnswers.includes(option)
@@ -438,7 +438,7 @@ const V2PracticeSetDetailPage: React.FC = () => {
               </div>
 
               <div className="mt-6 space-y-3">
-                {set.questions?.map((question, index) => (
+                {set.questions?.map((question: PracticeQuestion, index: number) => (
                   <div key={question.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-2 text-xs font-black uppercase tracking-wide text-brand-teal">
                       Question {index + 1} · {question.type.replace('_', ' ')}
@@ -452,8 +452,8 @@ const V2PracticeSetDetailPage: React.FC = () => {
           )}
         </section>
       </main>
-    </V2PublicShell>
+    </PublicShell>
   )
 }
 
-export default V2PracticeSetDetailPage
+export default PracticeSetDetailPage
