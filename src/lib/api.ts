@@ -196,16 +196,18 @@ class ApiClient {
 
   // Authentication
   async signup(email: string, password: string, displayName?: string) {
+    const normalizedEmail = email.trim().toLowerCase()
     return this.request('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password, displayName }),
+      body: JSON.stringify({ email: normalizedEmail, password, displayName }),
     })
   }
 
   async login(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase()
     return this.request('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: normalizedEmail, password }),
     })
   }
 
