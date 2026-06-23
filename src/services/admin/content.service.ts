@@ -1,5 +1,36 @@
 import apiClient from './apiClient'
 
+export type LessonStepType = 'note' | 'multiple_choice' | 'true_false' | 'fill_blank' | 'short_answer' | 'code_prompt'
+
+export interface LessonStep {
+  id?: string
+  lesson_id?: string
+  type: LessonStepType
+  title?: string
+  prompt: string
+  options?: any[]
+  correct_answer?: any
+  explanation?: string
+  hint?: string
+  is_required?: boolean
+  order_index: number
+}
+
+export interface BulkImportLessonStep {
+  type: LessonStepType
+  title?: string
+  prompt: string
+  options?: any[]
+  correctAnswer?: any
+  correct_answer?: any
+  explanation?: string
+  hint?: string
+  isRequired?: boolean
+  is_required?: boolean
+  orderIndex?: number
+  order_index?: number
+}
+
 export interface BulkImportPayload {
   chapterId?: string
   chapter_id?: string
@@ -12,7 +43,13 @@ export interface BulkImportPayload {
     starter_code?: string
     taskDescription?: string // Change instruction
     task_description?: string
-    hint?: string // Fix help
+    hint?: string // Legacy/general help
+    hintLevel1?: string // Progressive hint level 1
+    hint_level_1?: string
+    hintLevel2?: string // Progressive hint level 2
+    hint_level_2?: string
+    hintLevel3?: string // Progressive hint level 3
+    hint_level_3?: string
     commonMistakes?: string // Fix common errors
     common_mistakes?: string
     solutionCode?: string // Build result
@@ -43,6 +80,8 @@ export interface BulkImportPayload {
       timeout?: number
       is_hidden?: boolean
     }>
+    steps?: BulkImportLessonStep[]
+    lessonSteps?: BulkImportLessonStep[]
   }>
 }
 
@@ -50,6 +89,8 @@ export interface BulkImportResult {
   lessonsCreated: number
   testCasesCreated: number
   testCasesReplaced?: number
+  stepsCreated?: number
+  stepsReplaced?: number
   errors: string[]
 }
 
@@ -98,6 +139,9 @@ const toApiPayload = (payload: BulkImportPayload) => ({
     starterCode: lesson.starterCode || lesson.starter_code,
     taskDescription: lesson.taskDescription || lesson.task_description,
     hint: lesson.hint,
+    hintLevel1: lesson.hintLevel1 || lesson.hint_level_1,
+    hintLevel2: lesson.hintLevel2 || lesson.hint_level_2,
+    hintLevel3: lesson.hintLevel3 || lesson.hint_level_3,
     commonMistakes: lesson.commonMistakes || lesson.common_mistakes,
     solutionCode: lesson.solutionCode || lesson.solution_code,
     isAhaLesson: lesson.isAhaLesson || lesson.is_aha_lesson,
@@ -114,6 +158,17 @@ const toApiPayload = (payload: BulkImportPayload) => ({
       timeout: tc.timeout,
       is_hidden: tc.isHidden,
     })) || lesson.test_cases,
+    steps: lesson.steps?.map(step => ({
+      type: step.type,
+      title: step.title,
+      prompt: step.prompt,
+      options: step.options,
+      correctAnswer: step.correctAnswer ?? step.correct_answer,
+      explanation: step.explanation,
+      hint: step.hint,
+      isRequired: step.isRequired ?? step.is_required,
+      orderIndex: step.orderIndex ?? step.order_index,
+    })) || lesson.lessonSteps,
   })),
 })
 
@@ -163,6 +218,20 @@ export const contentService = {
 
   async deleteLessonTestCase(testCaseId: string): Promise<void> {
     await apiClient.delete(`/api/admin/test-cases/${testCaseId}`)
+  },
+
+  async getLessonSteps(lessonId: string): Promise<LessonStep[]> {
+    const response = await apiClient.get(`/api/admin/lessons/${lessonId}/steps`)
+    return response.data.data
+  },
+
+  async upsertLessonStep(lessonId: string, step: LessonStep): Promise<LessonStep> {
+    const response = await apiClient.post(`/api/admin/lessons/${lessonId}/steps`, step)
+    return response.data.data
+  },
+
+  async deleteLessonStep(stepId: string): Promise<void> {
+    await apiClient.delete(`/api/admin/lesson-steps/${stepId}`)
   },
 
   async getSubmissions(params?: { status?: 'all' | 'pass' | 'fail'; limit?: number }): Promise<AdminSubmission[]> {

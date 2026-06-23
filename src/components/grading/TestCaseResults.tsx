@@ -12,11 +12,22 @@ import { FiCheckCircle, FiXCircle, FiChevronDown, FiShield } from 'react-icons/f
 import { useTranslation } from 'react-i18next'
 import type { TestRunResult, TestCaseResult } from '../../types/grading.types'
 
-interface TestCaseResultsProps {
-  testRunResult: TestRunResult
+interface TestCaseResultsLabels {
+  title: string
+  caseLabel: string
+  errorMessage: string
+  expected: string
+  actual: string
+  compareHint: string
+  yourResult: string
 }
 
-const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
+interface TestCaseResultsProps {
+  testRunResult: TestRunResult
+  labels: TestCaseResultsLabels
+}
+
+const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult, labels }) => {
   const { t } = useTranslation()
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set())
 
@@ -41,7 +52,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-white flex items-center gap-2">
           <FiShield className="w-4 h-4 text-brand-teal" />
-          Kiểm tra kết quả
+          {labels.title}
         </h4>
         <div className="flex items-center gap-2">
           <span
@@ -62,6 +73,7 @@ const TestCaseResults: React.FC<TestCaseResultsProps> = ({ testRunResult }) => {
             index={index}
             isExpanded={expandedTests.has(result.testCaseId)}
             onToggle={() => toggleExpanded(result.testCaseId)}
+            labels={labels}
           />
         ))}
       </div>
@@ -78,9 +90,10 @@ interface TestCaseItemProps {
   index: number
   isExpanded: boolean
   onToggle: () => void
+  labels: TestCaseResultsLabels
 }
 
-const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, onToggle }) => {
+const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, onToggle, labels }) => {
   return (
     <div
       className={`rounded-lg border transition-colors ${
@@ -105,7 +118,7 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
           )}
 
           <div>
-            <span className="text-sm text-white font-medium">Bài kiểm tra #{index + 1}</span>
+            <span className="text-sm text-white font-medium">{labels.caseLabel} #{index + 1}</span>
             <span className="text-xs text-gray-400 ml-2">{result.description}</span>
           </div>
         </div>
@@ -123,7 +136,7 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
         <div className="px-3 pb-3 pt-0 space-y-2 animate-slideDown">
           {result.error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-md p-3">
-              <p className="text-xs text-red-300 break-all">⚠️ Có lỗi xảy ra khi chạy bài kiểm tra này.</p>
+              <p className="text-xs text-red-300 break-all">{labels.errorMessage}</p>
               <p className="text-xs font-mono text-red-400/70 mt-1 break-all">{result.error}</p>
             </div>
           )}
@@ -132,13 +145,13 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-bg-primary rounded-md p-3">
-                  <p className="text-xs text-gray-500 mb-1">✅ Kết quả mong đợi</p>
+                  <p className="text-xs text-gray-500 mb-1">{labels.expected}</p>
                   <pre className="text-xs font-mono text-green-300 break-all whitespace-pre-wrap">
                     {JSON.stringify(result.expectedOutput, null, 2)}
                   </pre>
                 </div>
                 <div className="bg-bg-primary rounded-md p-3">
-                  <p className="text-xs text-gray-500 mb-1">❌ Code của bạn cho ra</p>
+                  <p className="text-xs text-gray-500 mb-1">{labels.actual}</p>
                   <pre className="text-xs font-mono text-red-300 break-all whitespace-pre-wrap">
                     {result.actualOutput !== null
                       ? JSON.stringify(result.actualOutput, null, 2)
@@ -146,13 +159,13 @@ const TestCaseItem: React.FC<TestCaseItemProps> = ({ result, index, isExpanded, 
                   </pre>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 italic">💡 So sánh hai kết quả và kiểm tra lại code của bạn nhé!</p>
+              <p className="text-xs text-slate-500 italic">{labels.compareHint}</p>
             </>
           )}
 
           {result.passed && (
             <div className="bg-bg-primary rounded-md p-3">
-              <p className="text-xs text-gray-500 mb-1">Kết quả của bạn</p>
+              <p className="text-xs text-gray-500 mb-1">{labels.yourResult}</p>
               <pre className="text-xs font-mono text-green-300 break-all whitespace-pre-wrap">
                 {JSON.stringify(result.actualOutput, null, 2)}
               </pre>

@@ -10,14 +10,21 @@ import { useNavigate } from 'react-router-dom'
 import type { PvPMatch, FinalScore } from '../../types/pvp.types'
 import confetti from 'canvas-confetti'
 
+type ContentMap = Record<string, string | null | undefined>
+
 interface MatchResultsProps {
   match: PvPMatch
   finalScores: FinalScore[]
   currentUserId: string
+  content?: ContentMap
 }
 
-const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, currentUserId }) => {
+const formatTemplate = (template: string, values: Record<string, string | number>) =>
+  Object.entries(values).reduce((result, [key, value]) => result.split(`{${key}}`).join(String(value)), template)
+
+const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, currentUserId, content }) => {
   const navigate = useNavigate()
+  const getContent = (key: string, fallback: string) => content?.[key] || fallback
 
   // If no final scores yet, calculate from participants
   const scores = React.useMemo(() => {
@@ -120,17 +127,20 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
 
           <h1 className="text-5xl font-black text-white mb-4">
             {isWinner && !isDraw
-              ? 'Bạn thắng vòng này!'
+              ? getContent('pvp.results.win_title', 'Bạn thắng vòng này!')
               : isWinner && isDraw
-                ? 'Hòa ở hạng nhất!'
-                : 'Trận đấu hoàn thành'}
+                ? getContent('pvp.results.draw_title', 'Hòa ở hạng nhất!')
+                : getContent('pvp.results.complete_title', 'Trận đấu hoàn thành')}
           </h1>
           <p className="text-slate-400 text-xl">
             {isWinner && !isDraw
-              ? 'Tốt lắm. Hãy xem lại câu nào giúp bạn ghi điểm nhanh nhất.'
+              ? getContent('pvp.results.win_desc', 'Tốt lắm. Hãy xem lại câu nào giúp bạn ghi điểm nhanh nhất.')
               : isWinner && isDraw
-                ? 'Bạn giữ được nhịp rất tốt. Lần sau thử tăng độ khó.'
-                : `Bạn kết thúc ở hạng #${currentUserScore?.rank || '-'}. Đây là tín hiệu tốt để biết phần nào cần ôn lại.`}
+                ? getContent('pvp.results.draw_desc', 'Bạn giữ được nhịp rất tốt. Lần sau thử tăng độ khó.')
+                : formatTemplate(
+                    getContent('pvp.results.complete_desc', 'Bạn kết thúc ở hạng #{rank}. Đây là tín hiệu tốt để biết phần nào cần ôn lại.'),
+                    { rank: currentUserScore?.rank || '-' },
+                  )}
           </p>
         </motion.div>
 
@@ -163,23 +173,23 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
                     <h3 className="text-xl font-bold text-white mb-1">
                       {score.displayName}
                       {score.userId === currentUserId && (
-                        <span className="ml-2 text-sm text-brand-teal">(Bạn)</span>
+                        <span className="ml-2 text-sm text-brand-teal">{getContent('pvp.results.you_marker', '(Bạn)')}</span>
                       )}
                     </h3>
-                    <p className="text-slate-400 text-sm">Hạng #{score.rank}</p>
+                    <p className="text-slate-400 text-sm">{formatTemplate(getContent('pvp.results.rank_label', 'Hạng #{rank}'), { rank: score.rank })}</p>
                   </div>
 
                   {/* Score */}
                   <div className="text-right">
                     <p className="text-3xl font-bold text-white">{score.score}</p>
-                    <p className="text-slate-400 text-sm">điểm</p>
+                    <p className="text-slate-400 text-sm">{getContent('pvp.results.points_label', 'điểm')}</p>
                   </div>
                 </div>
               </motion.div>
             ))
           ) : (
             <div className="text-center text-slate-400 py-8">
-              <p>Đang tải kết quả...</p>
+              <p>{getContent('pvp.results.loading', 'Đang tải kết quả...')}</p>
             </div>
           )}
         </motion.div>
@@ -196,7 +206,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all"
           >
             <RotateCcw className="w-5 h-5" />
-            Đấu lại
+            {getContent('pvp.results.play_again', 'Đấu lại')}
           </button>
 
           <button
@@ -204,7 +214,7 @@ const MatchResults: React.FC<MatchResultsProps> = ({ match, finalScores, current
             className="flex items-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
           >
             <Home className="w-5 h-5" />
-            Về lộ trình
+            {getContent('pvp.results.back_to_journey', 'Về lộ trình')}
           </button>
         </motion.div>
       </div>

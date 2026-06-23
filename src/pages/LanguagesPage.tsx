@@ -98,20 +98,20 @@ function LanguageCard({ language }: { language: LanguageCard }) {
   const Icon = language.icon
 
   return (
-    <Link to={`/languages/${language.slug}`} className="group rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl hover:shadow-slate-200/80">
+    <Link to={`/languages/${language.slug}`} className="group loopy-card rounded-[2rem] border p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl">
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border text-2xl shadow-[0_4px_0_rgba(15,23,42,0.12)] ${language.accent}`}>
           <Icon />
         </div>
-        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-slate-500 group-hover:border-brand-teal group-hover:text-brand-ocean">
+        <div className="loopy-surface-soft rounded-full border loopy-border px-3 py-1 text-xs font-black uppercase tracking-wider loopy-muted group-hover:border-brand-teal group-hover:text-brand-ocean">
           Xem map
         </div>
       </div>
-      <h2 className="mt-5 text-2xl font-black tracking-tight text-slate-950">{language.name}</h2>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{language.fit}</p>
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+      <h2 className="loopy-heading mt-5 text-2xl font-black tracking-tight">{language.name}</h2>
+      <p className="loopy-body mt-3 text-sm leading-6">{language.fit}</p>
+      <div className="loopy-card-soft mt-5 rounded-2xl border p-4">
         <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Bắt đầu với</div>
-        <div className="mt-2 text-sm font-bold leading-6 text-slate-700">{language.next}</div>
+        <div className="mt-2 text-sm font-bold leading-6 loopy-muted">{language.next}</div>
       </div>
       <div className="mt-5 flex items-center gap-2 text-sm font-black text-brand-ocean">
         Bắt đầu lộ trình <FiArrowRight className="transition group-hover:translate-x-1" />
@@ -151,6 +151,13 @@ const LanguagesPage: React.FC = () => {
     'languages.cta.desc',
     'languages.cta.btn1',
     'languages.cta.btn2',
+    'languages.help.goal_web',
+    'languages.help.goal_logic',
+    'languages.help.goal_data',
+    'languages.help.suggestion',
+    'languages.how.badge',
+    'languages.how.step_label',
+    'languages.cta.command',
     // Footer content
     'footer.aboutLoopy',
     'footer.about',
@@ -262,6 +269,15 @@ const LanguagesPage: React.FC = () => {
   const ctaDesc = content['languages.cta.desc'] || 'Đi qua onboarding ngắn để Loopy gợi ý hướng bắt đầu thay vì tự lục catalog.'
   const ctaBtn1 = content['languages.cta.btn1'] || 'Tìm lộ trình phù hợp'
   const ctaBtn2 = content['languages.cta.btn2'] || 'Bỏ qua, học thử ngay'
+  const helpGoals = [
+    content['languages.help.goal_web'] || 'Muốn web hiển thị đẹp',
+    content['languages.help.goal_logic'] || 'Muốn code logic dễ hiểu',
+    content['languages.help.goal_data'] || 'Muốn làm việc với dữ liệu',
+  ]
+  const helpSuggestion = content['languages.help.suggestion'] || 'Loopy gợi ý lộ trình và bài đầu phù hợp.'
+  const howBadge = content['languages.how.badge'] || 'How it works'
+  const howStepLabel = content['languages.how.step_label'] || 'Step'
+  const ctaCommand = content['languages.cta.command'] || 'recommend --for beginner'
 
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
@@ -273,10 +289,10 @@ const LanguagesPage: React.FC = () => {
               <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                 {pageBadge}
               </div>
-              <h1 className="max-w-3xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+              <h1 className="loopy-heading max-w-3xl text-5xl font-black tracking-tight md:text-7xl">
                 {pageTitle}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+              <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
                 {pageSubtitle}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -285,17 +301,17 @@ const LanguagesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/80">
+            <div className="loopy-card rounded-[2rem] border p-4 shadow-xl">
               <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-teal">{helpBadge}</div>
                   <FiHelpCircle className="text-brand-teal" />
                 </div>
                 <div className="grid gap-3">
-                  {['Muốn web hiển thị đẹp', 'Muốn code logic dễ hiểu', 'Muốn làm việc với dữ liệu'].map((goal, index) => (
+                  {helpGoals.map((goal, index) => (
                     <div key={goal} className={`rounded-2xl border px-4 py-3 ${index === 1 ? 'border-brand-teal bg-brand-teal/10' : 'border-white/10 bg-white/[0.04]'}`}>
                       <div className="text-sm font-black">{goal}</div>
-                      <div className="mt-1 text-xs text-slate-400">Loopy gợi ý lộ trình và bài đầu phù hợp.</div>
+                      <div className="mt-1 text-xs text-slate-400">{helpSuggestion}</div>
                     </div>
                   ))}
                 </div>
@@ -304,7 +320,7 @@ const LanguagesPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-white px-4 py-16 md:px-6">
+        <section className="loopy-surface px-4 py-16 md:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
@@ -314,7 +330,7 @@ const LanguagesPage: React.FC = () => {
             </div>
             
             {apiLoading && (
-              <div className="mt-8 text-center text-slate-600">
+              <div className="mt-8 text-center loopy-muted">
                 {loadingText}
               </div>
             )}
@@ -336,20 +352,20 @@ const LanguagesPage: React.FC = () => {
         <section className="px-4 py-16 md:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="max-w-2xl">
-              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">How it works</div>
+              <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{howBadge}</div>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{howTitle}</h2>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {howItWorks.map((step, index) => {
                 const Icon = step.icon
                 return (
-                  <div key={step.title} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div key={step.title} className="loopy-card rounded-[2rem] border p-6 shadow-sm">
                     <div className="mb-5 flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><Icon /></div>
-                      <div className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Step {index + 1}</div>
+                      <div className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">{howStepLabel} {index + 1}</div>
                     </div>
                     <h3 className="text-2xl font-black">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{step.description}</p>
+                    <p className="loopy-body mt-3 text-sm leading-6">{step.description}</p>
                   </div>
                 )
               })}
@@ -367,7 +383,7 @@ const LanguagesPage: React.FC = () => {
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
               <div className="flex items-center gap-3 text-brand-teal">
                 <FiTerminal />
-                <span className="font-mono text-sm">recommend --for beginner</span>
+                 <span className="font-mono text-sm">{ctaCommand}</span>
               </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <PressedButton to="/onboarding">{ctaBtn1}</PressedButton>

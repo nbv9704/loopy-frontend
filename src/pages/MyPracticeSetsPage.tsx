@@ -118,10 +118,10 @@ const MyPracticeSetsPage: React.FC = () => {
                 <BookOpenCheck className="h-4 w-4" />
                 Quản lý
               </div>
-              <h1 className="text-4xl font-black tracking-normal text-slate-950">
+              <h1 className="loopy-heading text-4xl font-black tracking-normal">
                 Bộ bài tập của tôi
               </h1>
-              <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-600">
+              <p className="loopy-body mt-4 max-w-2xl text-base font-medium leading-7">
                 Xem, chỉnh sửa hoặc xoá các bộ bài tập bạn đã tạo.
               </p>
             </div>
@@ -139,16 +139,16 @@ const MyPracticeSetsPage: React.FC = () => {
           {setsLoading ? (
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-48 animate-pulse rounded-lg border border-slate-200 bg-white" />
+                <div key={index} className="loopy-skeleton h-48 animate-pulse rounded-lg border loopy-border" />
               ))}
             </div>
           ) : sets.length === 0 ? (
-            <div className="mt-8 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <div className="loopy-card mt-8 rounded-lg border border-dashed px-6 py-12 text-center">
               <Lock className="mx-auto h-10 w-10 text-slate-400" />
-              <h2 className="mt-4 text-xl font-black text-slate-950">
+              <h2 className="loopy-heading mt-4 text-xl font-black">
                 Bạn chưa tạo bộ bài tập nào
               </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-slate-600">
+              <p className="loopy-body mx-auto mt-2 max-w-xl text-sm font-medium leading-6">
                 Nhấn nút "Tạo mới" để bắt đầu soạn thảo bộ bài tập của riêng mình.
               </p>
             </div>
@@ -157,24 +157,24 @@ const MyPracticeSetsPage: React.FC = () => {
               {sets.map(set => (
                 <div
                   key={set.id}
-                  className="rounded-lg border border-slate-200 bg-white p-5 text-left shadow-sm flex flex-col"
+                  className="loopy-card flex flex-col rounded-lg border p-5 text-left shadow-sm"
                 >
                   <div className="mb-4 flex items-center justify-between">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black uppercase tracking-wide text-slate-600">
+                    <span className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide loopy-muted">
                       {set.difficulty}
                     </span>
                     <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${set.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                       {set.status}
                     </span>
                   </div>
-                  <h2 className="text-lg font-black text-slate-950 line-clamp-1" title={set.title}>{set.title}</h2>
-                  <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-slate-600 flex-grow">{set.description}</p>
+                  <h2 className="loopy-heading line-clamp-1 text-lg font-black" title={set.title}>{set.title}</h2>
+                  <p className="loopy-body mt-2 line-clamp-2 flex-grow text-sm font-medium leading-6">{set.description}</p>
                   <div className="mt-4 text-xs font-bold text-slate-500">{set.questionCount || 0} câu hỏi</div>
                   
-                  <div className="mt-5 flex items-center gap-2 pt-4 border-t border-slate-100">
+                  <div className="mt-5 flex items-center gap-2 border-t loopy-border pt-4">
                     <button
                       onClick={() => navigate(`/practice/sets/${set.id}`, { state: { from: 'my-sets' } })}
-                      className="flex-grow rounded bg-slate-100 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 transition"
+                      className="loopy-subtle-button flex-grow rounded border py-2 text-sm font-bold transition"
                     >
                       Xem
                     </button>

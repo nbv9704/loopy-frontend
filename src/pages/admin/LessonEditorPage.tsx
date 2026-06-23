@@ -10,7 +10,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { contentService, LessonTestCase } from '../../services/admin/content.service'
+import { contentService, LessonStep, LessonTestCase } from '../../services/admin/content.service'
 
 interface ChapterOption {
   id: string
@@ -27,6 +27,9 @@ const emptyLesson = {
   starterCode: '',
   taskDescription: '',
   hint: '',
+  hintLevel1: '',
+  hintLevel2: '',
+  hintLevel3: '',
   commonMistakes: '',
   solutionCode: '',
   isAhaLesson: false,
@@ -48,6 +51,18 @@ const emptyTestCase: LessonTestCase = {
   weight: 10,
   timeout: 1000,
   is_hidden: false,
+  order_index: 1,
+}
+
+const emptyLessonStep: LessonStep = {
+  type: 'note',
+  title: '',
+  prompt: '',
+  options: [],
+  correct_answer: null,
+  explanation: '',
+  hint: '',
+  is_required: false,
   order_index: 1,
 }
 
@@ -132,12 +147,17 @@ const LessonEditorPage: React.FC = () => {
   const [lesson, setLesson] = useState<any>(emptyLesson)
   const [testCases, setTestCases] = useState<LessonTestCase[]>([])
   const [editingTestCase, setEditingTestCase] = useState<LessonTestCase>(emptyTestCase)
+  const [lessonSteps, setLessonSteps] = useState<LessonStep[]>([])
+  const [editingLessonStep, setEditingLessonStep] = useState<LessonStep>(emptyLessonStep)
+  const [stepOptionsText, setStepOptionsText] = useState('[]')
+  const [stepCorrectAnswerText, setStepCorrectAnswerText] = useState('null')
   const [testInputText, setTestInputText] = useState('[]')
   const [expectedOutputText, setExpectedOutputText] = useState('""')
   const [newChecklistItem, setNewChecklistItem] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingTestCase, setSavingTestCase] = useState(false)
+  const [savingLessonStep, setSavingLessonStep] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -151,9 +171,10 @@ const LessonEditorPage: React.FC = () => {
         setChapters(chaptersData)
 
         if (!isNew && id) {
-          const [lessonData, testCaseData] = await Promise.all([
+          const [lessonData, testCaseData, stepData] = await Promise.all([
             contentService.getLessonById(id),
             contentService.getLessonTestCases(id),
+            contentService.getLessonSteps(id),
           ])
 
           setLesson({
@@ -165,6 +186,9 @@ const LessonEditorPage: React.FC = () => {
             starterCode: lessonData.starter_code || '',
             taskDescription: lessonData.task_description || '',
             hint: lessonData.hint || '',
+            hintLevel1: lessonData.hint_level_1 || '',
+            hintLevel2: lessonData.hint_level_2 || '',
+            hintLevel3: lessonData.hint_level_3 || '',
             commonMistakes: lessonData.common_mistakes || '',
             solutionCode: lessonData.solution_code || '',
             isAhaLesson: lessonData.is_aha_lesson || false,
@@ -179,7 +203,9 @@ const LessonEditorPage: React.FC = () => {
             debugHint: lessonData.debug_hint || '',
           })
           setTestCases(testCaseData)
+          setLessonSteps(stepData)
           setEditingTestCase({ ...emptyTestCase, order_index: testCaseData.length + 1 })
+          setEditingLessonStep({ ...emptyLessonStep, order_index: stepData.length + 1 })
         } else {
           setLesson({ ...emptyLesson, chapterId: chaptersData[0]?.id || '' })
         }
@@ -230,6 +256,9 @@ const LessonEditorPage: React.FC = () => {
         starter_code: lesson.starterCode,
         task_description: lesson.taskDescription,
         hint: lesson.hint,
+        hint_level_1: lesson.hintLevel1,
+        hint_level_2: lesson.hintLevel2,
+        hint_level_3: lesson.hintLevel3,
         common_mistakes: lesson.commonMistakes,
         solution_code: lesson.solutionCode,
         is_aha_lesson: lesson.isAhaLesson,
@@ -312,6 +341,61 @@ const LessonEditorPage: React.FC = () => {
     }
   }
 
+  const handleEditLessonStep = (step: LessonStep) => {
+    setEditingLessonStep(step)
+    setStepOptionsText(stringifyJson(step.options ?? []))
+    setStepCorrectAnswerText(stringifyJson(step.correct_answer ?? null))
+  }
+
+  const handleSaveLessonStep = async () => {
+    const lessonId = lesson.id || id
+    if (!lessonId) {
+      setError('Lưu lesson trước khi thêm lesson step.')
+      return
+    }
+
+    setSavingLessonStep(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const saved = await contentService.upsertLessonStep(lessonId, {
+        ...editingLessonStep,
+        options: parseJsonField(stepOptionsText, []),
+        correct_answer: parseJsonField(stepCorrectAnswerText, null),
+        order_index: Number(editingLessonStep.order_index) || lessonSteps.length + 1,
+      })
+
+      setLessonSteps(current => {
+        const exists = current.some(item => item.id === saved.id)
+        const next = exists ? current.map(item => (item.id === saved.id ? saved : item)) : [...current, saved]
+        return next.sort((a, b) => a.order_index - b.order_index)
+      })
+      setEditingLessonStep({ ...emptyLessonStep, order_index: lessonSteps.length + 2 })
+      setStepOptionsText('[]')
+      setStepCorrectAnswerText('null')
+      setMessage('Đã lưu lesson step.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu lesson step')
+    } finally {
+      setSavingLessonStep(false)
+    }
+  }
+
+  const handleDeleteLessonStep = async (step: LessonStep) => {
+    if (!step.id) return
+    if (!window.confirm(`Xóa lesson step "${step.title || step.prompt}"?`)) return
+
+    setError(null)
+    try {
+      await contentService.deleteLessonStep(step.id)
+      setLessonSteps(current => current.filter(item => item.id !== step.id))
+      setMessage('Đã xóa lesson step.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xóa lesson step')
+    }
+  }
+
   const autoSaveChecklist = async (newChecklist: any) => {
     if (!lesson.id) return // Chỉ auto-save nếu lesson đã có ID
     try {
@@ -324,6 +408,9 @@ const LessonEditorPage: React.FC = () => {
         starter_code: lesson.starterCode,
         task_description: lesson.taskDescription,
         hint: lesson.hint,
+        hint_level_1: lesson.hintLevel1,
+        hint_level_2: lesson.hintLevel2,
+        hint_level_3: lesson.hintLevel3,
         common_mistakes: lesson.commonMistakes,
         solution_code: lesson.solutionCode,
         is_aha_lesson: lesson.isAhaLesson,
@@ -507,24 +594,60 @@ const LessonEditorPage: React.FC = () => {
                   className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-black text-slate-700">Fix - hint</span>
+              <section className="rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                <div className="mb-4">
+                  <h3 className="text-base font-black text-slate-950">Progressive hints</h3>
+                  <p className="mt-1 text-sm font-semibold text-slate-600">
+                    Viết hint theo 3 mức tăng dần. AI chỉ là bước cuối khi các hint này chưa đủ.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 1 - gợi hướng</span>
+                    <textarea
+                      value={lesson.hintLevel1}
+                      onChange={event => updateLesson({ hintLevel1: event.target.value })}
+                      className="h-28 w-full resize-none rounded-lg border border-teal-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Nhắc nhẹ điều cần quan sát, chưa nói cách làm."
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 2 - chiến lược</span>
+                    <textarea
+                      value={lesson.hintLevel2}
+                      onChange={event => updateLesson({ hintLevel2: event.target.value })}
+                      className="h-28 w-full resize-none rounded-lg border border-teal-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Gợi cách tiếp cận hoặc bước kiểm tra tiếp theo."
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 3 - gần lời giải</span>
+                    <textarea
+                      value={lesson.hintLevel3}
+                      onChange={event => updateLesson({ hintLevel3: event.target.value })}
+                      className="h-28 w-full resize-none rounded-lg border border-teal-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                      placeholder="Gợi cụ thể nhưng không thay user làm hết."
+                    />
+                  </label>
+                </div>
+                <label className="mt-4 block">
+                  <span className="mb-2 block text-sm font-black text-slate-700">Legacy/general hint fallback</span>
                   <textarea
                     value={lesson.hint}
                     onChange={event => updateLesson({ hint: event.target.value })}
-                    className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                    className="h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                    placeholder="Fallback cho lesson cũ hoặc nội dung hỗ trợ chung."
                   />
                 </label>
-                <label className="block">
-                  <span className="mb-2 block text-sm font-black text-slate-700">Common mistakes</span>
-                  <textarea
-                    value={lesson.commonMistakes}
-                    onChange={event => updateLesson({ commonMistakes: event.target.value })}
-                    className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-                  />
-                </label>
-              </div>
+              </section>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black text-slate-700">Common mistakes</span>
+                <textarea
+                  value={lesson.commonMistakes}
+                  onChange={event => updateLesson({ commonMistakes: event.target.value })}
+                  className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-black text-slate-700">Build - solution code</span>
                 <textarea
@@ -628,6 +751,151 @@ const LessonEditorPage: React.FC = () => {
                         + Thêm rule
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-indigo-100 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-slate-950">Lesson steps</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  Activity nhỏ trong Learn. Không dùng để hoàn thành lesson và không trộn với Practice.
+                </p>
+              </div>
+              <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700">
+                {lessonSteps.length}
+              </span>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[1fr,380px]">
+              <div className="space-y-3">
+                {lessonSteps.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-bold text-slate-500">
+                    Chưa có lesson step.
+                  </div>
+                )}
+                {lessonSteps.map(step => (
+                  <div key={step.id || step.order_index} className="rounded-lg border border-slate-200 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-black text-slate-950">
+                          #{step.order_index} {step.title || step.type}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-indigo-700">{step.type}</div>
+                        <p className="mt-2 text-sm font-medium text-slate-600">{step.prompt}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditLessonStep(step)}
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLessonStep(step)}
+                          className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
+                <h3 className="mb-4 text-sm font-black uppercase tracking-widest text-indigo-700">
+                  {editingLessonStep.id ? 'Sửa lesson step' : 'Thêm lesson step'}
+                </h3>
+                <div className="space-y-3">
+                  <select
+                    value={editingLessonStep.type}
+                    onChange={event => setEditingLessonStep(current => ({ ...current, type: event.target.value as LessonStep['type'] }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold outline-none"
+                  >
+                    <option value="note">note</option>
+                    <option value="multiple_choice">multiple_choice</option>
+                    <option value="true_false">true_false</option>
+                    <option value="fill_blank">fill_blank</option>
+                    <option value="short_answer">short_answer</option>
+                    <option value="code_prompt">code_prompt</option>
+                  </select>
+                  <input
+                    value={editingLessonStep.title || ''}
+                    onChange={event => setEditingLessonStep(current => ({ ...current, title: event.target.value }))}
+                    placeholder="Title optional"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <textarea
+                    value={editingLessonStep.prompt}
+                    onChange={event => setEditingLessonStep(current => ({ ...current, prompt: event.target.value }))}
+                    placeholder="Prompt"
+                    className="h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <textarea
+                    value={stepOptionsText}
+                    onChange={event => setStepOptionsText(event.target.value)}
+                    placeholder={'options JSON, ví dụ ["A", "B"]'}
+                    className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <textarea
+                    value={stepCorrectAnswerText}
+                    onChange={event => setStepCorrectAnswerText(event.target.value)}
+                    placeholder={'correct_answer JSON, ví dụ "A"'}
+                    className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <textarea
+                    value={editingLessonStep.explanation || ''}
+                    onChange={event => setEditingLessonStep(current => ({ ...current, explanation: event.target.value }))}
+                    placeholder="Explanation optional"
+                    className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <input
+                    value={editingLessonStep.hint || ''}
+                    onChange={event => setEditingLessonStep(current => ({ ...current, hint: event.target.value }))}
+                    placeholder="Hint optional"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      value={editingLessonStep.order_index}
+                      onChange={event => setEditingLessonStep(current => ({ ...current, order_index: Number(event.target.value) }))}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
+                      placeholder="Order"
+                    />
+                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={editingLessonStep.is_required || false}
+                        onChange={event => setEditingLessonStep(current => ({ ...current, is_required: event.target.checked }))}
+                        className="h-4 w-4 accent-indigo-700"
+                      />
+                      Required
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveLessonStep}
+                      disabled={savingLessonStep || !lesson.id || !editingLessonStep.prompt.trim()}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-black text-white hover:bg-indigo-800 disabled:opacity-50"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      {savingLessonStep ? 'Đang lưu...' : 'Lưu step'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingLessonStep({ ...emptyLessonStep, order_index: lessonSteps.length + 1 })
+                        setStepOptionsText('[]')
+                        setStepCorrectAnswerText('null')
+                      }}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-50"
+                    >
+                      Clear
+                    </button>
                   </div>
                 </div>
               </div>

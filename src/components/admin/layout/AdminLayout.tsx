@@ -8,7 +8,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <div className="admin-layout min-h-screen bg-[#f4f7fb] text-slate-900">
+    <div className="admin-layout min-h-screen bg-[#f4f7fb] text-slate-900" style={{ colorScheme: 'light' }}>
       <Sidebar />
       <Header />
       <main className="ml-64 pt-16">

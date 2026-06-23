@@ -30,6 +30,49 @@ const PvPMatchPage: React.FC = () => {
   const contentKeys = [
     'pvp.match.notfound.title',
     'pvp.match.notfound.desc',
+    'pvp.lobby.leave_room',
+    'pvp.lobby.room_title',
+    'pvp.lobby.room_code_label',
+    'pvp.lobby.copy_room_code',
+    'pvp.lobby.share_code_desc',
+    'pvp.lobby.anonymous',
+    'pvp.lobby.you_marker',
+    'pvp.lobby.ready',
+    'pvp.lobby.waiting',
+    'pvp.lobby.waiting_players',
+    'pvp.lobby.ready_button',
+    'pvp.lobby.starting_match',
+    'pvp.lobby.waiting_others',
+    'pvp.lobby.need_more_players',
+    'pvp.lobby.settings_title',
+    'pvp.lobby.mode_label',
+    'pvp.lobby.difficulty_label',
+    'pvp.lobby.questions_label',
+    'pvp.lobby.time_per_question_label',
+    'pvp.lobby.language_label',
+    'pvp.arena.question_label',
+    'pvp.arena.players_title',
+    'pvp.arena.submit_answer',
+    'pvp.arena.submitted',
+    'pvp.arena.your_solution',
+    'pvp.arena.submit_code',
+    'pvp.arena.round_over_title',
+    'pvp.participant.you_marker',
+    'pvp.participant.disconnected',
+    'pvp.participant.score',
+    'pvp.participant.correct',
+    'pvp.results.win_title',
+    'pvp.results.draw_title',
+    'pvp.results.complete_title',
+    'pvp.results.win_desc',
+    'pvp.results.draw_desc',
+    'pvp.results.complete_desc',
+    'pvp.results.you_marker',
+    'pvp.results.rank_label',
+    'pvp.results.points_label',
+    'pvp.results.loading',
+    'pvp.results.play_again',
+    'pvp.results.back_to_journey',
   ]
 
   // Preload all content at once
@@ -302,14 +345,14 @@ const PvPMatchPage: React.FC = () => {
   }, [isPaused, pauseCountdown])
 
   if (isLoading) {
-    return <LoadingScreen message={t('common.loading')} className="bg-[#f7fbff] text-slate-900" />
+    return <LoadingScreen message={t('common.loading')} className="loopy-bg loopy-heading" />
   }
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-[#f7fbff] flex flex-col items-center justify-center gap-4">
-        <p className="text-slate-900 text-2xl font-black">{pvpNotFoundTitle}</p>
-        <p className="text-slate-600 text-sm max-w-md text-center">{pvpNotFoundDesc}</p>
+      <div className="loopy-bg flex min-h-screen flex-col items-center justify-center gap-4">
+        <p className="loopy-heading text-2xl font-black">{pvpNotFoundTitle}</p>
+        <p className="loopy-body max-w-md text-center text-sm">{pvpNotFoundDesc}</p>
         <button
           onClick={() => navigate('/practice/compete')}
           className="px-4 py-2 bg-brand-teal text-white rounded-lg hover:bg-brand-cyan transition-colors"
@@ -321,7 +364,7 @@ const PvPMatchPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7fbff] relative overflow-hidden text-slate-900">
+    <div className="loopy-bg relative min-h-screen overflow-hidden text-[color:var(--loopy-text)]">
       {/* Subtle background texture */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
       <div className="absolute top-0 right-0 -mr-[200px] -mt-[200px] w-[600px] h-[600px] rounded-full bg-brand-teal/10 blur-[100px] pointer-events-none" />
@@ -339,6 +382,7 @@ const PvPMatchPage: React.FC = () => {
               match={match}
               onReady={() => socket.markReady(match.id)}
               currentUserId={user?.id || ''}
+              content={content}
             />
           </motion.div>
         )}
@@ -361,6 +405,7 @@ const PvPMatchPage: React.FC = () => {
               isPaused={isPaused}
               pauseInfo={pauseInfo}
               pauseCountdown={pauseCountdown}
+              content={content}
             />
           </motion.div>
         )}
@@ -372,7 +417,7 @@ const PvPMatchPage: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <MatchResults match={match} finalScores={finalScores} currentUserId={user?.id || ''} />
+            <MatchResults match={match} finalScores={finalScores} currentUserId={user?.id || ''} content={content} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -34,7 +34,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex h-screen flex-col overflow-hidden bg-white ${className}`}>
+    <div className={`loopy-page flex h-screen flex-col overflow-hidden ${className}`}>
       {/* Hero Section Skeleton - Takes up most of viewport */}
       <section className="relative flex flex-1 items-center overflow-hidden px-4 py-8 md:px-6">
         <div className="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-brand-teal/20 blur-3xl animate-v2-loading-glow" />
@@ -44,26 +44,26 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             {/* Left Column */}
             <div className="space-y-3">
               {/* Badge Skeleton */}
-              <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 shadow-sm">
-                <div className="h-3 w-20 animate-pulse rounded bg-slate-300" />
+              <div className="inline-flex rounded-full border loopy-border loopy-surface-soft px-3 py-1 shadow-sm">
+                <div className="h-3 w-20 animate-pulse rounded loopy-skeleton" />
               </div>
 
               {/* Title Skeleton */}
               <div className="space-y-2">
-                <div className="h-7 w-full animate-pulse rounded bg-slate-300" />
-                <div className="h-7 w-4/5 animate-pulse rounded bg-slate-300" />
+                <div className="h-7 w-full animate-pulse rounded loopy-skeleton" />
+                <div className="h-7 w-4/5 animate-pulse rounded loopy-skeleton" />
               </div>
 
               {/* Subtitle Skeleton */}
               <div className="space-y-1">
-                <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
-                <div className="h-3 w-5/6 animate-pulse rounded bg-slate-200" />
+                <div className="h-3 w-full animate-pulse rounded loopy-skeleton" />
+                <div className="h-3 w-5/6 animate-pulse rounded loopy-skeleton" />
               </div>
 
               {/* Buttons Skeleton */}
               <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <div className="h-9 w-28 animate-pulse rounded-lg bg-slate-300 shadow-sm" />
-                <div className="h-9 w-28 animate-pulse rounded-lg bg-slate-200 shadow-sm" />
+                <div className="h-9 w-28 animate-pulse rounded-lg loopy-skeleton shadow-sm" />
+                <div className="h-9 w-28 animate-pulse rounded-lg loopy-skeleton shadow-sm" />
               </div>
 
               {/* Languages Skeleton */}
@@ -71,7 +71,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="h-7 w-16 animate-pulse rounded-full bg-slate-200"
+                    className="h-7 w-16 animate-pulse rounded-full loopy-skeleton"
                     style={{ animationDelay: `${i * 120}ms` }}
                   />
                 ))}
@@ -79,18 +79,18 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             </div>
 
             {/* Right Column - Compact Product Mock Skeleton */}
-            <div className="hidden rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-2xl shadow-slate-200/80 lg:block">
-              <div className="h-40 animate-pulse rounded-xl bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200" />
+            <div className="hidden rounded-2xl border loopy-border loopy-surface-soft p-2 shadow-2xl lg:block">
+              <div className="h-40 animate-pulse rounded-xl bg-gradient-to-br from-brand-teal/10 via-brand-cyan/20 to-brand-teal/10" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Loading Message - Fixed at bottom */}
-      <div className="flex items-center justify-center border-t border-slate-200 bg-slate-50 py-4">
+      <div className="loopy-surface-soft flex items-center justify-center border-t loopy-border py-4">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-5 w-5 animate-spin rounded-full border-3 border-slate-200 border-t-brand-teal" />
-          <p className="text-xs text-slate-600">{message}</p>
+          <div className="h-5 w-5 animate-spin rounded-full border-3 border-[color:var(--loopy-border)] border-t-brand-teal" />
+          <p className="text-xs loopy-muted">{message}</p>
         </div>
       </div>
     </div>

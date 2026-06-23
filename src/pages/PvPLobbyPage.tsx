@@ -55,6 +55,9 @@ const PvPLobbyPage: React.FC = () => {
     'pvp.unlock.badge',
     'pvp.unlock.desc',
     'pvp.header.title',
+    'pvp.challenge_hub',
+    'pvp.unlock.title',
+    'pvp.unlock.toast',
     // Footer content
     'footer.aboutLoopy',
     'footer.about',
@@ -143,6 +146,9 @@ const PvPLobbyPage: React.FC = () => {
   const pvpUnlockBadge = content['pvp.unlock.badge'] || 'Học để mở khóa'
   const pvpUnlockDesc = content['pvp.unlock.desc'] || 'Càng hoàn thành nhiều chương học, bạn càng mở khóa được nhiều thử thách hóc búa hơn. Hãy tiếp tục lộ trình học tập của mình nhé!'
   const pvpHeaderTitle = content['pvp.header.title'] || 'Thử thách nhanh sau bài học.'
+  const pvpChallengeHub = content['pvp.challenge_hub'] || 'Challenge Hub'
+  const pvpUnlockTitle = content['pvp.unlock.title'] || 'Hoàn thành bài học đầu tiên để mở khóa thử thách.'
+  const pvpUnlockToast = content['pvp.unlock.toast'] || 'Hoàn thành bài học đầu tiên để mở khóa PvP'
 
   const canPlay = Boolean(user?.points && user.points > 0)
   const preferredLang = user?.preferredLanguage || (user?.learningGoal === 'build_web' ? 'javascript' : user?.learningGoal === 'school_work' ? 'cpp' : 'python')
@@ -164,7 +170,7 @@ const PvPLobbyPage: React.FC = () => {
     }
 
     if (!canPlay) {
-      toast.error('Hoàn thành bài học đầu tiên để mở khóa PvP')
+      toast.error(pvpUnlockToast)
       navigate(`/library/${preferredLang}`)
       return
     }
@@ -195,7 +201,7 @@ const PvPLobbyPage: React.FC = () => {
     }
 
     if (!canPlay) {
-      toast.error('Hoàn thành bài học đầu tiên để mở khóa PvP')
+      toast.error(pvpUnlockToast)
       navigate(`/library/${preferredLang}`)
       return
     }
@@ -246,10 +252,10 @@ const PvPLobbyPage: React.FC = () => {
                 className="mb-8 bg-gradient-to-r from-brand-teal/10 via-brand-cyan/5 to-brand-teal/10 border border-brand-teal/30 rounded-2xl p-8 text-center"
               >
                 <Lock className="mx-auto mb-4 h-10 w-10 text-brand-teal" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Hoàn thành bài học đầu tiên để mở khóa thử thách.
+                <h3 className="loopy-heading mb-2 text-xl font-bold">
+                  {pvpUnlockTitle}
                 </h3>
-                <p className="text-slate-600 text-sm mb-6 max-w-md mx-auto">{pvpLockedDesc}</p>
+                <p className="loopy-body mx-auto mb-6 max-w-md text-sm">{pvpLockedDesc}</p>
                 <button
                   onClick={() => {
                     navigate(`/library/${preferredLang}`)
@@ -268,10 +274,10 @@ const PvPLobbyPage: React.FC = () => {
             >
               <div className="inline-flex items-center gap-3 mb-6 rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-brand-teal">
                 <Zap className="w-5 h-5" />
-                <span className="text-sm font-black uppercase tracking-widest">Challenge Hub</span>
+                <span className="text-sm font-black uppercase tracking-widest">{pvpChallengeHub}</span>
               </div>
-              <h1 className="mb-5 text-4xl font-black text-slate-900 md:text-6xl">{pvpHeaderTitle}</h1>
-              <p className="text-slate-600 text-xl max-w-2xl mx-auto leading-8">
+              <h1 className="loopy-heading mb-5 text-4xl font-black md:text-6xl">{pvpHeaderTitle}</h1>
+              <p className="loopy-body mx-auto max-w-2xl text-xl leading-8">
                 {pvpSubtitle}
               </p>
             </motion.div>
@@ -283,7 +289,7 @@ const PvPLobbyPage: React.FC = () => {
               transition={{ delay: 0.1 }}
               className="mb-12"
             >
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 text-center">{pvpModeTitle}</h2>
+              <h2 className="loopy-heading mb-6 text-center text-2xl font-bold">{pvpModeTitle}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {/* 1v1 Mode */}
                 <button
@@ -291,12 +297,12 @@ const PvPLobbyPage: React.FC = () => {
                   className={`p-8 rounded-2xl border-2 transition-all duration-300 ${
                     selectedMode === '1v1'
                       ? 'bg-brand-teal/10 border-brand-teal shadow-lg shadow-brand-teal/20'
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      : 'loopy-card hover:border-slate-300'
                   }`}
                 >
                   <Users className="w-12 h-12 text-brand-teal mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{t('pvp.duel')}</h3>
-                  <p className="text-slate-600 text-sm">
+                  <h3 className="loopy-heading mb-2 text-xl font-bold">{t('pvp.duel')}</h3>
+                  <p className="loopy-body text-sm">
                     {pvpMode1v1Desc}
                   </p>
                 </button>
@@ -305,11 +311,11 @@ const PvPLobbyPage: React.FC = () => {
                 <button
                   onClick={() => setSelectedMode('battle_royale')}
                   disabled
-                  className="p-8 rounded-2xl border-2 bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed"
+                  className="loopy-card-soft cursor-not-allowed rounded-2xl border-2 p-8 opacity-50"
                 >
                   <Trophy className="w-12 h-12 text-slate-400 mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{pvpModeBrTitle}</h3>
-                  <p className="text-slate-600 text-sm">
+                  <h3 className="loopy-heading mb-2 text-xl font-bold">{pvpModeBrTitle}</h3>
+                  <p className="loopy-body text-sm">
                     {pvpModeBrDesc}
                   </p>
                 </button>
@@ -323,7 +329,7 @@ const PvPLobbyPage: React.FC = () => {
               transition={{ delay: 0.2 }}
               className="mb-12"
             >
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 text-center">{pvpDiffTitle}</h2>
+              <h2 className="loopy-heading mb-6 text-center text-2xl font-bold">{pvpDiffTitle}</h2>
               <div className="flex gap-4 justify-center">
                 {(['easy', 'medium', 'hard'] as const).map(difficulty => (
                   <button
@@ -332,7 +338,7 @@ const PvPLobbyPage: React.FC = () => {
                     className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 ${
                       selectedDifficulty === difficulty
                         ? 'bg-brand-teal text-white'
-                        : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
+                        : 'loopy-subtle-button border'
                     }`}
                   >
                     {t(`pvp.${difficulty}`)}
@@ -369,7 +375,7 @@ const PvPLobbyPage: React.FC = () => {
                 <div className="absolute inset-0 bg-brand-cyan transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
               </button>
 
-              <div className="text-slate-500 font-bold hidden md:block">{pvpOr}</div>
+              <div className="hidden font-bold loopy-muted md:block">{pvpOr}</div>
 
               <form 
                 onSubmit={handleJoinRoom}
@@ -381,12 +387,12 @@ const PvPLobbyPage: React.FC = () => {
                   value={roomCodeInput}
                   onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
                   maxLength={6}
-                  className="px-6 py-6 bg-white border border-slate-200 rounded-2xl text-slate-900 text-xl font-mono focus:outline-none focus:border-brand-teal transition-all w-full md:w-64 text-center uppercase"
+                  className="loopy-surface w-full rounded-2xl border loopy-border px-6 py-6 text-center font-mono text-xl uppercase text-[color:var(--loopy-text)] transition-all focus:border-brand-teal focus:outline-none md:w-64"
                 />
                 <button
                   type="submit"
                   disabled={isJoining || isSearching || !roomCodeInput || !canPlay}
-                  className="px-8 py-6 bg-slate-100 text-slate-900 font-bold rounded-2xl hover:bg-slate-200 transition-all disabled:opacity-50"
+                  className="loopy-subtle-button rounded-2xl px-8 py-6 font-bold transition-all disabled:opacity-50"
                 >
                   {isJoining ? t('pvp.joining') : t('pvp.joinRoom')}
                 </button>
@@ -400,25 +406,25 @@ const PvPLobbyPage: React.FC = () => {
               transition={{ delay: 0.4 }}
               className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto"
             >
-              <div className="p-6 bg-white border border-slate-200 rounded-xl">
+              <div className="loopy-card rounded-xl border p-6">
                 <Clock className="w-8 h-8 text-brand-teal mb-3" />
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{pvpFeat1Title}</h3>
+                <h3 className="loopy-heading mb-2 text-lg font-bold">{pvpFeat1Title}</h3>
                 <p className="text-slate-600 text-sm">
                   {pvpFeat1Desc}
                 </p>
               </div>
 
-              <div className="p-6 bg-white border border-slate-200 rounded-xl">
+              <div className="loopy-card rounded-xl border p-6">
                 <Target className="w-8 h-8 text-brand-teal mb-3" />
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{pvpFeat2Title}</h3>
+                <h3 className="loopy-heading mb-2 text-lg font-bold">{pvpFeat2Title}</h3>
                 <p className="text-slate-600 text-sm">
                   {pvpFeat2Desc}
                 </p>
               </div>
 
-              <div className="p-6 bg-white border border-slate-200 rounded-xl">
+              <div className="loopy-card rounded-xl border p-6">
                 <Trophy className="w-8 h-8 text-brand-teal mb-3" />
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{pvpFeat3Title}</h3>
+                <h3 className="loopy-heading mb-2 text-lg font-bold">{pvpFeat3Title}</h3>
                 <p className="text-slate-600 text-sm">
                   {pvpFeat3Desc}
                 </p>
@@ -430,13 +436,13 @@ const PvPLobbyPage: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
-                  className="mt-12 p-6 rounded-2xl bg-white border border-slate-200 text-center col-span-1 md:col-span-3 max-w-2xl mx-auto"
+                  className="loopy-card col-span-1 mx-auto mt-12 max-w-2xl rounded-2xl border p-6 text-center md:col-span-3"
                 >
                   <div className="flex items-center justify-center gap-2 text-brand-teal mb-2">
                     <Trophy className="w-5 h-5" />
                     <span className="font-semibold uppercase tracking-wider text-xs">{pvpUnlockBadge}</span>
                   </div>
-                  <p className="text-slate-600 text-sm">{pvpUnlockDesc}</p>
+                  <p className="loopy-body text-sm">{pvpUnlockDesc}</p>
                 </motion.div>
               )}
             </motion.div>

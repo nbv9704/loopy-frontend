@@ -2,6 +2,53 @@ import React, { useMemo, useState } from 'react'
 import { Upload, CheckCircle, AlertCircle, FileJson, ArrowRight, Eye } from 'lucide-react'
 import { contentService, BulkImportPayload } from '../../services/admin/content.service'
 
+const samplePayload = {
+  chapterId: '00000000-0000-0000-0000-000000000000',
+  lessons: [
+    {
+      lessonId: 'xin-chao-console-log',
+      title: 'In dòng chào đầu tiên',
+      description: 'Quan sát cách console.log hiển thị nội dung ra màn hình.',
+      starterCode: 'console.log("Xin chào")',
+      taskDescription: 'Đổi nội dung để chương trình in ra: Xin chào Loopy',
+      hintLevel1: 'Nhìn vào phần chữ nằm trong dấu ngoặc kép.',
+      hintLevel2: 'Bạn chỉ cần thay chuỗi đang được truyền vào console.log.',
+      hintLevel3: 'Dòng code nên gần giống: console.log("Xin chào Loopy")',
+      hint: 'Fallback cho lesson cũ nếu chưa tách 3 mức hint.',
+      commonMistakes: 'Quên dấu ngoặc kép hoặc viết sai chữ hoa/thường.',
+      solutionCode: 'console.log("Xin chào Loopy")',
+      difficulty: 'beginner',
+      gradingMode: 'stdout',
+      status: 'draft',
+      orderIndex: 1,
+      testCases: [
+        {
+          orderIndex: 1,
+          description: 'In đúng nội dung yêu cầu',
+          input: [],
+          expectedOutput: 'Xin chào Loopy',
+          weight: 10,
+          timeout: 1000,
+          isHidden: false,
+        },
+      ],
+      steps: [
+        {
+          type: 'multiple_choice',
+          title: 'console.log dùng để làm gì?',
+          prompt: 'Chọn mô tả đúng nhất trước khi sửa code.',
+          options: ['In dữ liệu ra terminal', 'Tạo biến mới', 'Dừng chương trình'],
+          correctAnswer: 'In dữ liệu ra terminal',
+          explanation: 'Đúng. console.log giúp quan sát output khi học code.',
+          hint: 'Nhìn vào terminal sau khi bấm Chạy thử.',
+          isRequired: false,
+          orderIndex: 1,
+        },
+      ],
+    },
+  ],
+}
+
 const BulkImportPage: React.FC = () => {
   const [jsonInput, setJsonInput] = useState('')
   const [isImporting, setIsImporting] = useState(false)
@@ -20,6 +67,10 @@ const BulkImportPage: React.FC = () => {
         const testCases = lesson.testCases || lesson.test_cases || []
         return total + testCases.length
       }, 0)
+      const stepCount = lessons.reduce((total, lesson) => {
+        const steps = lesson.steps || lesson.lessonSteps || []
+        return total + steps.length
+      }, 0)
       const missingRequired = lessons.filter(lesson => {
         const lessonId = lesson.lessonId || lesson.lesson_id
         const starterCode = lesson.starterCode || lesson.starter_code
@@ -33,6 +84,7 @@ const BulkImportPage: React.FC = () => {
         chapterId: payload.chapterId || payload.chapter_id || '',
         lessonCount: lessons.length,
         testCaseCount,
+        stepCount,
         missingRequired,
         parseError: '',
       }
@@ -42,6 +94,7 @@ const BulkImportPage: React.FC = () => {
         chapterId: '',
         lessonCount: 0,
         testCaseCount: 0,
+        stepCount: 0,
         missingRequired: 0,
         parseError: err instanceof Error ? err.message : 'JSON không hợp lệ',
       }
@@ -98,6 +151,13 @@ const BulkImportPage: React.FC = () => {
                 <FileJson className="h-4 w-4 text-teal-700" />
                 <span className="text-sm font-black text-slate-700">JSON payload</span>
               </div>
+              <button
+                type="button"
+                onClick={() => setJsonInput(JSON.stringify(samplePayload, null, 2))}
+                className="rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-black text-teal-700 transition-colors hover:bg-teal-50"
+              >
+                Load example
+              </button>
             </div>
             <textarea
               value={jsonInput}
@@ -220,7 +280,7 @@ const BulkImportPage: React.FC = () => {
             <div className="flex min-h-[260px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-white p-12 text-center">
               <FileJson className="mb-4 h-16 w-16 text-slate-300" />
               <p className="max-w-xs text-sm font-bold text-slate-500">
-                Paste JSON để xem preview trước khi import.
+                Paste JSON để xem preview trước khi import, hoặc bấm Load example để xem format có `hintLevel1/2/3`.
               </p>
             </div>
           )}

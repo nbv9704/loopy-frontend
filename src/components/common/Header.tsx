@@ -64,7 +64,7 @@ const Header: React.FC = () => {
     return item.path
   }
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !(item.id === 'practice' && !user))
+  const visibleNavItems = NAV_ITEMS
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#0a0e1a]/90 backdrop-blur-xl border-b border-white/10 z-50">

@@ -1,0 +1,162 @@
+﻿src\pages\DocsPage.tsx:13: main.js
+src\pages\DocsPage.tsx:14: example
+src\pages\LandingPage.tsx:25: Mentor
+src\pages\LandingPage.tsx:40: main.js
+src\pages\LandingPage.tsx:41: Kiểm tra
+src\pages\LandingPage.tsx:44: const
+src\pages\LandingPage.tsx:44: name
+src\pages\LandingPage.tsx:44: "Loopy"
+src\pages\LandingPage.tsx:45: console
+src\pages\LandingPage.tsx:45: log
+src\pages\LandingPage.tsx:51: ✓ Test #1: Có in ra lời chào
+src\pages\LandingPage.tsx:52: ✓ Test #2: Dùng biến name
+src\pages\LanguageDetailPage.tsx:89: Xin chào Loopy
+src\pages\LanguageDetailPage.tsx:89: Mình đang học HTML.
+src\pages\LanguageDetailPage.tsx:138: Kiểm tra
+src\pages\LanguageDetailPage.tsx:146: Output
+src\pages\LanguagesPage.tsx:113: Bắt đầu với
+src\pages\LanguagesPage.tsx:298: Loopy gợi ý lộ trình và bài đầu phù hợp.
+src\pages\LanguagesPage.tsx:339: How it works
+src\pages\LanguagesPage.tsx:370: recommend --for beginner
+src\pages\LibraryPage.tsx:44: : isDone ?
+src\pages\LibraryPage.tsx:51: Bước tiếp theo
+src\pages\LibraryPage.tsx:74: Done
+src\pages\OfficialPracticeSetsPage.tsx:156: Tất cả độ khó
+src\pages\OfficialPracticeSetsPage.tsx:157: Easy
+src\pages\OfficialPracticeSetsPage.tsx:158: Medium
+src\pages\OfficialPracticeSetsPage.tsx:159: Hard
+src\pages\PlaygroundPage.tsx:145: Runner
+src\pages\PlaygroundPage.tsx:151: Output
+src\pages\PracticeSetCreatePage.tsx:90: Content warning
+src\pages\PracticeSetCreatePage.tsx:584: Question prompt
+src\pages\PracticeSetCreatePage.tsx:599: Answer options
+src\pages\PracticeSetCreatePage.tsx:600: Fill 2-4 answers. Empty answers will not be included.
+src\pages\PracticeSetCreatePage.tsx:664: Correct blank answer
+src\pages\PracticeSetCreatePage.tsx:676: Multiple correct answers:
+src\pages\PracticeSetCreatePage.tsx:682: Answer explanation
+src\pages\PracticeSetCreatePage.tsx:694: Question setup
+src\pages\PracticeSetCreatePage.tsx:696: Question type
+src\pages\PracticeSetCreatePage.tsx:704: Points
+src\pages\PracticeSetCreatePage.tsx:754: No questions yet
+src\pages\PracticeSetCreatePage.tsx:755: Create a question or find one from existing practice sets.
+src\pages\PracticeSetCreatePage.tsx:808: Find questions
+src\pages\PracticeSetCreatePage.tsx:809: From sets
+src\pages\PracticeSetCreatePage.tsx:817: Searching...
+src\pages\PracticeSetCreatePage.tsx:845: Set settings
+src\pages\PracticeSetCreatePage.tsx:846: Practice set details
+src\pages\PracticeSetCreatePage.tsx:856: Set title
+src\pages\PracticeSetCreatePage.tsx:865: Description
+src\pages\PracticeSetCreatePage.tsx:877: Topic
+src\pages\PracticeSetCreatePage.tsx:887: Language
+src\pages\PracticeSetCreatePage.tsx:902: Difficulty
+src\pages\PracticeSetCreatePage.tsx:908: Easy
+src\pages\PracticeSetCreatePage.tsx:909: Medium
+src\pages\PracticeSetCreatePage.tsx:910: Hard
+src\pages\PracticeSetCreatePage.tsx:915: Visibility
+src\pages\PracticeSetCreatePage.tsx:921: Public
+src\pages\PracticeSetCreatePage.tsx:922: Unlisted
+src\pages\PracticeSetCreatePage.tsx:923: Private
+src\pages\PracticeSetCreatePage.tsx:925: Official
+src\pages\PracticeSetCreatePage.tsx:931: Status
+src\pages\PracticeSetCreatePage.tsx:937: Published
+src\pages\PracticeSetCreatePage.tsx:938: Draft
+src\pages\PracticeSetCreatePage.tsx:944: Required completed lessons
+src\pages\PracticeSetDetailPage.tsx:234: Practice set not found
+src\pages\PracticeSetDetailPage.tsx:292: Practice completed
+src\pages\PracticeSetDetailPage.tsx:326: Your answer
+src\pages\PracticeSetsPage.tsx:174: Tất cả độ khó
+src\pages\PracticeSetsPage.tsx:175: Easy
+src\pages\PracticeSetsPage.tsx:176: Medium
+src\pages\PracticeSetsPage.tsx:177: Hard
+src\pages\ProfilePage.tsx:83: Docs là tài liệu tham khảo; progress chỉ lưu sau khi lesson được Kiểm tra thành công.
+src\pages\ProfilePage.tsx:414: Newbie-first path
+src\pages\ProfilePage.tsx:415: Loopy ưu tiên một bước tiếp theo rõ ràng thay vì bắt bạn tự chọn giữa nhiều chủ đề.
+src\pages\ProfilePage.tsx:416: View all paths
+src\pages\ProfilePage.tsx:446: Chọn ảnh có sẵn
+src\pages\ProfilePage.tsx:468: Hoặc tự tải ảnh lên
+src\pages\ProfilePage.tsx:473: Ảnh sẽ được tự động nén thu nhỏ để tiết kiệm dữ liệu.
+src\pages\ProfilePage.tsx:486: Email (không thể thay đổi)
+src\pages\ProfilePage.tsx:489: Khóa
+src\pages\ProfilePage.tsx:493: Tên hiển thị
+src\pages\ProfilePage.tsx:504: Bio
+src\pages\ProfilePage.tsx:504: (tối đa 500 ký tự)
+src\pages\ProfilePage.tsx:525: Ngôn ngữ ưu tiên
+src\pages\ProfilePage.tsx:531: JavaScript Web Starter
+src\pages\ProfilePage.tsx:532: Python Foundations
+src\pages\ProfilePage.tsx:533: C++ School Foundations
+src\pages\ProfilePage.tsx:537: Mục tiêu học
+src\pages\ProfilePage.tsx:543: Bắt đầu từ số 0
+src\pages\ProfilePage.tsx:544: Làm website
+src\pages\ProfilePage.tsx:545: Phục vụ việc học ở trường
+src\pages\ProfilePage.tsx:546: Khám phá xem code có hợp không
+src\pages\ProfilePage.tsx:555: Lưu thay đổi
+src\pages\ProfilePage.tsx:556: Cập nhật tên, bio và lộ trình học của bạn.
+src\pages\ProfilePage.tsx:564: Đang lưu...
+src\pages\ProfilePage.tsx:566: Lưu thay đổi
+src\pages\ProfilePage.tsx:573: Cập nhật onboarding
+src\pages\ProfilePage.tsx:574: Chạy lại onboarding để Loopy gợi ý lại lộ trình phù hợp nhất với bạn.
+src\pages\ProfilePage.tsx:575: Chạy lại onboarding
+src\pages\ProfilePage.tsx:609: Loopy learner
+src\pages\PvPLobbyPage.tsx:271: Challenge Hub
+src\components\common\ErrorBoundary.tsx:125: Error Message:
+src\components\common\ErrorBoundary.tsx:132: Stack Trace:
+src\components\common\ErrorBoundary.tsx:140: Component Stack:
+src\components\common\Terminal.tsx:18: Terminal
+src\components\grading\GradingResults.tsx:144: Đúng/Sai
+src\components\grading\GradingResults.tsx:167: AI đánh giá
+src\components\grading\SubmissionHistory.tsx:172: Test
+src\components\grading\TestCaseResults.tsx:126: ⚠️ Có lỗi xảy ra khi chạy bài kiểm tra này.
+src\components\grading\TestCaseResults.tsx:135: ✅ Kết quả mong đợi
+src\components\grading\TestCaseResults.tsx:141: ❌ Code của bạn cho ra
+src\components\grading\TestCaseResults.tsx:149: 💡 So sánh hai kết quả và kiểm tra lại code của bạn nhé!
+src\components\grading\TestCaseResults.tsx:155: Kết quả của bạn
+src\components\learn\LessonActionBar.tsx:64: Bước hiện tại
+src\components\learn\LessonActionBar.tsx:67: ✓ Thay đổi đã pass checker chính.
+src\components\learn\LessonActionBar.tsx:70: ✓ Debug đã xong, có thể lưu tiến độ.
+src\components\learn\LessonSidebar.tsx:131: Tiếp tục học
+src\components\learn\LessonSidebar.tsx:230: ⚡ Aha!
+src\components\learn\LessonSidebar.tsx:233: → Tiếp theo
+src\components\learn\LessonViewer.tsx:98: = 0 && currentIndex
+src\components\learn\LessonViewer.tsx:319: new Set
+src\components\learn\LessonViewer.tsx:374: Lộ trình này chưa có bài học
+src\components\learn\LessonViewer.tsx:375: Nội dung đang được chuẩn bị. Bạn có thể quay lại Journey Map để chọn lộ trình khác.
+src\components\learn\LessonViewer.tsx:465: Journey progress
+src\components\learn\LessonViewer.tsx:486: Luật Loopy:
+src\components\learn\LessonViewer.tsx:506: Mini checkpoint
+src\components\learn\LessonViewer.tsx:507: Trả lời nhanh để chắc bạn hiểu trước khi code.
+src\components\learn\LessonViewer.tsx:540: Bài này chưa có gợi ý sẵn.
+src\components\learn\LessonViewer.tsx:560: 🤖 AI Mentor chỉ gợi ý
+src\components\learn\LessonViewer.tsx:602: read-only
+src\components\learn\LessonViewer.tsx:604: editable
+src\components\learn\LessonViewer.tsx:619: Bước hiện tại
+src\components\learn\LessonViewer.tsx:645: Output / Kiểm tra
+src\components\learn\LessonViewer.tsx:646: Chạy thử xem output. Kiểm tra mới validate đúng/sai.
+src\components\learn\LessonViewer.tsx:667: Kết quả kiểm tra
+src\components\learn\LessonViewer.tsx:668: Checker deterministic của Loopy.
+src\components\learn\LessonViewer.tsx:681: Kiểm tra bài:
+src\components\learn\LessonViewer.tsx:723: Tuyệt vời! Progress đã được lưu.
+src\components\playground\MultiFileEditor.tsx:192: Loopy Lab
+src\components\playground\MultiFileEditor.tsx:229: Bạn có thể xem và sửa code. Đăng nhập để chạy và lưu Lab.
+src\components\pvp\MatchArena.tsx:207: Câu hỏi
+src\components\pvp\MatchArena.tsx:233: Người chơi
+src\components\pvp\MatchArena.tsx:331: Lời giải của bạn
+src\components\pvp\MatchArena.tsx:382: Hết vòng!
+src\components\pvp\MatchLobby.tsx:50: Phòng chờ thử thách
+src\components\pvp\MatchLobby.tsx:115: (Bạn)
+src\components\pvp\MatchLobby.tsx:122: Sẵn sàng
+src\components\pvp\MatchLobby.tsx:127: Đang chờ...
+src\components\pvp\MatchLobby.tsx:135: Đang chờ người chơi...
+src\components\pvp\MatchLobby.tsx:185: Thiết lập trận
+src\components\pvp\MatchLobby.tsx:188: Chế độ
+src\components\pvp\MatchLobby.tsx:192: Độ khó
+src\components\pvp\MatchLobby.tsx:196: Câu hỏi
+src\components\pvp\MatchLobby.tsx:200: Thời gian/câu
+src\components\pvp\MatchLobby.tsx:204: Ngôn ngữ
+src\components\pvp\MatchResults.tsx:39: 0 && score
+src\components\pvp\MatchResults.tsx:166: (Bạn)
+src\components\pvp\MatchResults.tsx:175: điểm
+src\components\pvp\MatchResults.tsx:182: Đang tải kết quả...
+src\components\pvp\ParticipantCard.tsx:72: (You)
+src\components\pvp\ParticipantCard.tsx:74: Disconnected
+src\components\pvp\ParticipantCard.tsx:83: Score
+src\components\pvp\ParticipantCard.tsx:91: Correct

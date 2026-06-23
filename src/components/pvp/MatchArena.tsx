@@ -19,6 +19,8 @@ import ReactionPicker from './ReactionPicker'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import toast from 'react-hot-toast'
 
+type ContentMap = Record<string, string | null | undefined>
+
 interface MatchArenaProps {
   match: PvPMatch
   question: PvPQuestion
@@ -30,6 +32,7 @@ interface MatchArenaProps {
   isPaused?: boolean
   pauseInfo?: MatchPausedPayload | null
   pauseCountdown: number
+  content?: ContentMap
 }
 
 const MatchArena: React.FC<MatchArenaProps> = ({
@@ -43,8 +46,10 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   isPaused = false,
   pauseInfo = null,
   pauseCountdown = 0,
+  content,
 }) => {
   const { t } = useTranslation()
+  const getContent = (key: string, fallback: string) => content?.[key] || fallback
   const [selectedAnswer, setSelectedAnswer] = useState<string>('')
   const [code, setCode] = useState<string>(question.starterCode || '')
   const [hasSubmitted, setHasSubmitted] = useState(false)
@@ -204,7 +209,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 
           {/* Question Progress */}
           <div className="text-center">
-            <p className="text-slate-400 text-sm mb-1">Câu hỏi</p>
+            <p className="text-slate-400 text-sm mb-1">{getContent('pvp.arena.question_label', 'Câu hỏi')}</p>
             <p className="text-white font-bold text-lg">
               {match.current_question_index + 1} / {match.question_ids.length}
             </p>
@@ -230,13 +235,14 @@ const MatchArena: React.FC<MatchArenaProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Participants Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-lg font-bold text-white mb-4">Người chơi</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{getContent('pvp.arena.players_title', 'Người chơi')}</h3>
             {match.participants?.map(participant => (
               <ParticipantCard
                 key={participant.user_id}
                 participant={participant}
                 isCurrentUser={participant.user_id === currentUserId}
                 reactions={reactions.filter((r: any) => r.userId === participant.user_id).map((r: any) => r.emoji)}
+                content={content}
               />
             ))}
           </div>
@@ -266,7 +272,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Đã gửi' : 'Gửi đáp án'}
+                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
                   </button>
                 </>
               )}
@@ -314,7 +320,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Đã gửi' : 'Gửi đáp án'}
+                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
                   </button>
                 </>
               )}
@@ -328,7 +334,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Code className="w-5 h-5 text-brand-teal" />
-                      <h3 className="text-lg font-bold text-white">Lời giải của bạn</h3>
+                      <h3 className="text-lg font-bold text-white">{getContent('pvp.arena.your_solution', 'Lời giải của bạn')}</h3>
                     </div>
                     <CodeMirror
                       value={code}
@@ -347,7 +353,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? 'Đã gửi' : 'Gửi code'}
+                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_code', 'Gửi code')}
                   </button>
                 </>
               )}
@@ -379,7 +385,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     </div>
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-4">Hết vòng!</h2>
+                <h2 className="text-3xl font-bold text-white mb-4">{getContent('pvp.arena.round_over_title', 'Hết vòng!')}</h2>
                   <p className="text-brand-teal text-lg font-medium animate-pulse">
                     {isMatchOverCooldown
                       ? t('pvp.match.summarizing')

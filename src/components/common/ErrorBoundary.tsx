@@ -122,14 +122,14 @@ class ErrorBoundary extends Component<Props, State> {
                     </summary>
                     <div className="bg-black/30 rounded-xl p-4 border border-red-500/20">
                       <div className="mb-4">
-                        <p className="text-red-400 font-semibold mb-2">Error Message:</p>
+                        <p className="text-red-400 font-semibold mb-2">{this.props.t('errorBoundary.errorMessage', 'Error Message:')}:</p>
                         <p className="text-slate-300 font-mono text-sm break-all">
                           {this.state.error.message}
                         </p>
                       </div>
                       {this.state.error.stack && (
                         <div>
-                          <p className="text-red-400 font-semibold mb-2">Stack Trace:</p>
+                          <p className="text-red-400 font-semibold mb-2">{this.props.t('errorBoundary.stackTrace', 'Stack Trace')}:</p>
                           <pre className="text-slate-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap break-all">
                             {this.state.error.stack}
                           </pre>
@@ -137,7 +137,7 @@ class ErrorBoundary extends Component<Props, State> {
                       )}
                       {this.state.errorInfo && this.state.errorInfo.componentStack && (
                         <div className="mt-4">
-                          <p className="text-red-400 font-semibold mb-2">Component Stack:</p>
+                          <p className="text-red-400 font-semibold mb-2">{this.props.t('errorBoundary.componentStack', 'Component Stack')}:</p>
                           <pre className="text-slate-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap">
                             {this.state.errorInfo.componentStack}
                           </pre>

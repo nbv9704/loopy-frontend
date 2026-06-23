@@ -80,15 +80,15 @@ const findBannedKeywords = (values: string[], keywords: string[]) => {
   })
 }
 
-const ModerationWarning: React.FC<{ matches: string[] }> = ({ matches }) => {
+const ModerationWarning: React.FC<{ matches: string[]; title: string; message: string }> = ({ matches, title, message }) => {
   if (!matches.length) return null
 
   return (
     <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
       <div>
-        <div className="font-black">Content warning</div>
-        <div>Found restricted keyword{matches.length > 1 ? 's' : ''}: {matches.join(', ')}. Please revise this content before publishing.</div>
+        <div className="font-black">{title}</div>
+        <div>{message.replace('{keywords}', matches.join(', ')).replace('{s}', matches.length > 1 ? 's' : '')}</div>
       </div>
     </div>
   )
@@ -186,6 +186,15 @@ const PracticeSetCreatePage: React.FC = () => {
     'footer.allRightsReserved',
     'footer.privacy',
     'footer.terms',
+    'practice.create.warning.title', 'practice.create.warning.message',
+    'practice.create.loading', 'practice.create.seo_title',
+    'practice.create.toast.load_error', 'practice.create.toast.add_question', 'practice.create.toast.restricted', 'practice.create.toast.updated', 'practice.create.toast.created', 'practice.create.toast.save_error',
+    'practice.create.editor.edit_title', 'practice.create.editor.create_title', 'practice.create.editor.save_question', 'practice.create.editor.prompt', 'practice.create.editor.prompt_placeholder',
+    'practice.create.editor.options_title', 'practice.create.editor.options_desc', 'practice.create.editor.correct_blank', 'practice.create.editor.blank_placeholder', 'practice.create.editor.multi_correct', 'practice.create.editor.explanation', 'practice.create.editor.explanation_placeholder', 'practice.create.editor.setup', 'practice.create.editor.type', 'practice.create.editor.points', 'practice.create.editor.help',
+    'practice.create.main.settings', 'practice.create.main.publishing', 'practice.create.main.update_set', 'practice.create.main.publish_set', 'practice.create.main.summary', 'practice.create.main.create_question', 'practice.create.main.empty_title', 'practice.create.main.empty_desc',
+    'practice.create.library.title', 'practice.create.library.from_sets', 'practice.create.library.placeholder', 'practice.create.library.searching', 'practice.create.library.idle', 'practice.create.library.empty',
+    'practice.create.settings.badge', 'practice.create.settings.title', 'practice.create.settings.set_title', 'practice.create.settings.description', 'practice.create.settings.description_placeholder', 'practice.create.settings.topic', 'practice.create.settings.topic_placeholder', 'practice.create.settings.language', 'practice.create.settings.difficulty', 'practice.create.settings.visibility', 'practice.create.settings.status', 'practice.create.settings.required_lessons', 'practice.create.settings.required_placeholder', 'practice.create.settings.required_help',
+    'practice.create.option.easy', 'practice.create.option.medium', 'practice.create.option.hard', 'practice.create.option.public', 'practice.create.option.unlisted', 'practice.create.option.private', 'practice.create.option.official', 'practice.create.option.published', 'practice.create.option.draft',
   ], [])
 
   const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
@@ -249,7 +258,7 @@ const PracticeSetCreatePage: React.FC = () => {
           setQuestions(data.questions.map(q => fromPracticeQuestion(q)))
         }
       } catch (error) {
-        toast.error('Unable to load set')
+        toast.error(text('practice.create.toast.load_error', 'Unable to load set'))
         navigate('/practice/my-sets')
       } finally {
         if (mounted) setInitialLoading(false)
@@ -307,6 +316,12 @@ const PracticeSetCreatePage: React.FC = () => {
     'footer.privacy': content['footer.privacy'],
     'footer.terms': content['footer.terms'],
   }
+
+  const text = (key: string, fallback: string) => content[key] || fallback
+  const formatText = (key: string, fallback: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((result, [name, value]) => result.replace(`{${name}}`, String(value)), text(key, fallback))
+  const warningTitle = text('practice.create.warning.title', 'Content warning')
+  const warningMessage = text('practice.create.warning.message', 'Found restricted keyword{s}: {keywords}. Please revise this content before publishing.')
 
   const totalPoints = questions.reduce((sum, question) => sum + question.points, 0)
   const settingsModerationMatches = useMemo(() => findBannedKeywords([
@@ -507,11 +522,11 @@ const PracticeSetCreatePage: React.FC = () => {
 
   const publishSet = async () => {
     if (questions.length === 0) {
-      toast.error('Add at least one question before publishing')
+      toast.error(text('practice.create.toast.add_question', 'Add at least one question before publishing'))
       return
     }
     if (setModerationMatches.length) {
-      toast.error('This set contains restricted keywords')
+      toast.error(text('practice.create.toast.restricted', 'This set contains restricted keywords'))
       return
     }
     setSaving(true)
@@ -534,72 +549,72 @@ const PracticeSetCreatePage: React.FC = () => {
 
       if (setId) {
         await practiceService.updateSet(setId, payload)
-        toast.success('Practice set updated successfully')
+        toast.success(text('practice.create.toast.updated', 'Practice set updated successfully'))
         navigate('/practice/my-sets')
       } else {
         await practiceService.createSet(payload)
-        toast.success('Practice set created successfully')
+        toast.success(text('practice.create.toast.created', 'Practice set created successfully'))
         navigate('/practice/sets')
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to save practice set')
+      toast.error(error instanceof Error ? error.message : text('practice.create.toast.save_error', 'Unable to save practice set'))
     } finally {
       setSaving(false)
     }
   }
 
-  if (contentLoading || initialLoading) return <LoadingScreen message="Loading set builder..." />
+  if (contentLoading || initialLoading) return <LoadingScreen message={text('practice.create.loading', 'Loading set builder...')} />
 
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
-      <SEO title="Create Practice Set | Loopy" />
-      <main className="flex-grow bg-[#f7fbff]">
+      <SEO title={text('practice.create.seo_title', 'Create Practice Set | Loopy')} />
+      <main className="flex-grow">
         {mode === 'editor' ? (
-          <section className="min-h-[calc(100vh-73px)] bg-[#f7fbff]">
-            <div className="sticky top-[73px] z-30 border-b border-slate-200 bg-white">
+          <section className="min-h-[calc(100vh-73px)]">
+            <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
               <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setMode('preview')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700">
+                  <button type="button" onClick={() => setMode('preview')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted">
                     <ArrowLeft className="h-4 w-4" />
                   </button>
-                  <div className="text-sm font-black text-slate-800">{editingQuestionId ? 'Edit question' : 'Create question'}</div>
+                  <div className="text-sm font-black loopy-heading">{editingQuestionId ? text('practice.create.editor.edit_title', 'Edit question') : text('practice.create.editor.create_title', 'Create question')}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={saveQuestion} className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950">
                     <Save className="h-4 w-4" />
-                    Save question
+                    {text('practice.create.editor.save_question', 'Save question')}
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="mx-auto grid max-w-6xl gap-6 px-6 py-8 lg:grid-cols-[1fr,320px]">
-              <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="loopy-card rounded-lg border p-6 shadow-sm">
                 <div className="mb-5">
                   <div className="text-xs font-black uppercase tracking-wide text-brand-teal">{typeMeta[editorQuestion.type].label}</div>
-                  <h1 className="mt-2 text-2xl font-black text-slate-950">{editingQuestionId ? 'Edit question' : 'Create question'}</h1>
+                   <h1 className="loopy-heading mt-2 text-2xl font-black">{editingQuestionId ? text('practice.create.editor.edit_title', 'Edit question') : text('practice.create.editor.create_title', 'Create question')}</h1>
                 </div>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Question prompt</span>
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.prompt', 'Question prompt')}</span>
                   <textarea
                     value={editorQuestion.prompt}
                     onChange={event => updateEditor({ prompt: event.target.value })}
-                    placeholder="Type question here"
+                    placeholder={text('practice.create.editor.prompt_placeholder', 'Type question here')}
                     rows={7}
-                    className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                    className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-4 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                   />
                 </label>
-                <ModerationWarning matches={editorModerationMatches} />
+                <ModerationWarning matches={editorModerationMatches} title={warningTitle} message={warningMessage} />
 
                 {(editorQuestion.type === 'multiple_choice' || editorQuestion.type === 'multiple_select') && (
                   <div className="mt-6">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
-                        <h2 className="text-sm font-black text-slate-900">Answer options</h2>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">Fill 2-4 answers. Empty answers will not be included.</p>
+                        <h2 className="text-sm font-black loopy-heading">{text('practice.create.editor.options_title', 'Answer options')}</h2>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{text('practice.create.editor.options_desc', 'Fill 2-4 answers. Empty answers will not be included.')}</p>
                       </div>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                      <span className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black loopy-muted">
                         {editorQuestion.options.filter(option => option.trim()).length}/4 filled
                       </span>
                     </div>
@@ -611,14 +626,14 @@ const PracticeSetCreatePage: React.FC = () => {
                           ? editorQuestion.correctAnswers.includes(normalizedOption) && canMarkCorrect
                           : editorQuestion.correctAnswer === normalizedOption && canMarkCorrect
                         return (
-                          <div key={optionIndex} className={`flex items-center gap-3 rounded-lg border bg-white p-3 transition ${isCorrect ? 'border-brand-teal ring-2 ring-brand-teal/15' : 'border-slate-200'}`}>
+                          <div key={optionIndex} className={`flex items-center gap-3 rounded-lg border p-3 transition ${isCorrect ? 'border-brand-teal bg-brand-teal/10 ring-2 ring-brand-teal/15' : 'loopy-border loopy-surface'}`}>
                             <button
                               type="button"
                               disabled={!canMarkCorrect}
                               onClick={() => editorQuestion.type === 'multiple_select' ? toggleCorrectAnswer(option) : markSingleCorrectAnswer(option)}
                               className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-35 ${isCorrect
                                   ? 'border-brand-teal bg-brand-teal text-slate-950'
-                                  : 'border-slate-300 bg-white text-slate-400 hover:border-brand-teal hover:text-brand-teal'
+                                  : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal hover:text-brand-teal'
                                 }`}
                               title="Mark correct"
                             >
@@ -628,7 +643,7 @@ const PracticeSetCreatePage: React.FC = () => {
                               value={option}
                               onChange={event => updateOption(optionIndex, event.target.value)}
                               placeholder={`Answer ${optionIndex + 1}`}
-                              className="min-w-0 flex-1 rounded-md border border-transparent bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                              className="loopy-surface min-w-0 flex-1 rounded-md border border-transparent px-3 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                             />
                             <span className="hidden text-xs font-black uppercase tracking-wide text-slate-400 sm:inline">
                               {isCorrect ? 'Correct' : canMarkCorrect ? 'Mark' : 'Empty'}
@@ -648,8 +663,8 @@ const PracticeSetCreatePage: React.FC = () => {
                         type="button"
                         onClick={() => updateEditor({ correctAnswer: value })}
                         className={`flex min-h-[120px] items-center justify-between rounded-lg border-2 px-5 text-left text-xl font-black transition ${editorQuestion.correctAnswer === value
-                            ? 'border-brand-teal bg-brand-teal/10 text-slate-950'
-                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-brand-teal/60'
+                            ? 'border-brand-teal bg-brand-teal/10 text-[color:var(--loopy-text)]'
+                            : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal/60'
                           }`}
                       >
                         <span>{value === 'true' ? 'True' : 'False'}</span>
@@ -660,77 +675,77 @@ const PracticeSetCreatePage: React.FC = () => {
                 )}
 
                 {editorQuestion.type === 'fill_blank' && (
-                  <label className="mt-6 block rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Correct blank answer</span>
+                  <label className="loopy-card-soft mt-6 block rounded-lg border p-4">
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.correct_blank', 'Correct blank answer')}</span>
                     <input
                       value={editorQuestion.correctAnswer}
                       onChange={event => updateEditor({ correctAnswer: event.target.value })}
-                      placeholder="Type the expected answer"
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                      placeholder={text('practice.create.editor.blank_placeholder', 'Type the expected answer')}
+                      className="loopy-surface w-full rounded-lg border loopy-border px-4 py-3 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                     />
                   </label>
                 )}
 
                 {editorQuestion.type === 'multiple_select' && (
-                  <div className="mt-4 flex items-center gap-3 text-sm font-black text-slate-700">
-                    <span>Multiple correct answers:</span>
-                    <span className="rounded-full bg-brand-teal/15 px-3 py-1 text-slate-950">{editorQuestion.correctAnswers.length} selected</span>
+                  <div className="mt-4 flex items-center gap-3 text-sm font-black loopy-muted">
+                    <span>{text('practice.create.editor.multi_correct', 'Multiple correct answers:')}</span>
+                    <span className="rounded-full bg-brand-teal/15 px-3 py-1 text-[color:var(--loopy-text)]">{editorQuestion.correctAnswers.length} selected</span>
                   </div>
                 )}
 
                 <label className="mt-6 block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Answer explanation</span>
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.explanation', 'Answer explanation')}</span>
                   <textarea
                     value={editorQuestion.explanation}
                     onChange={event => updateEditor({ explanation: event.target.value })}
                     rows={3}
-                    placeholder="Optional explanation shown after the learner answers."
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                    placeholder={text('practice.create.editor.explanation_placeholder', 'Optional explanation shown after the learner answers.')}
+                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                   />
                 </label>
               </div>
 
-              <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-[145px] lg:self-start">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Question setup</h2>
+              <aside className="loopy-card rounded-lg border p-5 shadow-sm lg:sticky lg:top-[145px] lg:self-start">
+                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">{text('practice.create.editor.setup', 'Question setup')}</h2>
                 <label className="mt-4 block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Question type</span>
-                  <select value={editorQuestion.type} onChange={event => updateEditorType(event.target.value as QuestionType)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-black text-slate-800 outline-none focus:border-brand-teal">
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.type', 'Question type')}</span>
+                  <select value={editorQuestion.type} onChange={event => updateEditorType(event.target.value as QuestionType)} className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal">
                     {(Object.entries(typeMeta) as Array<[QuestionType, typeof typeMeta[QuestionType]]>).map(([type, meta]) => (
                       <option key={type} value={type}>{meta.label}</option>
                     ))}
                   </select>
                 </label>
                 <label className="mt-4 block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Points</span>
-                  <input type="number" min="1" max="100" value={editorQuestion.points} onChange={event => updateEditor({ points: Number(event.target.value) })} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-black text-slate-800 outline-none focus:border-brand-teal" />
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.points', 'Points')}</span>
+                  <input type="number" min="1" max="100" value={editorQuestion.points} onChange={event => updateEditor({ points: Number(event.target.value) })} className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal" />
                 </label>
-                <div className="mt-5 rounded-lg bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-600">
-                  Tick an answer to mark it correct. Empty options stay disabled and will be skipped when saving.
+                <div className="loopy-card-soft mt-5 rounded-lg p-4 text-sm font-semibold leading-6 loopy-muted">
+                  {text('practice.create.editor.help', 'Tick an answer to mark it correct. Empty options stay disabled and will be skipped when saving.')}
                 </div>
               </aside>
             </div>
           </section>
         ) : (
           <section className="min-h-[calc(100vh-73px)]">
-            <div className="sticky top-[73px] z-30 border-b border-slate-200 bg-white">
+            <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
               <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <button type="button" onClick={() => navigate('/practice/sets')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700">
+                  <button type="button" onClick={() => navigate('/practice/sets')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted">
                     <ArrowLeft className="h-4 w-4" />
                   </button>
-                  <input value={setForm.title} onChange={event => setSetForm(current => ({ ...current, title: event.target.value }))} className="min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm font-black text-slate-950 outline-none" />
+                  <input value={setForm.title} onChange={event => setSetForm(current => ({ ...current, title: event.target.value }))} className="loopy-surface min-w-0 rounded-lg border loopy-border px-3 py-2 text-sm font-black text-[color:var(--loopy-text)] outline-none" />
                 </div>
                 <div className="flex items-center gap-4">
-                  <button type="button" onClick={openSettings} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 md:hidden">
+                  <button type="button" onClick={openSettings} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted md:hidden">
                     <Settings className="h-4 w-4" />
                   </button>
-                  <button type="button" onClick={openSettings} className="hidden items-center gap-2 text-sm font-black text-slate-700 md:inline-flex">
+                  <button type="button" onClick={openSettings} className="hidden items-center gap-2 text-sm font-black loopy-muted md:inline-flex">
                     <Settings className="h-4 w-4" />
-                    Settings
+                    {text('practice.create.main.settings', 'Settings')}
                   </button>
                   <button type="button" onClick={publishSet} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950 disabled:opacity-60">
                     <Save className="h-4 w-4" />
-                    {saving ? 'Publishing...' : <span className="font-semibold">{setId ? 'Update Set' : 'Publish Set'}</span>}
+                    {saving ? text('practice.create.main.publishing', 'Publishing...') : <span className="font-semibold">{setId ? text('practice.create.main.update_set', 'Update Set') : text('practice.create.main.publish_set', 'Publish Set')}</span>}
                   </button>
                 </div>
               </div>
@@ -738,41 +753,41 @@ const PracticeSetCreatePage: React.FC = () => {
 
             <div className="grid gap-6 px-6 py-8 xl:grid-cols-[1fr,420px]">
               <main>
-                <ModerationWarning matches={setModerationMatches} />
+                <ModerationWarning matches={setModerationMatches} title={warningTitle} message={warningMessage} />
                 <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                  <div className="text-lg font-black text-slate-800">
-                    {questions.length} Questions <span className="mx-3 text-slate-400">•</span> {totalPoints} Points
+                  <div className="text-lg font-black loopy-heading">
+                    {formatText('practice.create.main.summary', '{questions} Questions • {points} Points', { questions: questions.length, points: totalPoints })}
                   </div>
-                  <button type="button" onClick={() => { setEditingQuestionId(null); setEditorQuestion(newQuestion()); setMode('editor') }} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800">
+                  <button type="button" onClick={() => { setEditingQuestionId(null); setEditorQuestion(newQuestion()); setMode('editor') }} className="loopy-subtle-button inline-flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-black">
                     <Plus className="h-4 w-4" />
-                    Create question
+                    {text('practice.create.main.create_question', 'Create question')}
                   </button>
                 </div>
 
                 {questions.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-                    <h2 className="text-2xl font-black text-slate-950">No questions yet</h2>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">Create a question or find one from existing practice sets.</p>
+                  <div className="loopy-card rounded-lg border border-dashed px-6 py-16 text-center">
+                    <h2 className="loopy-heading text-2xl font-black">{text('practice.create.main.empty_title', 'No questions yet')}</h2>
+                    <p className="mt-2 text-sm font-semibold text-slate-500">{text('practice.create.main.empty_desc', 'Create a question or find one from existing practice sets.')}</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
                     {questions.map((question, index) => (
-                      <article key={question.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                      <article key={question.id} className="loopy-card rounded-lg border p-5 shadow-sm">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <div className="text-xs font-black uppercase tracking-wide text-slate-500">
                               {String(index + 1).padStart(2, '0')} {typeMeta[question.type].shortLabel} <span className="mx-2">•</span> {question.points}Pt
                             </div>
-                            <h3 className="mt-5 text-base font-black text-slate-950">{question.prompt || question.title}</h3>
+                            <h3 className="loopy-heading mt-5 text-base font-black">{question.prompt || question.title}</h3>
                           </div>
                           <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setQuestions(current => [...current, { ...question, id: crypto.randomUUID() }])} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
+                            <button type="button" onClick={() => setQuestions(current => [...current, { ...question, id: crypto.randomUUID() }])} className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10">
                               <Copy className="h-4 w-4" />
                             </button>
-                            <button type="button" onClick={() => setQuestions(current => current.filter(item => item.id !== question.id))} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
+                            <button type="button" onClick={() => setQuestions(current => current.filter(item => item.id !== question.id))} className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10">
                               <Trash2 className="h-4 w-4" />
                             </button>
-                            <button type="button" onClick={() => editQuestion(question)} className="rounded-lg px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-100">
+                            <button type="button" onClick={() => editQuestion(question)} className="rounded-lg px-3 py-2 text-sm font-black loopy-muted hover:bg-brand-teal/10">
                               Edit
                             </button>
                           </div>
@@ -783,7 +798,7 @@ const PracticeSetCreatePage: React.FC = () => {
                             {(question.type === 'true_false' ? ['true', 'false'] : question.options.filter(Boolean)).map(option => {
                               const correct = question.type === 'multiple_select' ? question.correctAnswers.includes(option) : question.correctAnswer === option
                               return (
-                                <div key={option} className="flex items-center gap-3 text-sm font-semibold text-slate-800">
+                                <div key={option} className="flex items-center gap-3 text-sm font-semibold loopy-body">
                                   {correct ? <CheckCircle className="h-5 w-5 fill-emerald-600 text-emerald-600" /> : <span className="h-5 w-5 rounded-full border border-slate-300" />}
                                   {option}
                                 </div>
@@ -793,7 +808,7 @@ const PracticeSetCreatePage: React.FC = () => {
                         )}
 
                         {question.type === 'fill_blank' && (
-                          <div className="mt-5 rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                          <div className="loopy-card-soft mt-5 rounded-lg px-4 py-3 text-sm font-semibold loopy-muted">
                             Correct answer: {question.correctAnswer}
                           </div>
                         )}
@@ -803,32 +818,32 @@ const PracticeSetCreatePage: React.FC = () => {
                 )}
               </main>
 
-              <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <aside className="loopy-card rounded-lg border p-5 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-black text-slate-950">Find questions</h2>
-                  <span className="text-xs font-black text-slate-400">From sets</span>
+                  <h2 className="loopy-heading text-xl font-black">{text('practice.create.library.title', 'Find questions')}</h2>
+                  <span className="text-xs font-black text-slate-400">{text('practice.create.library.from_sets', 'From sets')}</span>
                 </div>
-                <label className="mt-5 flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <label className="loopy-surface mt-5 flex items-center gap-3 rounded-full border loopy-border px-4 py-3 shadow-sm">
                   <Search className="h-5 w-5 text-slate-500" />
-                  <input value={libraryKeyword} onChange={event => setLibraryKeyword(event.target.value)} placeholder="Search for questions on any topic" className="min-w-0 flex-1 text-sm font-semibold outline-none placeholder:text-slate-400" />
+                  <input value={libraryKeyword} onChange={event => setLibraryKeyword(event.target.value)} placeholder={text('practice.create.library.placeholder', 'Search for questions on any topic')} className="min-w-0 flex-1 text-sm font-semibold outline-none placeholder:text-slate-400" />
                 </label>
 
                 <div className="mt-6 space-y-3">
-                  {libraryLoading && <div className="text-sm font-semibold text-slate-500">Searching...</div>}
+                  {libraryLoading && <div className="text-sm font-semibold text-slate-500">{text('practice.create.library.searching', 'Searching...')}</div>}
                   {!libraryLoading && !libraryKeyword.trim() && (
-                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-12 text-center text-sm font-semibold leading-6 text-slate-500">
-                      Search existing sets, then add matching questions into this set.
+                    <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-12 text-center text-sm font-semibold leading-6 loopy-muted">
+                      {text('practice.create.library.idle', 'Search existing sets, then add matching questions into this set.')}
                     </div>
                   )}
                   {!libraryLoading && libraryKeyword.trim() && libraryResults.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500">
-                      No matching questions found.
+                    <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-8 text-center text-sm font-semibold loopy-muted">
+                      {text('practice.create.library.empty', 'No matching questions found.')}
                     </div>
                   )}
                   {libraryResults.map(({ set, question }) => (
-                    <button key={`${set.id}-${question.id}`} type="button" onClick={() => addLibraryQuestion(question)} className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-brand-teal/50 hover:shadow-md">
+                    <button key={`${set.id}-${question.id}`} type="button" onClick={() => addLibraryQuestion(question)} className="loopy-card w-full rounded-lg border p-4 text-left transition hover:border-brand-teal/50 hover:shadow-md">
                       <div className="text-[10px] font-black uppercase tracking-wide text-brand-teal">{set.title}</div>
-                      <div className="mt-2 text-sm font-black text-slate-950">{question.title || question.prompt}</div>
+                      <div className="loopy-heading mt-2 text-sm font-black">{question.title || question.prompt}</div>
                       <div className="mt-2 text-xs font-semibold text-slate-500">{typeMeta[question.type as QuestionType]?.label || question.type}</div>
                     </button>
                   ))}
@@ -839,56 +854,56 @@ const PracticeSetCreatePage: React.FC = () => {
         )}
         {settingsOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
-            <div className="max-h-[calc(100vh-48px)] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl">
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+            <div className="loopy-card max-h-[calc(100vh-48px)] w-full max-w-2xl overflow-y-auto rounded-lg border shadow-2xl">
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b loopy-border loopy-surface px-5 py-4">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-wide text-brand-teal">Set settings</div>
-                  <h2 className="mt-1 text-xl font-black text-slate-950">Practice set details</h2>
+                  <div className="text-xs font-black uppercase tracking-wide text-brand-teal">{text('practice.create.settings.badge', 'Set settings')}</div>
+                  <h2 className="loopy-heading mt-1 text-xl font-black">{text('practice.create.settings.title', 'Practice set details')}</h2>
                 </div>
-                <button type="button" onClick={() => setSettingsOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">
+                <button type="button" onClick={() => setSettingsOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted hover:bg-brand-teal/10">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="space-y-5 px-5 py-5">
-                <ModerationWarning matches={settingsModerationMatches} />
+                <ModerationWarning matches={settingsModerationMatches} title={warningTitle} message={warningMessage} />
                 <label className="block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Set title</span>
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.set_title', 'Set title')}</span>
                   <input
                     value={settingsDraft.title}
                     onChange={event => setSettingsDraft(current => ({ ...current, title: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Description</span>
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.description', 'Description')}</span>
                   <textarea
                     value={settingsDraft.description}
                     onChange={event => setSettingsDraft(current => ({ ...current, description: event.target.value }))}
                     rows={3}
-                    placeholder="Short note about this practice set."
-                    className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                    placeholder={text('practice.create.settings.description_placeholder', 'Short note about this practice set.')}
+                    className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                   />
                 </label>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Topic</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.topic', 'Topic')}</span>
                     <input
                       value={settingsDraft.topic}
                       onChange={event => setSettingsDraft(current => ({ ...current, topic: event.target.value }))}
-                      placeholder="Arrays, loops, functions..."
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal focus:bg-white"
+                      placeholder={text('practice.create.settings.topic_placeholder', 'Arrays, loops, functions...')}
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Language</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.language', 'Language')}</span>
                     <select
                       value={settingsDraft.languageId}
                       onChange={event => setSettingsDraft(current => ({ ...current, languageId: event.target.value }))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-brand-teal"
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
                     >
                       {languageOptions.map(language => (
                         <option key={language.id} value={language.id}>{language.label}</option>
@@ -899,66 +914,66 @@ const PracticeSetCreatePage: React.FC = () => {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Difficulty</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.difficulty', 'Difficulty')}</span>
                     <select
                       value={settingsDraft.difficulty}
                       onChange={event => setSettingsDraft(current => ({ ...current, difficulty: event.target.value as 'easy' | 'medium' | 'hard' }))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-brand-teal"
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
                     >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
+                      <option value="easy">{text('practice.create.option.easy', 'Easy')}</option>
+                      <option value="medium">{text('practice.create.option.medium', 'Medium')}</option>
+                      <option value="hard">{text('practice.create.option.hard', 'Hard')}</option>
                     </select>
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Visibility</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.visibility', 'Visibility')}</span>
                     <select
                       value={settingsDraft.visibility}
                       onChange={event => setSettingsDraft(current => ({ ...current, visibility: event.target.value as 'public' | 'private' | 'unlisted' | 'official' }))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-brand-teal"
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
                     >
-                      <option value="public">Public</option>
-                      <option value="unlisted">Unlisted</option>
-                      <option value="private">Private</option>
+                      <option value="public">{text('practice.create.option.public', 'Public')}</option>
+                      <option value="unlisted">{text('practice.create.option.unlisted', 'Unlisted')}</option>
+                      <option value="private">{text('practice.create.option.private', 'Private')}</option>
                       {isAdmin && (
-                        <option value="official">Official</option>
+                        <option value="official">{text('practice.create.option.official', 'Official')}</option>
                       )}
                     </select>
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-800">Status</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.status', 'Status')}</span>
                     <select
                       value={settingsDraft.status}
                       onChange={event => setSettingsDraft(current => ({ ...current, status: event.target.value as 'draft' | 'published' }))}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-brand-teal"
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
                     >
-                      <option value="published">Published</option>
-                      <option value="draft">Draft</option>
+                      <option value="published">{text('practice.create.option.published', 'Published')}</option>
+                      <option value="draft">{text('practice.create.option.draft', 'Draft')}</option>
                     </select>
                   </label>
                 </div>
 
-                <label className="block rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <span className="mb-2 block text-sm font-black text-slate-800">Required completed lessons</span>
+                <label className="loopy-card-soft block rounded-lg border p-4">
+                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.required_lessons', 'Required completed lessons')}</span>
                   <input
                     type="number"
                     min="1"
                     max="999"
                     value={settingsDraft.requirementCount}
                     onChange={event => setSettingsDraft(current => ({ ...current, requirementCount: event.target.value }))}
-                    placeholder="Leave empty for no requirement"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                    placeholder={text('practice.create.settings.required_placeholder', 'Leave empty for no requirement')}
+                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                   />
                   <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
-                    When filled, learners must complete this many lessons in the selected language before starting the set.
+                    {text('practice.create.settings.required_help', 'When filled, learners must complete this many lessons in the selected language before starting the set.')}
                   </p>
                 </label>
               </div>
 
-              <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-5 py-4">
-                <button type="button" onClick={() => setSettingsOpen(false)} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-50">
+              <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t loopy-border loopy-surface px-5 py-4">
+                <button type="button" onClick={() => setSettingsOpen(false)} className="loopy-subtle-button rounded-lg border px-4 py-2.5 text-sm font-black">
                   Cancel
                 </button>
                 <button type="button" onClick={saveSettings} className="rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiBookOpen, FiCheckCircle, FiClock, FiCode, FiCompass, FiLock, FiPlay, FiTarget, FiZap } from 'react-icons/fi'
+import { FiBookOpen, FiCheckCircle, FiChevronDown, FiClock, FiCode, FiCompass, FiLock, FiPlay, FiTarget, FiZap } from 'react-icons/fi'
 import { PressedButton, PublicShell } from '../components/PublicShell'
 import { api } from '../lib/api'
 import { useContentPreloader } from '../hooks/useContentPreloader'
@@ -26,9 +26,9 @@ type JourneyChapter = {
 
 const stateStyles: Record<LessonState, string> = {
   done: 'border-brand-teal bg-brand-teal/15 text-brand-ocean',
-  current: 'border-slate-950 bg-white text-slate-950 shadow-[0_5px_0_rgba(15,23,42,0.18)]',
-  next: 'border-slate-300 bg-white text-slate-800',
-  locked: 'border-slate-200 bg-slate-100 text-slate-400',
+  current: 'border-brand-teal loopy-surface text-brand-teal shadow-[0_5px_0_rgba(15,23,42,0.18)]',
+  next: 'border-brand-teal/40 loopy-surface text-[color:var(--loopy-text)]',
+  locked: 'loopy-border loopy-surface-soft loopy-muted',
 }
 
 function JourneyNode({ lesson, index }: { lesson: JourneyLesson; index: number }) {
@@ -44,7 +44,7 @@ function JourneyNode({ lesson, index }: { lesson: JourneyLesson; index: number }
             {isLocked ? <FiLock /> : isDone ? <FiCheckCircle /> : index + 1}
           </div>
           <div>
-            <div className="font-black text-slate-900">{lesson.title}</div>
+            <div className="font-black loopy-heading">{lesson.title}</div>
             <div className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500"><FiClock /> {lesson.time}</div>
           </div>
         </div>
@@ -52,7 +52,7 @@ function JourneyNode({ lesson, index }: { lesson: JourneyLesson; index: number }
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {lesson.tags.map(tag => (
-          <span key={tag} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-500">{tag}</span>
+          <span key={tag} className="loopy-surface rounded-full border loopy-border px-2.5 py-1 text-[11px] font-black loopy-muted">{tag}</span>
         ))}
       </div>
     </div>
@@ -82,10 +82,12 @@ const LibraryPage: React.FC = () => {
   const { i18n } = useTranslation()
   const slug = language || 'javascript'
   
+  const [userLearningPath, setUserLearningPath] = useState<string>('first_steps')
   const [chapters, setChapters] = useState<JourneyChapter[]>([])
   const [progress, setProgress] = useState(0)
   const [apiLoading, setApiLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set())
 
   // Define all content keys needed for this page (including header)
   const contentKeys = [
@@ -142,6 +144,22 @@ const LibraryPage: React.FC = () => {
   // Preload all content at once
   const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
 
+  // Load user profile to get their selected learning path
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      const profileRes = await api.getMyProfile()
+      const profile = (profileRes.data as any)?.profile || profileRes.data
+      const pathFromProfile = profile?.learningPath || profile?.learning_path || profile?.learningGoal || profile?.learning_goal
+      if (profileRes.success && typeof pathFromProfile === 'string' && pathFromProfile.trim()) {
+        setUserLearningPath(pathFromProfile)
+      }
+    }
+
+    loadUserProfile().catch(() => {
+      setUserLearningPath('first_steps')
+    })
+  }, [])
+
   // Fetch curriculum from API (must be called before early return)
   useEffect(() => {
     const fetchData = async () => {
@@ -150,7 +168,7 @@ const LibraryPage: React.FC = () => {
         setError(null)
 
         const [curriculumRes, progressRes] = await Promise.all([
-          api.getCurriculum(slug),
+          api.getCurriculumByPath(slug, userLearningPath),
           api.getUserProgress().catch(() => ({ data: { progress: [] } }))
         ])
 
@@ -236,7 +254,32 @@ const LibraryPage: React.FC = () => {
     }
 
     fetchData()
-  }, [slug])
+  }, [slug, userLearningPath])
+
+  useEffect(() => {
+    if (chapters.length === 0) {
+      setExpandedChapters(new Set())
+      return
+    }
+
+    setExpandedChapters(current => {
+      if (current.size > 0) return current
+      const activeChapter = chapters.find(ch => ch.lessons.some(lesson => lesson.state === 'current')) || chapters[0]
+      return new Set([activeChapter.id])
+    })
+  }, [chapters])
+
+  const toggleChapter = (chapterId: string) => {
+    setExpandedChapters(current => {
+      const next = new Set(current)
+      if (next.has(chapterId)) {
+        next.delete(chapterId)
+      } else {
+        next.add(chapterId)
+      }
+      return next
+    })
+  }
 
   // Show loading screen while content is being fetched
   if (contentLoading) {
@@ -308,7 +351,7 @@ const LibraryPage: React.FC = () => {
         <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto max-w-7xl">
-            <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
+            <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black loopy-muted hover:text-brand-teal">
               <FiCompass /> {backBtn}
             </Link>
             <div className="grid gap-8 lg:grid-cols-[1fr,380px] lg:items-start">
@@ -316,20 +359,21 @@ const LibraryPage: React.FC = () => {
                 <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                   {libraryBadge}
                 </div>
-                <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                
+                <h1 className="loopy-heading max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
                   {libraryTitle}
                 </h1>
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
                   {librarySubtitle}
                 </p>
               </div>
-              <aside className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+              <aside className="loopy-card rounded-[2rem] border p-5 shadow-xl">
                 <div className="flex items-center gap-5">
                   <ProgressRing progress={progress} />
                   <div>
                     <div className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">{progressLabel}</div>
                     <h2 className="mt-2 text-2xl font-black">{slug.charAt(0).toUpperCase() + slug.slice(1)} Starter</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{progress}% {progressDone}</p>
+                    <p className="mt-2 text-sm leading-6 loopy-muted">{progress}% {progressDone}</p>
                   </div>
                 </div>
                 <div className="mt-5 grid grid-cols-3 gap-2 text-center">
@@ -338,7 +382,7 @@ const LibraryPage: React.FC = () => {
                     [chapters.reduce((sum, ch) => sum + ch.lessons.length, 0).toString(), 'Bài'],
                     ['1', 'Next'],
                   ].map(([value, label]) => (
-                    <div key={label} className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-3">
+                    <div key={label} className="loopy-card-soft rounded-2xl border p-3">
                       <div className="text-xl font-black">{value}</div>
                       <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</div>
                     </div>
@@ -352,7 +396,7 @@ const LibraryPage: React.FC = () => {
         <section className="px-4 pb-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[380px,1fr]">
             <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-xl shadow-slate-200/80">
+              <div className="rounded-[2rem] border border-white/10 bg-slate-950 p-6 text-white shadow-xl">
                 <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal">
                   <FiPlay /> {nextBadge}
                 </div>
@@ -373,9 +417,9 @@ const LibraryPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[2rem] border border-slate-200 bg-white p-5">
+              <div className="loopy-card mt-4 rounded-[2rem] border p-5">
                 <div className="flex items-center gap-2 text-sm font-black text-brand-ocean"><FiTarget /> {lockRuleBadge}</div>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <p className="mt-3 text-sm leading-6 loopy-muted">
                   {lockRuleDesc}
                 </p>
               </div>
@@ -383,7 +427,7 @@ const LibraryPage: React.FC = () => {
 
             <div className="grid gap-5">
               {apiLoading && (
-                <div className="text-center text-slate-600">
+                <div className="text-center loopy-muted">
                   {loadingText}
                 </div>
               )}
@@ -394,26 +438,62 @@ const LibraryPage: React.FC = () => {
                 </div>
               )}
               
-              {!apiLoading && chapters.length > 0 && ((chapters as any) || []).map((chapter: JourneyChapter, chapterIndex: number) => (
-                <section key={chapter.id} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Chapter {chapterIndex + 1}</div>
-                      <h2 className="mt-2 text-2xl font-black text-slate-950">{chapter.title}</h2>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{chapter.description}</p>
-                    </div>
-                    <div className="rounded-full border border-slate-200 bg-[#f8fafc] px-3 py-1 text-xs font-black text-slate-500">{chapter.lessons.length} bài</div>
-                  </div>
-                  <div className="grid gap-3">
-                    {chapter.lessons.map((lesson: JourneyLesson, lessonIndex: number) => (
-                      <JourneyNode key={lesson.id} lesson={lesson} index={lessonIndex} />
-                    ))}
-                  </div>
-                </section>
-              ))}
+              {!apiLoading && chapters.length > 0 && (
+                <div className="max-h-[calc(100vh-8rem)] space-y-4 overflow-y-auto pr-1 lg:pr-3">
+                  {chapters.map((chapter: JourneyChapter, chapterIndex: number) => {
+                    const isExpanded = expandedChapters.has(chapter.id)
+                    const currentCount = chapter.lessons.filter(lesson => lesson.state === 'current').length
+                    const doneCount = chapter.lessons.filter(lesson => lesson.state === 'done').length
+
+                    return (
+                      <section key={chapter.id} className="loopy-card overflow-hidden rounded-[2rem] border shadow-sm transition hover:shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => toggleChapter(chapter.id)}
+                          aria-expanded={isExpanded}
+                          className="flex w-full flex-col gap-3 p-5 text-left transition hover:bg-brand-teal/5 sm:flex-row sm:items-start sm:justify-between"
+                        >
+                          <div>
+                            <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Chapter {chapterIndex + 1}</div>
+                            <h2 className="loopy-heading mt-2 text-2xl font-black">{chapter.title}</h2>
+                            <p className="loopy-body mt-2 text-sm leading-6">{chapter.description}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <span className="loopy-surface-soft rounded-full border loopy-border px-3 py-1 text-xs font-black loopy-muted">{chapter.lessons.length} bài</span>
+                              {doneCount > 0 && (
+                                <span className="rounded-full border border-brand-teal/30 bg-brand-teal/10 px-3 py-1 text-xs font-black text-brand-ocean">{doneCount} đã xong</span>
+                              )}
+                              {currentCount > 0 && (
+                                <span className="rounded-full border border-amber-300/50 bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">Đang học</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-3">
+                            <span className="text-xs font-black uppercase tracking-[0.16em] loopy-muted">
+                              {isExpanded ? 'Thu gọn' : 'Mở'}
+                            </span>
+                            <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border loopy-border loopy-surface-soft transition ${isExpanded ? 'rotate-180 text-brand-ocean' : 'loopy-muted'}`}>
+                              <FiChevronDown />
+                            </span>
+                          </div>
+                        </button>
+
+                        <div className={`grid transition-all duration-300 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                          <div className="overflow-hidden">
+                            <div className="grid gap-3 border-t loopy-border p-5 pt-4">
+                              {chapter.lessons.map((lesson: JourneyLesson, lessonIndex: number) => (
+                                <JourneyNode key={lesson.id} lesson={lesson} index={lessonIndex} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+                    )
+                  })}
+                </div>
+              )}
               
               {!apiLoading && chapters.length === 0 && !error && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
+                <div className="loopy-card-soft rounded-2xl border p-6 text-center loopy-muted">
                   {emptyText}
                 </div>
               )}
@@ -421,7 +501,7 @@ const LibraryPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-white px-4 py-16 md:px-6">
+        <section className="loopy-surface px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
             {[
               [FiBookOpen, feat1Title, feat1Desc],
@@ -430,10 +510,10 @@ const LibraryPage: React.FC = () => {
             ].map(([Icon, title, description]) => {
               const CardIcon = Icon as typeof FiBookOpen
               return (
-                <div key={title as string} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-6">
+                <div key={title as string} className="loopy-card-soft rounded-[2rem] border p-6">
                   <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><CardIcon /></div>
                   <h3 className="text-2xl font-black">{title as string}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{description as string}</p>
+                  <p className="loopy-body mt-3 text-sm leading-6">{description as string}</p>
                 </div>
               )
             })}

@@ -12,8 +12,8 @@ const languages = ['Python', 'JavaScript', 'C++', 'SQL', 'HTML', 'CSS', 'Git', '
 
 function ProductMock({ badge, status, title, desc, item1, item2, item3, item4 }: any) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-300/60">
-      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-950 text-white">
+    <div className="loopy-card rounded-[2rem] border p-3 shadow-2xl">
+      <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950 text-white">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-teal">
             <FiCompass /> {badge || 'Lesson 03'}
@@ -210,10 +210,10 @@ const LandingPage: React.FC = () => {
               <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                 Guided coding journey
               </div>
-              <h1 className="max-w-3xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+              <h1 className="loopy-heading max-w-3xl text-5xl font-black tracking-tight md:text-7xl">
                 {heroTitle}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+              <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
                 {heroSubtitle}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -222,7 +222,7 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="mt-8 flex flex-wrap gap-2">
                 {languages.map(language => (
-                  <span key={language} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm">{language}</span>
+                  <span key={language} className="loopy-surface inline-flex rounded-full border loopy-border px-4 py-2 text-sm font-black shadow-sm">{language}</span>
                 ))}
               </div>
             </div>
@@ -230,7 +230,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        <section id="learn" className="bg-white px-4 py-16 md:px-6">
+        <section id="learn" className="loopy-surface px-4 py-16 md:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="max-w-2xl">
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{learnBadge}</div>
@@ -244,10 +244,10 @@ const LandingPage: React.FC = () => {
               ].map(step => {
                 const Icon = step.icon
                 return (
-                  <div key={step.title} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-6 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl hover:shadow-slate-200">
+                  <div key={step.title} className="loopy-card-soft rounded-[2rem] border p-6 shadow-sm transition hover:-translate-y-1 hover:border-brand-teal hover:shadow-xl">
                     <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><Icon /></div>
                     <h3 className="text-2xl font-black">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{step.description}</p>
+                    <p className="loopy-body mt-3 text-sm leading-6">{step.description}</p>
                   </div>
                 )
               })}
@@ -260,10 +260,10 @@ const LandingPage: React.FC = () => {
             <div>
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{journeyBadge}</div>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{journeyTitle}</h2>
-              <p className="mt-5 text-base leading-7 text-slate-600">{journeyDesc}</p>
+              <p className="loopy-body mt-5 text-base leading-7">{journeyDesc}</p>
             </div>
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
-              <div className="grid gap-4 sm:grid-cols-5">
+            <div className="loopy-card flex min-h-[250px] items-center justify-center rounded-[2rem] border p-6 shadow-xl lg:self-center">
+              <div className="grid w-full items-center gap-4 sm:grid-cols-5">
                 {[
                   { title: node1, state: 'done' },
                   { title: node2, state: 'done' },
@@ -272,11 +272,11 @@ const LandingPage: React.FC = () => {
                   { title: node5, state: 'locked' },
                 ].map((node, index) => (
                   <div key={node.title} className="relative flex flex-col items-center gap-3 text-center">
-                    {index < 4 && <div className="absolute left-1/2 top-8 hidden h-1 w-full bg-slate-200 sm:block" />}
-                    <div className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border-4 text-xl font-black shadow-[0_5px_0_rgba(15,23,42,0.18)] ${node.state === 'done' ? 'border-brand-teal bg-brand-teal text-slate-950' : node.state === 'active' ? 'border-slate-950 bg-white text-slate-950' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
+                    {index < 4 && <div className="absolute left-1/2 top-8 hidden h-1 w-full bg-brand-teal/20 sm:block" />}
+                    <div className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-[1.4rem] border-4 text-xl font-black shadow-[0_5px_0_rgba(15,23,42,0.18)] ${node.state === 'done' ? 'border-brand-teal bg-brand-teal text-slate-950' : node.state === 'active' ? 'border-brand-teal loopy-surface text-brand-teal' : 'loopy-border loopy-surface-soft loopy-muted'}`}>
                       {node.state === 'locked' ? <FiLock /> : index + 1}
                     </div>
-                    <div className="text-sm font-black text-slate-700">{node.title}</div>
+                    <div className="text-sm font-black loopy-muted">{node.title}</div>
                   </div>
                 ))}
               </div>
@@ -306,10 +306,10 @@ const LandingPage: React.FC = () => {
         </section>
 
         <section className="px-4 py-16 md:px-6">
-          <div className="mx-auto flex max-w-5xl flex-col items-center rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/70 md:p-12">
+          <div className="loopy-card mx-auto flex max-w-5xl flex-col items-center rounded-[2rem] border p-8 text-center shadow-xl md:p-12">
             <FiZap className="mb-4 h-10 w-10 text-brand-ocean" />
             <h2 className="text-4xl font-black tracking-tight">{bottomTitle}</h2>
-            <p className="mt-4 max-w-2xl text-slate-600">{bottomDesc}</p>
+            <p className="loopy-body mt-4 max-w-2xl">{bottomDesc}</p>
             <div className="mt-7">
               <PressedButton to="/onboarding">{bottomBtn}</PressedButton>
             </div>

@@ -8,17 +8,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Target } from 'lucide-react'
 import type { PvPParticipant } from '../../types/pvp.types'
 
+type ContentMap = Record<string, string | null | undefined>
+
 interface ParticipantCardProps {
   participant: PvPParticipant
   isCurrentUser: boolean
   reactions?: string[]
+  content?: ContentMap
 }
 
 const ParticipantCard: React.FC<ParticipantCardProps> = ({ 
   participant, 
   isCurrentUser,
-  reactions = []
+  reactions = [],
+  content,
 }) => {
+  const getContent = (key: string, fallback: string) => content?.[key] || fallback
   return (
     <div className="relative">
       {/* Reactions Display (Floating to the left) */}
@@ -69,9 +74,9 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="text-white font-semibold truncate">
               {participant.display_name || 'Anonymous'}
-              {isCurrentUser && <span className="text-brand-teal ml-1">(You)</span>}
+              {isCurrentUser && <span className="text-brand-teal ml-1">{getContent('pvp.participant.you_marker', '(Bạn)')}</span>}
             </h4>
-            {!participant.is_connected && <p className="text-red-400 text-xs">Disconnected</p>}
+            {!participant.is_connected && <p className="text-red-400 text-xs">{getContent('pvp.participant.disconnected', 'Mất kết nối')}</p>}
           </div>
         </div>
 
@@ -80,7 +85,7 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-brand-teal" />
-              <span className="text-slate-400 text-sm">Score</span>
+              <span className="text-slate-400 text-sm">{getContent('pvp.participant.score', 'Điểm')}</span>
             </div>
             <span className="text-white font-bold">{participant.total_score}</span>
           </div>
@@ -88,7 +93,7 @@ const ParticipantCard: React.FC<ParticipantCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-brand-teal" />
-              <span className="text-slate-400 text-sm">Correct</span>
+              <span className="text-slate-400 text-sm">{getContent('pvp.participant.correct', 'Đúng')}</span>
             </div>
             <span className="text-white font-bold">
               {participant.correct_answers}/{participant.questions_answered}

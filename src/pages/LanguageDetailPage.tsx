@@ -129,13 +129,13 @@ function LessonTagPill({ tag }: { tag: LessonTag }) {
   return <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${tagClasses[tag]}`}>{tag}</span>
 }
 
-function CodePreview({ detail }: { detail: LanguageDetail }) {
+function CodePreview({ detail, runLabel, outputLabel }: { detail: LanguageDetail; runLabel: string; outputLabel: string }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/70">
+    <div className="loopy-card rounded-[2rem] border p-3 shadow-xl">
       <div className="overflow-hidden rounded-[1.5rem] bg-slate-950 text-white">
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <div className="font-mono text-xs text-slate-400">{detail.codeFile}</div>
-          <div className="rounded-xl bg-brand-teal px-3 py-2 text-xs font-black text-slate-950 shadow-[0_3px_0_#0b889c]">Kiểm tra</div>
+          <div className="rounded-xl bg-brand-teal px-3 py-2 text-xs font-black text-slate-950 shadow-[0_3px_0_#0b889c]">{runLabel}</div>
         </div>
         <div className="bg-[#020617] p-5 font-mono text-sm leading-7">
           {detail.codeSample.map((line, index) => (
@@ -143,7 +143,7 @@ function CodePreview({ detail }: { detail: LanguageDetail }) {
           ))}
         </div>
         <div className="border-t border-white/10 bg-black/30 p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-brand-teal"><FiTerminal /> Output</div>
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-brand-teal"><FiTerminal /> {outputLabel}</div>
           <div className="font-mono text-sm text-slate-300">{detail.output}</div>
         </div>
       </div>
@@ -181,11 +181,18 @@ const LanguageDetailPage: React.FC = () => {
     'detail.syllabus.title',
     'detail.syllabus.desc',
     'detail.loading',
+    'detail.loading_detail',
     'detail.empty',
     'detail.cta.title',
     'detail.cta.desc',
     'detail.cta.btn1',
     'detail.cta.btn2',
+    'detail.preview.run_label',
+    'detail.preview.output_label',
+    'detail.hero.badge',
+    'detail.hero.title',
+    'detail.syllabus.chapter_label',
+    'detail.syllabus.lesson_count',
     // Footer content
     'footer.aboutLoopy',
     'footer.about',
@@ -253,7 +260,7 @@ const LanguageDetailPage: React.FC = () => {
 
   // Show loading screen while content is being fetched
   if (contentLoading) {
-    return <LoadingScreen message="Loading language detail..." />
+    return <LoadingScreen message={content['detail.loading_detail'] || 'Loading language detail...'} />
   }
 
   // Extract header content
@@ -297,6 +304,12 @@ const LanguageDetailPage: React.FC = () => {
   const ctaDesc = content['detail.cta.desc'] || 'Bài đầu tiên sẽ dạy bạn quan sát code mẫu, chạy thử output, rồi sửa một dòng nhỏ. Không áp lực, chỉ học từng bước.'
   const ctaBtn1 = content['detail.cta.btn1'] || 'Bắt đầu bài đầu tiên'
   const ctaBtn2 = content['detail.cta.btn2'] || 'Đổi lộ trình'
+  const previewRunLabel = content['detail.preview.run_label'] || 'Kiểm tra'
+  const previewOutputLabel = content['detail.preview.output_label'] || 'Output'
+  const heroBadgeTemplate = content['detail.hero.badge'] || 'Lộ trình {name}'
+  const heroTitleTemplate = content['detail.hero.title'] || 'Học {name} bằng một syllabus có đường đi rõ.'
+  const chapterLabel = content['detail.syllabus.chapter_label'] || 'Chapter'
+  const lessonCountTemplate = content['detail.syllabus.lesson_count'] || '{count} bài'
 
   // Get language detail from description map
   const desc = descriptionMap[slug] || descriptionMap.javascript
@@ -318,7 +331,7 @@ const LanguageDetailPage: React.FC = () => {
     syllabus: [], // Will be populated from API
   }
 
-  const syllabusToDisplay = chapters.length > 0 ? chapters : []
+  const syllabusToDisplay = chapters.length > 0 ? chapters.slice(0, 3) : []
 
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
@@ -327,28 +340,28 @@ const LanguageDetailPage: React.FC = () => {
           <div className="absolute left-0 top-16 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr,1.1fr] lg:items-center">
             <div>
-              <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-slate-950">
+              <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black loopy-muted hover:text-brand-teal">
                 <FiArrowLeft /> {backBtn}
               </Link>
               <div className="mb-5 flex items-center gap-4">
                 <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-3xl shadow-[0_5px_0_rgba(15,23,42,0.14)] ${detail.accent}`}><detail.icon /></div>
                 <div>
-                  <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">Lộ trình {detail.name}</div>
+                  <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{heroBadgeTemplate.replace('{name}', detail.name)}</div>
                   <div className="mt-1 text-sm font-bold text-slate-500">{detail.subtitle}</div>
                 </div>
               </div>
-              <h1 className="max-w-3xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
-                Học {detail.name} bằng một syllabus có đường đi rõ.
+              <h1 className="loopy-heading max-w-3xl text-5xl font-black tracking-tight md:text-7xl">
+                {heroTitleTemplate.replace('{name}', detail.name)}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">{detail.promise}</p>
+              <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">{detail.promise}</p>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border loopy-border loopy-surface p-4">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{fitLabel}</div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{detail.fit}</p>
+                  <p className="mt-2 text-sm leading-6 loopy-body">{detail.fit}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border loopy-border loopy-surface p-4">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{firstWinLabel}</div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{detail.firstWin}</p>
+                  <p className="mt-2 text-sm leading-6 loopy-body">{detail.firstWin}</p>
                 </div>
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -356,22 +369,22 @@ const LanguageDetailPage: React.FC = () => {
                 <PressedButton to="#syllabus" variant="secondary">{syllabusBtn}</PressedButton>
               </div>
             </div>
-            <CodePreview detail={detail} />
+            <CodePreview detail={detail} runLabel={previewRunLabel} outputLabel={previewOutputLabel} />
           </div>
         </section>
 
-        <section id="syllabus" className="bg-white px-4 py-16 md:px-6">
+        <section id="syllabus" className="loopy-surface px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr,1.3fr]">
             <div>
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{syllabusBadge}</div>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{syllabusTitle}</h2>
-              <p className="mt-5 text-sm leading-6 text-slate-600">
+              <p className="mt-5 text-sm leading-6 loopy-muted">
                 {syllabusDesc}
               </p>
             </div>
             <div className="grid gap-4">
               {apiLoading && (
-                <div className="text-center text-slate-600">
+                <div className="text-center loopy-muted">
                   {loadingText}
                 </div>
               )}
@@ -383,21 +396,21 @@ const LanguageDetailPage: React.FC = () => {
               )}
               
               {!apiLoading && syllabusToDisplay.length > 0 && ((syllabusToDisplay as any) || []).map((section: SyllabusSection, sectionIndex: number) => (
-                <div key={section.title} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-5">
+                <div key={section.title} className="loopy-card-soft rounded-[2rem] border p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Chapter {sectionIndex + 1}</div>
-                      <h3 className="mt-2 text-2xl font-black text-slate-950">{section.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{section.description}</p>
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{chapterLabel} {sectionIndex + 1}</div>
+                      <h3 className="loopy-heading mt-2 text-2xl font-black">{section.title}</h3>
+                      <p className="loopy-body mt-2 text-sm leading-6">{section.description}</p>
                     </div>
-                    <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-500">{section.lessons.length} bài</div>
+                    <div className="loopy-surface rounded-full border loopy-border px-3 py-1 text-xs font-black loopy-muted">{lessonCountTemplate.replace('{count}', String(section.lessons.length))}</div>
                   </div>
                   <div className="mt-5 grid gap-2">
                     {section.lessons.map((lesson: SyllabusLesson, lessonIndex: number) => (
-                      <div key={lesson.title} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-500">{lessonIndex + 1}</div>
+                      <div key={lesson.title} className="loopy-surface flex items-start gap-3 rounded-2xl border loopy-border p-4">
+                        <div className="loopy-surface-soft mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black loopy-muted">{lessonIndex + 1}</div>
                         <div className="flex-1">
-                          <div className="font-black text-slate-900">{lesson.title}</div>
+                          <div className="font-black loopy-heading">{lesson.title}</div>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {lesson.tags.map(tag => (
                               <LessonTagPill key={tag} tag={tag} />
@@ -411,7 +424,7 @@ const LanguageDetailPage: React.FC = () => {
               ))}
               
               {!apiLoading && syllabusToDisplay.length === 0 && !error && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-600">
+                <div className="loopy-card-soft rounded-2xl border p-6 text-center loopy-muted">
                   {emptyText}
                 </div>
               )}

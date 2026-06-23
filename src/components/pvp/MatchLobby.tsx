@@ -9,13 +9,21 @@ import { ArrowLeft, Check, Clock, Copy, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { PvPMatch } from '../../types/pvp.types'
 
+type ContentMap = Record<string, string | null | undefined>
+
 interface MatchLobbyProps {
   match: PvPMatch
   onReady: () => void
   currentUserId: string
+  content?: ContentMap
 }
 
-const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }) => {
+const getContent = (content: ContentMap | undefined, key: string, fallback: string) => content?.[key] || fallback
+
+const formatTemplate = (template: string, values: Record<string, string | number>) =>
+  Object.entries(values).reduce((result, [key, value]) => result.split(`{${key}}`).join(String(value)), template)
+
+const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, content }) => {
   const navigate = useNavigate()
 
   const currentParticipant = match.participants?.find((p: any) => p.user_id === currentUserId)
@@ -31,11 +39,11 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
       {/* Back button */}
       <button
-        onClick={() => navigate('/pvp')}
+        onClick={() => navigate('/practice/compete')}
         className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
       >
         <ArrowLeft className="w-5 h-5" />
-        Rời phòng
+        {getContent(content, 'pvp.lobby.leave_room', 'Rời phòng')}
       </button>
 
       <div className="max-w-4xl w-full">
@@ -47,11 +55,11 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
         >
           <div className="inline-flex items-center gap-3 mb-4">
             <Users className="w-10 h-10 text-brand-teal" />
-              <h1 className="text-4xl font-black text-white">Phòng chờ thử thách</h1>
+            <h1 className="text-4xl font-black text-white">{getContent(content, 'pvp.lobby.room_title', 'Phòng chờ thử thách')}</h1>
           </div>
           <div className="mb-6">
             <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider font-semibold">
-              Mã phòng
+              {getContent(content, 'pvp.lobby.room_code_label', 'Mã phòng')}
             </p>
             <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-4 rounded-2xl">
               <span className="text-4xl font-mono font-bold tracking-[0.2em] text-brand-teal">
@@ -60,14 +68,17 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
               <button
                 onClick={copyRoomCode}
                 className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition-colors hover:border-brand-teal/40 hover:text-brand-teal"
-                title="Copy mã phòng"
+                title={getContent(content, 'pvp.lobby.copy_room_code', 'Copy mã phòng')}
               >
                 <Copy className="h-5 w-5" />
               </button>
             </div>
           </div>
           <p className="text-slate-400 text-lg">
-            Chia sẻ mã phòng cho bạn bè. Đủ người thì bấm sẵn sàng. ({participantCount}/{match.max_players})
+            {formatTemplate(
+              getContent(content, 'pvp.lobby.share_code_desc', 'Chia sẻ mã phòng cho bạn bè. Đủ người thì bấm sẵn sàng. ({current}/{max})'),
+              { current: participantCount, max: match.max_players },
+            )}
           </p>
         </motion.div>
 
@@ -110,21 +121,21 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
                     {/* Info */}
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-white mb-1">
-                        {participant.display_name || 'Anonymous'}
+                        {participant.display_name || getContent(content, 'pvp.lobby.anonymous', 'Anonymous')}
                         {participant.user_id === currentUserId && (
-                          <span className="ml-2 text-sm text-brand-teal">(Bạn)</span>
+                          <span className="ml-2 text-sm text-brand-teal">{getContent(content, 'pvp.lobby.you_marker', '(Bạn)')}</span>
                         )}
                       </h3>
                       <div className="flex items-center gap-2">
                         {participant.is_ready ? (
                           <>
                             <Check className="w-4 h-4 text-brand-teal" />
-                            <span className="text-brand-teal text-sm font-semibold">Sẵn sàng</span>
+                            <span className="text-brand-teal text-sm font-semibold">{getContent(content, 'pvp.lobby.ready', 'Sẵn sàng')}</span>
                           </>
                         ) : (
                           <>
                             <Clock className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-400 text-sm">Đang chờ...</span>
+                            <span className="text-slate-400 text-sm">{getContent(content, 'pvp.lobby.waiting', 'Đang chờ...')}</span>
                           </>
                         )}
                       </div>
@@ -132,7 +143,7 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-16">
-                    <span className="text-slate-500 text-sm">Đang chờ người chơi...</span>
+                    <span className="text-slate-500 text-sm">{getContent(content, 'pvp.lobby.waiting_players', 'Đang chờ người chơi...')}</span>
                   </div>
                 )}
               </div>
@@ -155,7 +166,7 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
             >
               <span className="relative z-10 flex items-center gap-3">
                 <Check className="w-6 h-6" />
-                Tôi sẵn sàng
+                {getContent(content, 'pvp.lobby.ready_button', 'Tôi sẵn sàng')}
               </span>
               <div className="absolute inset-0 bg-brand-cyan transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
             </button>
@@ -163,14 +174,19 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
             <div className="inline-flex items-center gap-3 px-12 py-6 bg-brand-teal/20 border-2 border-brand-teal rounded-2xl">
               <Check className="w-6 h-6 text-brand-teal" />
               <span className="text-brand-teal text-xl font-bold">
-                {allReady ? 'Đang bắt đầu trận...' : 'Đang chờ người khác...'}
+                {allReady
+                  ? getContent(content, 'pvp.lobby.starting_match', 'Đang bắt đầu trận...')
+                  : getContent(content, 'pvp.lobby.waiting_others', 'Đang chờ người khác...')}
               </span>
             </div>
           )}
 
           {participantCount < match.max_players && (
             <p className="text-slate-400 text-sm mt-4">
-              Cần thêm {match.max_players - participantCount} người chơi
+              {formatTemplate(
+                getContent(content, 'pvp.lobby.need_more_players', 'Cần thêm {count} người chơi'),
+                { count: match.max_players - participantCount },
+              )}
             </p>
           )}
         </motion.div>
@@ -182,26 +198,26 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId }
           transition={{ delay: 0.3 }}
           className="mt-12 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl"
         >
-          <h3 className="text-lg font-bold text-white mb-4">Thiết lập trận</h3>
+          <h3 className="text-lg font-bold text-white mb-4">{getContent(content, 'pvp.lobby.settings_title', 'Thiết lập trận')}</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div>
-              <p className="text-slate-400 text-sm mb-1">Chế độ</p>
+              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.mode_label', 'Chế độ')}</p>
               <p className="text-white font-semibold">{match.mode.toUpperCase()}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">Độ khó</p>
+              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.difficulty_label', 'Độ khó')}</p>
               <p className="text-white font-semibold">{(match.difficulty || 'medium').toUpperCase()}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">Câu hỏi</p>
+              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.questions_label', 'Câu hỏi')}</p>
               <p className="text-white font-semibold">{match.question_ids.length}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">Thời gian/câu</p>
+              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.time_per_question_label', 'Thời gian/câu')}</p>
               <p className="text-white font-semibold">{match.time_per_question}s</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">Ngôn ngữ</p>
+              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.language_label', 'Ngôn ngữ')}</p>
               <p className="text-white font-semibold">{match.language_id || 'Mixed'}</p>
             </div>
           </div>

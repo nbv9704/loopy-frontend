@@ -187,16 +187,16 @@ const DocsPage: React.FC = () => {
                 <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                   {sandboxBadge}
                 </div>
-                <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                <h1 className="loopy-heading max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
                   {docsTitle}
                 </h1>
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
                   {docsSubtitle}
                 </p>
               </div>
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+              <div className="loopy-card rounded-[2rem] border p-5 shadow-xl">
                 <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-slate-400"><FiSearch /> {searchQuick}</div>
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-4 text-sm font-bold text-slate-500">
+                <div className="loopy-card-soft rounded-2xl border px-4 py-4 text-sm font-bold loopy-muted">
                   {searchHint}
                 </div>
               </div>
@@ -207,7 +207,7 @@ const DocsPage: React.FC = () => {
         <section className="px-4 pb-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px,1fr,280px]">
             <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="loopy-card rounded-[2rem] border p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBookOpen /> {topicTitle}</div>
                 <div className="grid gap-5">
                   {navGroups.map(group => (
@@ -215,7 +215,7 @@ const DocsPage: React.FC = () => {
                       <div className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">{group.title}</div>
                       <div className="grid gap-1">
                         {group.items.map((item, index) => (
-                          <button key={item} className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition ${index === 0 ? 'bg-brand-teal/15 text-brand-ocean' : 'text-slate-600 hover:bg-slate-100'}`}>
+                          <button key={item} className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition ${index === 0 ? 'bg-brand-teal/15 text-brand-ocean' : 'loopy-muted hover:bg-brand-teal/10 hover:text-brand-teal'}`}>
                             {item}
                           </button>
                         ))}
@@ -226,10 +226,10 @@ const DocsPage: React.FC = () => {
               </div>
             </aside>
 
-            <article className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <article className="loopy-card rounded-[2rem] border p-6 shadow-sm md:p-8">
               <div className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean"><FiFileText /> {refBadge}</div>
-              <h2 className="text-4xl font-black tracking-tight text-slate-950 md:text-5xl">{refTitle}</h2>
-              <p className="mt-5 text-base leading-8 text-slate-600">
+              <h2 className="loopy-heading text-4xl font-black tracking-tight md:text-5xl">{refTitle}</h2>
+              <p className="mt-5 text-base leading-8 loopy-body">
                 {refDesc}
               </p>
 
@@ -238,38 +238,38 @@ const DocsPage: React.FC = () => {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-                  <div className="mb-2 flex items-center gap-2 font-black text-slate-950"><FiPlay /> {playBadge}</div>
-                  <p className="text-sm leading-6 text-slate-600">{playDesc}</p>
+                <div className="loopy-card-soft rounded-2xl border p-5">
+                  <div className="mb-2 flex items-center gap-2 font-black loopy-heading"><FiPlay /> {playBadge}</div>
+                  <p className="text-sm leading-6 loopy-body">{playDesc}</p>
                 </div>
                 <div className="rounded-2xl border border-brand-teal/30 bg-brand-teal/10 p-5">
                   <div className="mb-2 flex items-center gap-2 font-black text-brand-ocean"><FiCompass /> {checkBadge}</div>
-                  <p className="text-sm leading-6 text-slate-600">{checkDesc}</p>
+                  <p className="text-sm leading-6 loopy-body">{checkDesc}</p>
                 </div>
               </div>
 
-              <h3 className="mt-10 text-2xl font-black text-slate-950">{tipsTitle}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <h3 className="loopy-heading mt-10 text-2xl font-black">{tipsTitle}</h3>
+              <p className="mt-3 text-sm leading-7 loopy-body">
                 {tipsDesc}
               </p>
 
-              <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-950 p-5 text-white">
+              <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-slate-950 p-5 text-white">
                 <div className="flex items-center gap-2 text-sm font-black text-brand-teal"><FiTerminal /> {terminalBadge}</div>
                 <p className="mt-3 text-sm leading-6 text-slate-400">{terminalDesc}</p>
               </div>
             </article>
 
             <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="loopy-card rounded-[2rem] border p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiHash /> {tocTitle}</div>
                 <div className="grid gap-2">
                   {toc.map(item => (
-                    <a key={item} href="#" className="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-950">{item}</a>
+                    <a key={item} href="#" className="rounded-xl px-3 py-2 text-sm font-bold loopy-muted hover:bg-brand-teal/10 hover:text-brand-teal">{item}</a>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white">
+              <div className="mt-4 rounded-[2rem] border border-white/10 bg-slate-950 p-5 text-white">
                 <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-teal">{nextBadge}</div>
                 <h3 className="mt-3 text-2xl font-black">{nextTitle}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-400">{nextDesc}</p>

@@ -60,7 +60,7 @@ function LanguagePill({ language, active, onClick }: { language: PlaygroundLangu
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition ${active ? 'border-brand-teal bg-brand-teal/15 text-brand-ocean shadow-[0_4px_0_rgba(11,136,156,0.18)]' : 'border-slate-200 bg-white text-slate-600 hover:border-brand-teal'}`}
+      className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition ${active ? 'border-brand-teal bg-brand-teal/15 text-brand-ocean shadow-[0_4px_0_rgba(11,136,156,0.18)]' : 'loopy-card loopy-muted hover:border-brand-teal'}`}
     >
       <Icon /> {item.label}
     </button>
@@ -112,7 +112,7 @@ function InteractivePlayground({ language }: { language: PlaygroundLanguage }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl shadow-slate-300/70">
+    <div className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl shadow-black/30">
       <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2 font-mono text-sm text-slate-400">
           <FiCode /> {item.file}
@@ -273,14 +273,14 @@ const PlaygroundPage: React.FC = () => {
                 <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                   {playgroundBadge}
                 </div>
-                <h1 className="max-w-4xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+                <h1 className="loopy-heading max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
                   {playgroundTitle}
                 </h1>
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+                <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
                   {playgroundSubtitle}
                 </p>
               </div>
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+              <div className="loopy-card rounded-[2rem] border p-5 shadow-xl">
                 <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{runtimeLabel}</div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {(Object.keys(playgrounds) as PlaygroundLanguage[]).map(item => (
@@ -296,7 +296,7 @@ const PlaygroundPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-white px-4 py-16 md:px-6">
+        <section className="loopy-surface px-4 py-16 md:px-6">
           <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
             {[
               [FiPlay, feat1Title, feat1Desc],
@@ -305,10 +305,10 @@ const PlaygroundPage: React.FC = () => {
             ].map(([Icon, title, description]) => {
               const CardIcon = Icon as typeof FiPlay
               return (
-                <div key={title as string} className="rounded-[2rem] border border-slate-200 bg-[#f8fafc] p-6">
+                <div key={title as string} className="loopy-card-soft rounded-[2rem] border p-6">
                   <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><CardIcon /></div>
-                  <h2 className="text-2xl font-black">{title as string}</h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{description as string}</p>
+                  <h2 className="loopy-heading text-2xl font-black">{title as string}</h2>
+                  <p className="loopy-body mt-3 text-sm leading-6">{description as string}</p>
                 </div>
               )
             })}
@@ -319,22 +319,22 @@ const PlaygroundPage: React.FC = () => {
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.8fr,1.2fr] lg:items-center">
             <div>
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{separateBadge}</div>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{separateTitle}</h2>
-              <p className="mt-5 text-sm leading-6 text-slate-600">
+              <h2 className="loopy-heading mt-3 text-4xl font-black tracking-tight md:text-5xl">{separateTitle}</h2>
+              <p className="loopy-body mt-5 text-sm leading-6">
                 {separateDesc}
               </p>
             </div>
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70">
+            <div className="loopy-card rounded-[2rem] border p-6 shadow-xl">
               <div className="grid gap-3">
                 {[
                   ['Chạy thử', 'Có trong Playground và Learn, chỉ hiển thị output.'],
                   ['Kiểm tra', 'Chỉ trong lesson, validate bằng deterministic checker.'],
                   ['Lưu progress', 'Chỉ sau khi `completeLesson` thành công.'],
                 ].map(([title, description]) => (
-                  <div key={title} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+                  <div key={title} className="loopy-card-soft flex items-center justify-between gap-4 rounded-2xl border p-4">
                     <div>
-                      <div className="font-black">{title}</div>
-                      <div className="mt-1 text-sm text-slate-600">{description}</div>
+                      <div className="font-black loopy-heading">{title}</div>
+                      <div className="mt-1 text-sm loopy-body">{description}</div>
                     </div>
                     <FiArrowRight className="shrink-0 text-brand-ocean" />
                   </div>

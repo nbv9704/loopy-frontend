@@ -39,7 +39,7 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
   ]
 
   return (
-    <footer className="relative bg-white border-t border-slate-200 mt-auto">
+    <footer className="loopy-surface relative mt-auto border-t loopy-border">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-16">
         {/* Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -48,7 +48,7 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
             <div className="flex items-center gap-3 mb-4">
               <img src={headerLogo} alt="Loopy" className="h-10" />
             </div>
-            <p className="text-slate-600 text-sm leading-relaxed mb-6 max-w-md">
+            <p className="loopy-body text-sm leading-relaxed mb-6 max-w-md">
               {getFooterText('footer.description', 'Learn to code by building real projects.')}
             </p>
 
@@ -58,13 +58,13 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-teal"
+                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
               >
                 <Code2 size={20} />
               </a>
               <a
                 href="mailto:hello@loopy.dev"
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-teal"
+                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
               >
                 <Mail size={20} />
               </a>
@@ -72,7 +72,7 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
                 href="https://blog.loopy.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600 hover:text-brand-teal"
+                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
               >
                 <BookOpen size={20} />
               </a>
@@ -82,7 +82,7 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
           {/* Footer Columns */}
           {FOOTER_COLUMNS.map(column => (
             <div key={column.id}>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
+              <h3 className="loopy-heading text-sm font-bold uppercase tracking-wider mb-4">
                 {getFooterText(column.titleKey, column.titleKey)}
               </h3>
               <ul className="space-y-3">
@@ -90,7 +90,7 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className="text-sm text-slate-600 hover:text-brand-teal transition-colors"
+                      className="text-sm loopy-muted hover:text-brand-teal transition-colors"
                     >
                       {getFooterText(item.labelKey, item.labelKey)}
                     </Link>
@@ -102,17 +102,17 @@ const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-slate-200 pt-8">
+        <div className="border-t loopy-border pt-8">
           {/* Bottom Section */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs loopy-muted">
               © {currentYear} Loopy. {getFooterText('footer.allRightsReserved', 'All rights reserved.')}
             </p>
             <div className="flex items-center gap-6">
-              <Link to="/privacy" className="text-xs text-slate-500 hover:text-slate-700 transition-colors">
+              <Link to="/privacy" className="text-xs loopy-muted hover:text-brand-teal transition-colors">
                 {getFooterText('footer.privacy', 'Privacy')}
               </Link>
-              <Link to="/terms" className="text-xs text-slate-500 hover:text-slate-700 transition-colors">
+              <Link to="/terms" className="text-xs loopy-muted hover:text-brand-teal transition-colors">
                 {getFooterText('footer.terms', 'Terms')}
               </Link>
             </div>

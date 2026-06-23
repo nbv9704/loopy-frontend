@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import AdminAuthManager from './components/admin/auth/AdminAuthManager'
 import AppRouter from './routes/AppRouter'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 /**
  * Root application component
@@ -18,10 +19,12 @@ function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AdminAuthManager />
-            <AppRouter />
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <AdminAuthManager />
+              <AppRouter />
+            </AuthProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </HelmetProvider>
       <Toaster position="top-right" toastOptions={toasterConfig} />

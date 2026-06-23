@@ -1,32 +1,65 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../lib/api'
 
+interface LessonStepItem {
+  id: string
+  lessonId?: string
+  type: 'note' | 'multiple_choice' | 'true_false' | 'fill_blank' | 'short_answer' | 'code_prompt'
+  title?: string
+  prompt: string
+  options?: unknown[]
+  correctAnswer?: unknown
+  explanation?: string
+  hint?: string
+  isRequired?: boolean
+  orderIndex: number
+}
+
+type LessonInteractionType =
+  | 'concept'
+  | 'true_false'
+  | 'multiple_choice'
+  | 'fill_blank'
+  | 'short_answer'
+  | 'code_fix'
+  | 'code_output'
+  | 'code_build'
+
 interface Lesson {
   id: string
   chapterId: string
   lessonId: string
   title: string
   description: string
+  code?: string
+  insight?: string
+  lessonType?: LessonInteractionType
   starterCode: string
   taskDescription: string
   hint: string
+  hintLevel1?: string
+  hintLevel2?: string
+  hintLevel3?: string
   commonMistakes: string
   solutionCode: string
   isAhaLesson: boolean
+  validationType?: string
+  validationRules?: Record<string, unknown>
+  successOutput?: string
+  failureHint?: string
+  gradingMode?: 'stdout' | 'function'
   orderIndex: number
   difficulty: string
   estimated_time: number
   // Data-driven debug schema
-  debug_starter_code?: string
-  debug_task_description?: string
-  debug_validation_rules?: Array<{
-    type: 'rule' | 'exact' | 'regex' | 'stdout'
-    value: string
-    description?: string
-  }>
-  debug_hint?: string
-  created_at: string
-  updated_at: string
+  debugStarterCode?: string
+  debugTaskDescription?: string
+  debugValidationRules?: Record<string, unknown>
+  debugHint?: string
+  steps?: LessonStepItem[]
+  lessonSteps?: LessonStepItem[]
+  createdAt: string
+  updatedAt: string
 }
 
 interface Chapter {
@@ -66,7 +99,12 @@ export const useLessonData = (language: string, initialLessonId?: string, userId
 
         const data = curriculumResponse.data as { lessons: Lesson[]; chapters?: unknown[] }
         const chaptersData = (data.chapters as Chapter[]) || []
-        const allLessons: Lesson[] = data.lessons || []
+        const allLessons: Lesson[] = (data.lessons || []).map(lesson => {
+          const steps = (lesson.steps || lesson.lessonSteps || []).sort(
+            (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+          )
+          return { ...lesson, steps }
+        })
 
         setChapters(chaptersData)
         setLessons(allLessons)

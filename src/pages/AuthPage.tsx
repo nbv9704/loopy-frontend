@@ -149,7 +149,7 @@ const AuthPage: React.FC = () => {
   return (
     <>
       <SEO {...pageMetadata.auth} />
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f7fbff] p-4 py-24">
+      <div className="loopy-page relative flex min-h-screen items-center justify-center overflow-hidden p-4 py-24">
         {/* Ambient background - light theme */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-brand-teal/5 rounded-full blur-[120px] animate-pulse" />
@@ -165,7 +165,7 @@ const AuthPage: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           onClick={() => navigate('/', { replace: true })}
-          className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 hover:border-slate-300 transition-all duration-300 group"
+          className="loopy-subtle-button absolute left-6 top-6 z-20 flex items-center gap-2 rounded-xl border px-4 py-2.5 transition-all duration-300 group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
           <span className="font-medium">{t('common.back')}</span>
@@ -175,9 +175,9 @@ const AuthPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl lg:grid-cols-[0.95fr,1.05fr]"
+          className="loopy-card relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[2rem] border shadow-xl lg:grid-cols-[0.95fr,1.05fr]"
         >
-          <div className="relative hidden overflow-hidden border-r border-slate-200 bg-gradient-to-br from-brand-teal/10 via-white to-transparent p-10 lg:block">
+          <div className="relative hidden overflow-hidden border-r loopy-border bg-gradient-to-br from-brand-teal/10 via-[color:var(--loopy-surface)] to-transparent p-10 lg:block">
             <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand-teal/10 blur-3xl" />
             <div className="relative flex h-full flex-col justify-between">
               <div>
@@ -185,10 +185,10 @@ const AuthPage: React.FC = () => {
                   <Compass className="h-4 w-4" />
                   Loopy Journey
                 </div>
-                <h2 className="text-4xl font-black leading-tight text-slate-900">
+                <h2 className="loopy-heading text-4xl font-black leading-tight">
                   {isLogin ? titleLogin1 : titleSignup1}
                 </h2>
-                <p className="mt-5 text-lg leading-8 text-slate-600">{contextCopy}</p>
+                <p className="loopy-body mt-5 text-lg leading-8">{contextCopy}</p>
               </div>
 
               <div className="mt-10 space-y-4">
@@ -198,11 +198,11 @@ const AuthPage: React.FC = () => {
                   { icon: Flame, title: feat3 },
                   { icon: CheckCircle2, title: feat4 },
                 ].map(item => (
-                  <div key={item.title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div key={item.title} className="loopy-card-soft flex items-center gap-3 rounded-2xl border p-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
                       <item.icon className="h-5 w-5" />
                     </div>
-                    <span className="font-semibold text-slate-900">{item.title}</span>
+                    <span className="font-semibold loopy-heading">{item.title}</span>
                   </div>
                 ))}
               </div>
@@ -217,10 +217,10 @@ const AuthPage: React.FC = () => {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <h1 className="text-4xl font-black text-slate-900 mb-3">
+                <h1 className="loopy-heading mb-3 text-4xl font-black">
                   {isLogin ? titleLogin2 : titleSignup2}
                 </h1>
-                <p className="text-slate-600 text-base leading-6">
+                <p className="loopy-body text-base leading-6">
                   {contextCopy}
                 </p>
               </motion.div>
@@ -258,7 +258,7 @@ const AuthPage: React.FC = () => {
                       type="text"
                       value={displayName}
                       onChange={e => setDisplayName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-brand-teal focus:bg-white focus:outline-none transition-all duration-300"
+                      className="w-full rounded-xl border loopy-border loopy-surface px-4 py-3.5 text-[color:var(--loopy-text)] placeholder:text-slate-400 transition-all duration-300 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
                       placeholder={t('auth.displayName')}
                       required={!isLogin}
                     />
@@ -275,7 +275,7 @@ const AuthPage: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-brand-teal focus:bg-white focus:outline-none transition-all duration-300"
+                  className="w-full rounded-xl border loopy-border loopy-surface px-4 py-3.5 text-[color:var(--loopy-text)] placeholder:text-slate-400 transition-all duration-300 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
                   placeholder="your@email.com"
                   required
                 />
@@ -290,7 +290,7 @@ const AuthPage: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:border-brand-teal focus:bg-white focus:outline-none transition-all duration-300"
+                  className="w-full rounded-xl border loopy-border loopy-surface px-4 py-3.5 text-[color:var(--loopy-text)] placeholder:text-slate-400 transition-all duration-300 focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -325,7 +325,7 @@ const AuthPage: React.FC = () => {
                   setError('')
                 }}
                 disabled={loading}
-                className="text-slate-600 hover:text-brand-teal text-sm transition-all duration-300 cursor-pointer"
+                className="loopy-muted cursor-pointer text-sm transition-all duration-300 hover:text-brand-teal"
               >
                 {isLogin ? (
                   <>
@@ -343,7 +343,7 @@ const AuthPage: React.FC = () => {
 
             {/* Dev Login - only in development */}
             {import.meta.env.DEV && (
-              <div className="mt-6 pt-6 border-t border-slate-200">
+              <div className="mt-6 border-t loopy-border pt-6">
                 <button
                   type="button"
                   disabled={loading}
@@ -389,7 +389,7 @@ const AuthPage: React.FC = () => {
                 >
                   ⚡ Dev Login (dev-admin)
                 </button>
-                <p className="text-slate-500 text-xs text-center mt-2">
+                <p className="loopy-muted mt-2 text-center text-xs">
                   {t('auth.devLoginOnly')}
                 </p>
               </div>

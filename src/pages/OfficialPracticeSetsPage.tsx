@@ -26,6 +26,23 @@ const OfficialPracticeSetsPage: React.FC = () => {
     'nav.settings',
     'nav.logout',
     'practice.sets.start',
+    'practice.sets.question_count',
+    'practice.official.loading',
+    'practice.official.seo_title',
+    'practice.official.seo_desc',
+    'practice.official.back',
+    'practice.official.badge',
+    'practice.official.title',
+    'practice.official.subtitle',
+    'practice.official.empty_title',
+    'practice.official.empty_desc',
+    'practice.sets.filter.reset',
+    'practice.sets.filter.topic',
+    'practice.sets.filter.language',
+    'practice.sets.filter.all_difficulties',
+    'practice.sets.filter.easy',
+    'practice.sets.filter.medium',
+    'practice.sets.filter.hard',
     'footer.aboutLoopy',
     'footer.about',
     'footer.team',
@@ -67,7 +84,7 @@ const OfficialPracticeSetsPage: React.FC = () => {
   }, [difficultyFilter, languageFilter, topicFilter])
 
   if (contentLoading) {
-    return <LoadingScreen message="Loading official sets..." />
+    return <LoadingScreen message={content['practice.official.loading'] || 'Loading official sets...'} />
   }
 
   const headerContent = {
@@ -94,30 +111,32 @@ const OfficialPracticeSetsPage: React.FC = () => {
     'footer.terms': content['footer.terms'],
   }
 
+  const text = (key: string, fallback: string) => content[key] || fallback
+
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
-      <SEO title="Official Sets | Loopy" description="Bộ bài tập chính thức từ đội ngũ Loopy" />
+      <SEO title={text('practice.official.seo_title', 'Official Sets | Loopy')} description={text('practice.official.seo_desc', 'Bộ bài tập chính thức từ đội ngũ Loopy')} />
       <main className="flex-grow pb-16 pt-8 md:pt-10">
         <section className="mx-auto max-w-6xl px-6">
           <button
             onClick={() => navigate('/practice')}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-brand-teal"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-black loopy-muted hover:text-brand-teal"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to practice
+            {text('practice.official.back', 'Back to practice')}
           </button>
 
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-blue-600">
                 <ShieldCheck className="h-4 w-4" />
-                Official
+                {text('practice.official.badge', 'Official')}
               </div>
-              <h1 className="text-4xl font-black tracking-normal text-slate-950">
-                Bộ bài tập chính thức
+              <h1 className="loopy-heading text-4xl font-black tracking-normal">
+                {text('practice.official.title', 'Bộ bài tập chính thức')}
               </h1>
-              <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-slate-600">
-                Các bộ bài tập chuẩn do đội ngũ phát triển xây dựng để đánh giá chính xác kiến thức của bạn.
+              <p className="loopy-body mt-4 max-w-2xl text-base font-medium leading-7">
+                {text('practice.official.subtitle', 'Các bộ bài tập chuẩn do đội ngũ phát triển xây dựng để đánh giá chính xác kiến thức của bạn.')}
               </p>
             </div>
             <div className="flex gap-3">
@@ -127,53 +146,53 @@ const OfficialPracticeSetsPage: React.FC = () => {
                   setLanguageFilter('')
                   setDifficultyFilter('all')
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700"
+                className="loopy-subtle-button inline-flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-black"
               >
                 <Filter className="h-4 w-4" />
-                Reset
+                {text('practice.sets.filter.reset', 'Reset')}
               </button>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-3">
+          <div className="loopy-card mt-6 grid gap-3 rounded-lg border p-4 md:grid-cols-3">
             <input
               value={topicFilter}
               onChange={event => setTopicFilter(event.target.value)}
-              placeholder="Chủ đề"
-              className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
+              placeholder={text('practice.sets.filter.topic', 'Chủ đề')}
+              className="rounded-lg border loopy-border loopy-surface px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
             />
             <input
               value={languageFilter}
               onChange={event => setLanguageFilter(event.target.value)}
-              placeholder="Ngôn ngữ, ví dụ javascript"
-              className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
+              placeholder={text('practice.sets.filter.language', 'Ngôn ngữ, ví dụ javascript')}
+              className="rounded-lg border loopy-border loopy-surface px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
             />
             <select
               value={difficultyFilter}
               onChange={event => setDifficultyFilter(event.target.value as 'all' | 'easy' | 'medium' | 'hard')}
-              className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
+              className="rounded-lg border loopy-border loopy-surface px-3 py-2.5 text-sm font-semibold outline-none focus:border-brand-teal"
             >
-              <option value="all">Tất cả độ khó</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
+              <option value="all">{text('practice.sets.filter.all_difficulties', 'Tất cả độ khó')}</option>
+              <option value="easy">{text('practice.sets.filter.easy', 'Easy')}</option>
+              <option value="medium">{text('practice.sets.filter.medium', 'Medium')}</option>
+              <option value="hard">{text('practice.sets.filter.hard', 'Hard')}</option>
             </select>
           </div>
 
           {setsLoading ? (
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-48 animate-pulse rounded-lg border border-slate-200 bg-white" />
+                <div key={index} className="loopy-skeleton h-48 animate-pulse rounded-lg border loopy-border" />
               ))}
             </div>
           ) : sets.length === 0 ? (
-            <div className="mt-8 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <div className="loopy-card mt-8 rounded-lg border border-dashed px-6 py-12 text-center">
               <Lock className="mx-auto h-10 w-10 text-slate-400" />
-              <h2 className="mt-4 text-xl font-black text-slate-950">
-                Chưa có bộ bài tập chính thức nào
+              <h2 className="loopy-heading mt-4 text-xl font-black">
+                {text('practice.official.empty_title', 'Chưa có bộ bài tập chính thức nào')}
               </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-slate-600">
-                Đội ngũ phát triển hiện đang chuẩn bị các nội dung chính thức. Bạn hãy quay lại sau nhé!
+              <p className="loopy-body mx-auto mt-2 max-w-xl text-sm font-medium leading-6">
+                {text('practice.official.empty_desc', 'Đội ngũ phát triển hiện đang chuẩn bị các nội dung chính thức. Bạn hãy quay lại sau nhé!')}
               </p>
             </div>
           ) : (
@@ -182,19 +201,19 @@ const OfficialPracticeSetsPage: React.FC = () => {
                 <button
                   key={set.id}
                   onClick={() => navigate(`/practice/sets/${set.id}`, { state: { from: 'official-sets' } })}
-                  className="rounded-lg border border-blue-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg relative overflow-hidden"
+                  className="loopy-card relative overflow-hidden rounded-lg border border-blue-500/20 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
                 >
-                  <div className="absolute top-0 right-0 h-16 w-16 -translate-y-8 translate-x-8 rounded-full bg-blue-50"></div>
+                  <div className="absolute right-0 top-0 h-16 w-16 -translate-y-8 translate-x-8 rounded-full bg-blue-500/10"></div>
                   
                   <div className="relative mb-4 flex items-center justify-between">
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-blue-600 border border-blue-100 flex items-center gap-1">
                       <ShieldCheck className="h-3 w-3" />
                       {set.difficulty}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">{set.questionCount || 0} câu</span>
+                    <span className="text-xs font-bold text-slate-500">{text('practice.sets.question_count', '{count} câu').replace('{count}', String(set.questionCount || 0))}</span>
                   </div>
-                  <h2 className="relative text-lg font-black text-slate-950">{set.title}</h2>
-                  <p className="relative mt-2 line-clamp-3 text-sm font-medium leading-6 text-slate-600">{set.description}</p>
+                  <h2 className="loopy-heading relative text-lg font-black">{set.title}</h2>
+                  <p className="loopy-body relative mt-2 line-clamp-3 text-sm font-medium leading-6">{set.description}</p>
                   <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-black text-blue-600">
                     <Play className="h-4 w-4" />
                     {content['practice.sets.start'] || 'Bắt đầu'}

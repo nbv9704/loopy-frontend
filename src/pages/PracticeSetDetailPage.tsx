@@ -64,6 +64,39 @@ const PracticeSetDetailPage: React.FC = () => {
     'nav.settings',
     'nav.logout',
     'practice.sets.start',
+    'practice.detail.loading',
+    'practice.detail.seo_fallback',
+    'practice.detail.toast.started',
+    'practice.detail.toast.unavailable',
+    'practice.detail.toast.choose_one',
+    'practice.detail.toast.fill_blank',
+    'practice.detail.toast.choose_answer',
+    'practice.detail.toast.correct',
+    'practice.detail.toast.submitted',
+    'practice.detail.toast.submit_error',
+    'practice.detail.back_my_sets',
+    'practice.detail.back_official_sets',
+    'practice.detail.back_sets',
+    'practice.detail.not_found',
+    'practice.detail.attempt_badge',
+    'practice.detail.progress_summary',
+    'practice.detail.question_label',
+    'practice.detail.completed_title',
+    'practice.detail.score_summary',
+    'practice.detail.back_overview',
+    'practice.detail.question_fallback',
+    'practice.detail.points',
+    'practice.detail.your_answer',
+    'practice.detail.correct',
+    'practice.detail.submitted',
+    'practice.detail.earned_points',
+    'practice.detail.next_question',
+    'practice.detail.submitting',
+    'practice.detail.submit_answer',
+    'practice.detail.question_count',
+    'practice.detail.topic',
+    'practice.detail.language',
+    'practice.detail.starting',
     'footer.aboutLoopy',
     'footer.about',
     'footer.team',
@@ -140,6 +173,10 @@ const PracticeSetDetailPage: React.FC = () => {
     'footer.terms': content['footer.terms'],
   }
 
+  const text = (key: string, fallback: string) => content[key] || fallback
+  const formatText = (key: string, fallback: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((result, [name, value]) => result.replace(`{${name}}`, String(value)), text(key, fallback))
+
   const handleStart = async () => {
     if (!setId) return
     setStarting(true)
@@ -149,9 +186,9 @@ const PracticeSetDetailPage: React.FC = () => {
       setActiveIndex(0)
       setAnswers({})
       setSubmissions({})
-      toast.success(`Started practice attempt (${startedAttempt.questions?.length || 0} questions)`)
+      toast.success(formatText('practice.detail.toast.started', 'Started practice attempt ({count} questions)', { count: startedAttempt.questions?.length || 0 }))
     } catch {
-      toast.error('You have not met the requirements, or this practice set is unavailable')
+      toast.error(text('practice.detail.toast.unavailable', 'You have not met the requirements, or this practice set is unavailable'))
     } finally {
       setStarting(false)
     }
@@ -166,11 +203,11 @@ const PracticeSetDetailPage: React.FC = () => {
     const rawValue = answers[activeQuestion.id] ?? ''
     const value = rawValue.trim()
     if (activeQuestion.type === 'multiple_select' && getSelectedAnswers(value).length === 0) {
-      toast.error('Choose at least one answer first')
+      toast.error(text('practice.detail.toast.choose_one', 'Choose at least one answer first'))
       return
     }
     if (!value) {
-      toast.error(activeQuestion.type === 'fill_blank' ? 'Fill in the answer before submitting' : 'Choose an answer first')
+      toast.error(activeQuestion.type === 'fill_blank' ? text('practice.detail.toast.fill_blank', 'Fill in the answer before submitting') : text('practice.detail.toast.choose_answer', 'Choose an answer first'))
       return
     }
 
@@ -190,9 +227,9 @@ const PracticeSetDetailPage: React.FC = () => {
           testResults: result.submission.testResults,
         },
       }))
-      toast.success(result.submission.isCorrect ? 'Correct answer' : 'Answer submitted')
+      toast.success(result.submission.isCorrect ? text('practice.detail.toast.correct', 'Correct answer') : text('practice.detail.toast.submitted', 'Answer submitted'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to submit answer')
+      toast.error(error instanceof Error ? error.message : text('practice.detail.toast.submit_error', 'Unable to submit answer'))
     } finally {
       setSubmitting(false)
     }
@@ -203,13 +240,13 @@ const PracticeSetDetailPage: React.FC = () => {
   }
 
   if (contentLoading || setLoading) {
-    return <LoadingScreen message="Loading practice set..." />
+    return <LoadingScreen message={text('practice.detail.loading', 'Loading practice set...')} />
   }
 
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
-      <SEO title={`${set?.title || 'Practice Set'} | Loopy`} description={set?.description || undefined} />
-      <main className="flex-grow bg-[#f7fbff] pb-16 pt-8 md:pt-10">
+      <SEO title={`${set?.title || text('practice.detail.seo_fallback', 'Practice Set')} | Loopy`} description={set?.description || undefined} />
+      <main className="flex-grow pb-16 pt-8 md:pt-10">
         <section className="mx-auto max-w-6xl px-6">
           {!attempt && (
             <button
@@ -218,42 +255,42 @@ const PracticeSetDetailPage: React.FC = () => {
                 else if (location.state?.from === 'official-sets') navigate('/practice/official-sets')
                 else navigate('/practice/sets')
               }}
-              className="mb-6 inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-brand-teal"
+              className="mb-6 inline-flex items-center gap-2 text-sm font-black loopy-muted hover:text-brand-teal"
             >
               <ArrowLeft className="h-4 w-4" />
               {location.state?.from === 'my-sets' 
-                ? 'Back to my set library' 
+                ? text('practice.detail.back_my_sets', 'Back to my set library') 
                 : location.state?.from === 'official-sets' 
-                  ? 'Back to official sets' 
-                  : 'Back to sets'}
+                  ? text('practice.detail.back_official_sets', 'Back to official sets') 
+                  : text('practice.detail.back_sets', 'Back to sets')}
             </button>
           )}
 
           {!set ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-              <h1 className="text-2xl font-black text-slate-950">Practice set not found</h1>
+            <div className="loopy-card rounded-lg border border-dashed px-6 py-12 text-center">
+              <h1 className="loopy-heading text-2xl font-black">{text('practice.detail.not_found', 'Practice set not found')}</h1>
             </div>
           ) : attempt ? (
             <div className="grid gap-6 lg:grid-cols-[280px,1fr]">
               <aside className="space-y-4">
-                <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <section className="rounded-lg border loopy-border loopy-surface p-5 shadow-sm">
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-brand-teal">
                     <BookOpenCheck className="h-4 w-4" />
-                    Practice attempt
+                    {text('practice.detail.attempt_badge', 'Practice attempt')}
                   </div>
-                  <h1 className="mt-3 text-xl font-black text-slate-950">{set.title}</h1>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <h1 className="loopy-heading mt-3 text-xl font-black">{set.title}</h1>
+                  <div className="loopy-skeleton mt-4 h-2 overflow-hidden rounded-full">
                     <div
                       className="h-full rounded-full bg-brand-teal transition-all"
                       style={{ width: `${totalQuestions ? (submittedCount / totalQuestions) * 100 : 0}%` }}
                     />
                   </div>
-                  <div className="mt-3 text-sm font-bold text-slate-600">
-                    {submittedCount}/{totalQuestions} submitted · {earnedPoints}/{maxPoints} points
+                  <div className="mt-3 text-sm font-bold loopy-muted">
+                    {formatText('practice.detail.progress_summary', '{submitted}/{total} submitted · {earned}/{max} points', { submitted: submittedCount, total: totalQuestions, earned: earnedPoints, max: maxPoints })}
                   </div>
                 </section>
 
-                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <section className="loopy-card rounded-lg border p-4 shadow-sm">
                   <div className="space-y-2">
                     {questions.map((question: PracticeQuestion, index: number) => {
                       const submission = submissions[question.id]
@@ -264,7 +301,7 @@ const PracticeSetDetailPage: React.FC = () => {
                           type="button"
                           onClick={() => setActiveIndex(index)}
                           className={`flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition ${
-                            isActive ? 'border-brand-teal bg-brand-teal/10' : 'border-slate-200 bg-white hover:border-slate-300'
+                            isActive ? 'border-brand-teal bg-brand-teal/10' : 'loopy-border loopy-surface hover:border-brand-teal/50'
                           }`}
                         >
                           {submission ? (
@@ -273,7 +310,7 @@ const PracticeSetDetailPage: React.FC = () => {
                             <Circle className="h-5 w-5 text-slate-300" />
                           )}
                           <div className="min-w-0">
-                            <div className="text-sm font-black text-slate-950">Question {index + 1}</div>
+                            <div className="text-sm font-black loopy-heading">{formatText('practice.detail.question_label', 'Question {index}', { index: index + 1 })}</div>
                             <div className="truncate text-xs font-semibold text-slate-500">{question.type.replace('_', ' ')}</div>
                           </div>
                         </button>
@@ -285,13 +322,13 @@ const PracticeSetDetailPage: React.FC = () => {
 
               <section className="min-w-0">
                 {isAttemptComplete ? (
-                  <div className="rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <div className="loopy-card rounded-lg border p-8 text-center shadow-sm">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-teal/10 text-brand-teal">
                       <Trophy className="h-7 w-7" />
                     </div>
-                    <h2 className="mt-4 text-3xl font-black text-slate-950">Practice completed</h2>
-                    <p className="mt-3 text-base font-semibold text-slate-600">
-                      Your score: {earnedPoints}/{maxPoints} points
+                    <h2 className="loopy-heading mt-4 text-3xl font-black">{text('practice.detail.completed_title', 'Practice completed')}</h2>
+                    <p className="loopy-body mt-3 text-base font-semibold">
+                      {formatText('practice.detail.score_summary', 'Your score: {earned}/{max} points', { earned: earnedPoints, max: maxPoints })}
                     </p>
                     <button
                       type="button"
@@ -299,36 +336,36 @@ const PracticeSetDetailPage: React.FC = () => {
                         setAttempt(null)
                         setActiveIndex(0)
                       }}
-                      className="mt-6 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700"
+                      className="mt-6 rounded-lg border px-5 py-3 text-sm font-black loopy-subtle-button"
                     >
-                      Back to set overview
+                      {text('practice.detail.back_overview', 'Back to set overview')}
                     </button>
                   </div>
                 ) : activeQuestion ? (
-                  <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                  <div className="loopy-card rounded-lg border shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b loopy-border px-5 py-4">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wide text-brand-teal">
-                          Question {activeIndex + 1} · {activeQuestion.type.replace('_', ' ')}
+                          {formatText('practice.detail.question_label', 'Question {index}', { index: activeIndex + 1 })} · {activeQuestion.type.replace('_', ' ')}
                         </div>
-                        <h2 className="mt-1 text-2xl font-black text-slate-950">{activeQuestion.title || 'Practice question'}</h2>
+                        <h2 className="loopy-heading mt-1 text-2xl font-black">{activeQuestion.title || text('practice.detail.question_fallback', 'Practice question')}</h2>
                       </div>
-                      <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                        {activeQuestion.points} points
+                      <div className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black loopy-muted">
+                        {formatText('practice.detail.points', '{points} points', { points: activeQuestion.points })}
                       </div>
                     </div>
 
                     <div className="p-5">
-                      <p className="text-base font-semibold leading-8 text-slate-700">{activeQuestion.prompt}</p>
+                      <p className="loopy-body text-base font-semibold leading-8">{activeQuestion.prompt}</p>
 
                       {activeQuestion.type === 'fill_blank' ? (
                         <label className="mt-5 block">
-                          <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">Your answer</span>
+                          <span className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">{text('practice.detail.your_answer', 'Your answer')}</span>
                           <input
                             value={answers[activeQuestion.id] || ''}
                             onChange={event => setAnswer(activeQuestion.id, event.target.value)}
                             disabled={Boolean(submissions[activeQuestion.id])}
-                            className="w-full rounded-lg border border-slate-200 px-4 py-3 text-base font-semibold outline-none focus:border-brand-teal disabled:bg-slate-50"
+                            className="loopy-surface w-full rounded-lg border loopy-border px-4 py-3 text-base font-semibold outline-none focus:border-brand-teal disabled:opacity-60"
                           />
                         </label>
                       ) : (
@@ -356,8 +393,8 @@ const PracticeSetDetailPage: React.FC = () => {
                                 disabled={locked}
                                 className={`rounded-lg border px-4 py-4 text-left text-sm font-black transition ${
                                   selected
-                                    ? 'border-brand-teal bg-brand-teal/10 text-slate-950'
-                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                                    ? 'border-brand-teal bg-brand-teal/10 text-[color:var(--loopy-text)]'
+                                    : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal/50'
                                 } disabled:cursor-not-allowed`}
                               >
                                 {option}
@@ -374,10 +411,10 @@ const PracticeSetDetailPage: React.FC = () => {
                             : 'border-amber-200 bg-amber-50 text-amber-800'
                         }`}>
                           <div className="font-black">
-                            {submissions[activeQuestion.id].isCorrect ? 'Correct' : 'Submitted'}
+                            {submissions[activeQuestion.id].isCorrect ? text('practice.detail.correct', 'Correct') : text('practice.detail.submitted', 'Submitted')}
                           </div>
                           <div className="mt-1 text-sm font-semibold">
-                            Earned {submissions[activeQuestion.id].pointsEarned}/{activeQuestion.points} points.
+                            {formatText('practice.detail.earned_points', 'Earned {earned}/{points} points.', { earned: submissions[activeQuestion.id].pointsEarned, points: activeQuestion.points })}
                           </div>
                           {activeQuestion.explanation && (
                             <p className="mt-3 text-sm font-semibold leading-6">{activeQuestion.explanation}</p>
@@ -390,9 +427,9 @@ const PracticeSetDetailPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={goNext}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700"
+                            className="inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-black loopy-subtle-button"
                           >
-                            Next question
+                            {text('practice.detail.next_question', 'Next question')}
                             <ChevronRight className="h-4 w-4" />
                           </button>
                         )}
@@ -404,7 +441,7 @@ const PracticeSetDetailPage: React.FC = () => {
                             className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-60"
                           >
                             <Send className="h-4 w-4" />
-                            {submitting ? 'Submitting...' : 'Submit answer'}
+                            {submitting ? text('practice.detail.submitting', 'Submitting...') : text('practice.detail.submit_answer', 'Submit answer')}
                           </button>
                         )}
                       </div>
@@ -415,17 +452,17 @@ const PracticeSetDetailPage: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="loopy-card rounded-lg border p-6 shadow-sm">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-teal/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-brand-teal">
                   <BookOpenCheck className="h-4 w-4" />
                   {set.difficulty}
                 </div>
-                <h1 className="text-3xl font-black text-slate-950">{set.title}</h1>
-                {set.description && <p className="mt-4 text-base font-medium leading-7 text-slate-600">{set.description}</p>}
-                <div className="mt-6 flex flex-wrap gap-3 text-sm font-bold text-slate-600">
-                  <span>{set.questionCount || set.questions?.length || 0} questions</span>
-                  {set.topic && <span>Topic: {set.topic}</span>}
-                  {set.languageId && <span>Language: {set.languageId}</span>}
+                <h1 className="loopy-heading text-3xl font-black">{set.title}</h1>
+                {set.description && <p className="loopy-body mt-4 text-base font-medium leading-7">{set.description}</p>}
+                <div className="mt-6 flex flex-wrap gap-3 text-sm font-bold loopy-muted">
+                  <span>{formatText('practice.detail.question_count', '{count} questions', { count: set.questionCount || set.questions?.length || 0 })}</span>
+                  {set.topic && <span>{formatText('practice.detail.topic', 'Topic: {topic}', { topic: set.topic })}</span>}
+                  {set.languageId && <span>{formatText('practice.detail.language', 'Language: {language}', { language: set.languageId })}</span>}
                 </div>
                 <button
                   onClick={handleStart}
@@ -433,18 +470,18 @@ const PracticeSetDetailPage: React.FC = () => {
                   className="mt-8 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-3 text-sm font-black text-slate-950 disabled:opacity-60"
                 >
                   <Play className="h-4 w-4" />
-                  {starting ? 'Starting...' : content['practice.sets.start'] || 'Start'}
+                  {starting ? text('practice.detail.starting', 'Starting...') : content['practice.sets.start'] || 'Start'}
                 </button>
               </div>
 
               <div className="mt-6 space-y-3">
                 {set.questions?.map((question: PracticeQuestion, index: number) => (
-                  <div key={question.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <div key={question.id} className="loopy-card rounded-lg border p-5 shadow-sm">
                     <div className="mb-2 text-xs font-black uppercase tracking-wide text-brand-teal">
-                      Question {index + 1} · {question.type.replace('_', ' ')}
+                      {formatText('practice.detail.question_label', 'Question {index}', { index: index + 1 })} · {question.type.replace('_', ' ')}
                     </div>
-                    <h2 className="text-lg font-black text-slate-950">{question.title || question.prompt}</h2>
-                    {question.title && <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{question.prompt}</p>}
+                    <h2 className="loopy-heading text-lg font-black">{question.title || question.prompt}</h2>
+                    {question.title && <p className="loopy-body mt-2 text-sm font-medium leading-6">{question.prompt}</p>}
                   </div>
                 ))}
               </div>

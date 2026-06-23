@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Flame, LogOut, Menu, Settings, Star, X, User } from 'lucide-react'
+import { Flame, LogOut, Menu, Moon, Settings, Star, Sun, X, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import LanguageSwitcher from './common/LanguageSwitcher'
 import headerLogo from '../assets/images/logos/header/logo-w256.png'
+import { useTheme } from '../contexts/ThemeContext'
 
 // Static navigation items — labels resolved via props
 const NAV_ITEMS = [
@@ -32,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { theme, toggleTheme } = useTheme()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -77,14 +79,14 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
     return headerContent[labelKey] || t(labelKey)
   }
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !(item.id === 'practice' && !user))
+  const visibleNavItems = NAV_ITEMS
 
   return (
-    <header className="sticky top-0 left-0 right-0 bg-[#f7fbff]/90 backdrop-blur-xl border-b border-slate-200/80 z-50">
+    <header className="loopy-page sticky top-0 left-0 right-0 z-50 border-b loopy-border backdrop-blur-xl">
       {/* Subtle gradient line */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-teal/30 to-transparent" />
 
-      <div className="max-w-[1800px] mx-auto px-6 py-3.5">
+      <div className="w-full px-4 py-3.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Left: Logo + Navigation */}
           <div className="flex items-center gap-8">
@@ -106,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                   className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
                     isActive(item.path)
                       ? 'text-brand-teal bg-brand-teal/10'
-                      : 'text-slate-600 hover:text-brand-teal hover:bg-slate-100'
+                      : 'loopy-muted hover:text-brand-teal hover:bg-brand-teal/10'
                   }`}
                 >
                   {getNavLabel(item.labelKey)}
@@ -122,11 +124,21 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
           <div className="flex items-center gap-4">
             <LanguageSwitcher variant="light" />
 
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border loopy-border loopy-surface-soft text-brand-ocean transition-all hover:-translate-y-0.5 hover:border-brand-teal/40 hover:text-brand-teal"
+              aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+
             {user && (
               <div className="hidden md:flex items-center gap-2">
                 <div
                   id="v2-header-streak-count"
-                  className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-black text-orange-600 shadow-sm shadow-orange-100/70"
+                  className="flex items-center gap-1.5 rounded-xl border border-orange-400/25 bg-orange-400/10 px-3 py-2 text-sm font-black text-orange-500 shadow-sm"
                   title="Streak học theo ngày"
                   aria-label={`Streak học theo ngày: ${user.currentStreak || 0}`}
                 >
@@ -135,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                 </div>
                 <div
                   id="v2-header-points-count"
-                  className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-black text-amber-600 shadow-sm shadow-amber-100/70"
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm font-black text-amber-500 shadow-sm"
                   title="Points từ lesson đã hoàn thành"
                   aria-label={`Points từ lesson đã hoàn thành: ${user.points || 0}`}
                 >
@@ -154,7 +166,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                   aria-expanded={showDropdown}
                   aria-controls="v2-user-menu"
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 transition-all duration-200 ${showDropdown ? 'bg-slate-100 shadow-sm ring-2 ring-brand-teal/20' : 'hover:bg-slate-100'}`}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 transition-all duration-200 ${showDropdown ? 'loopy-surface-soft shadow-sm ring-2 ring-brand-teal/20' : 'hover:bg-brand-teal/10'}`}
                 >
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-brand-teal text-slate-950 font-bold overflow-hidden transition-transform duration-200 group-hover:scale-105">
                     {user.avatarUrl ? (
@@ -163,7 +175,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                       user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'
                     )}
                   </div>
-                  <span className="hidden sm:inline text-sm font-semibold text-slate-700">{user.displayName || user.email?.split('@')[0]}</span>
+                  <span className="hidden sm:inline text-sm font-semibold loopy-muted">{user.displayName || user.email?.split('@')[0]}</span>
                 </button>
 
                 {/* Dropdown Menu */}
@@ -172,13 +184,13 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                     id="v2-user-menu"
                     role="menu"
                     aria-labelledby="v2-user-menu-button"
-                    className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-2xl shadow-slate-300/60 backdrop-blur-xl z-50 animate-v2-dropdown-enter"
+                    className="loopy-surface absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border loopy-border shadow-2xl backdrop-blur-xl animate-v2-dropdown-enter"
                   >
                     <Link
                       to="/settings"
                       role="menuitem"
                       onClick={() => setShowDropdown(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100 animate-v2-menu-item-enter"
+                      className="flex items-center gap-3 border-b loopy-border px-4 py-3 text-sm font-bold loopy-muted transition-colors hover:bg-brand-teal/10 animate-v2-menu-item-enter"
                     >
                       <Settings size={16} />
                       {getNavLabel('nav.settings')}
@@ -208,7 +220,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-brand-teal/10 rounded-lg transition-colors"
             >
               {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -217,7 +229,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <nav className="md:hidden mt-4 pb-4 border-t border-slate-200 pt-4 space-y-2">
+          <nav className="md:hidden mt-4 pb-4 border-t loopy-border pt-4 space-y-2">
             {visibleNavItems.map(item => (
               <Link
                 key={item.id}
@@ -225,7 +237,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                 className={`block px-4 py-2 rounded-lg transition-colors ${
                   isActive(item.path)
                     ? 'bg-brand-teal/10 text-brand-teal font-semibold'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : 'loopy-muted hover:bg-brand-teal/10'
                 }`}
                 onClick={() => setShowMobileMenu(false)}
               >

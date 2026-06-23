@@ -19,6 +19,7 @@ import {
 import TestCaseResults from './TestCaseResults'
 import AIAnalysisDisplay from './AIAnalysisDisplay'
 import GradingDepthDropdown from './GradingDepthDropdown'
+import { useContentPreloader } from '../../hooks/useContentPreloader'
 
 interface GradingResultsProps {
   result: GradingResult
@@ -36,7 +37,20 @@ const GradingResults: React.FC<GradingResultsProps> = ({
   onRetry,
   isGrading = false,
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const contentKeys = [
+    'grading.breakdown.test_score',
+    'grading.breakdown.ai_score',
+    'grading.tests.title',
+    'grading.tests.case_label',
+    'grading.tests.error_message',
+    'grading.tests.expected',
+    'grading.tests.actual',
+    'grading.tests.compare_hint',
+    'grading.tests.your_result',
+  ]
+  const { content } = useContentPreloader(contentKeys, i18n.language)
+  const text = (key: string, fallback: string) => content[key] || fallback
   const gradeColor = GRADE_COLORS[result.gradeLevel]
   const gradeLabel = GRADE_LABELS[result.gradeLevel]
 
@@ -141,7 +155,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             <div className="bg-bg-primary rounded-lg p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <FiCheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-gray-400">Đúng/Sai</span>
+                <span className="text-sm text-gray-400">{text('grading.breakdown.test_score', 'Đúng/Sai')}</span>
                 <span className="text-xs text-gray-500 ml-auto">
                   {showBothScores ? '70%' : '100%'}
                 </span>
@@ -164,7 +178,7 @@ const GradingResults: React.FC<GradingResultsProps> = ({
             <div className="bg-bg-primary rounded-lg p-4 border border-white/5">
               <div className="flex items-center gap-2 mb-2">
                 <FiCpu className="w-4 h-4 text-brand-cyan" />
-                <span className="text-sm text-gray-400">AI đánh giá</span>
+                <span className="text-sm text-gray-400">{text('grading.breakdown.ai_score', 'AI đánh giá')}</span>
                 <span className="text-xs text-gray-500 ml-auto">
                   {showBothScores ? '30%' : '100%'}
                 </span>
@@ -195,7 +209,18 @@ const GradingResults: React.FC<GradingResultsProps> = ({
         <>
           {/* Test Case Results */}
           {result.feedback.testResults && result.feedback.testResults.results.length > 0 && (
-            <TestCaseResults testRunResult={result.feedback.testResults} />
+            <TestCaseResults
+              testRunResult={result.feedback.testResults}
+              labels={{
+                title: text('grading.tests.title', 'Kiểm tra kết quả'),
+                caseLabel: text('grading.tests.case_label', 'Bài kiểm tra'),
+                errorMessage: text('grading.tests.error_message', '⚠️ Có lỗi xảy ra khi chạy bài kiểm tra này.'),
+                expected: text('grading.tests.expected', '✅ Kết quả mong đợi'),
+                actual: text('grading.tests.actual', '❌ Code của bạn cho ra'),
+                compareHint: text('grading.tests.compare_hint', '💡 So sánh hai kết quả và kiểm tra lại code của bạn nhé!'),
+                yourResult: text('grading.tests.your_result', 'Kết quả của bạn'),
+              }}
+            />
           )}
 
           {/* AI Analysis */}

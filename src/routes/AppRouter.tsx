@@ -41,6 +41,8 @@ const AdminAuditLogsPage = lazy(() => import('../pages/admin/AuditLogsPage'))
 const AdminImportHistoryPage = lazy(() => import('../pages/admin/ImportHistoryPage'))
 const AdminContentManagerPage = lazy(() => import('../pages/admin/ContentManagerPage'))
 const AdminModerationPage = lazy(() => import('../pages/admin/ModerationPage'))
+const AdminPracticePage = lazy(() => import('../pages/admin/AdminPracticePage'))
+const AdminPracticeEditorPage = lazy(() => import('../pages/admin/AdminPracticeEditorPage'))
 
 // Loading fallback component for lazy-loaded admin pages
 function AdminLoadingFallback() {
@@ -87,7 +89,7 @@ const AppRouter: React.FC = () => {
         {/* Practice routes */}
         <Route path="/practice" element={<Suspense fallback={<LoadingScreen />}><PracticePage /></Suspense>} />
         <Route path="/practice/sets" element={<Suspense fallback={<LoadingScreen />}><PracticeSetsPage /></Suspense>} />
-        <Route path="/practice/sets/new" element={<Suspense fallback={<LoadingScreen />}><PracticeSetCreatePage /></Suspense>} />
+        <Route path="/practice/sets/new" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><PracticeSetCreatePage /></Suspense></UserProtectedRoute>} />
         <Route path="/practice/sets/:setId/edit" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><PracticeSetCreatePage /></Suspense></UserProtectedRoute>} />
         <Route path="/practice/my-sets" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><MyPracticeSetsPage /></Suspense></UserProtectedRoute>} />
         <Route path="/practice/official-sets" element={<Suspense fallback={<LoadingScreen />}><OfficialPracticeSetsPage /></Suspense>} />
@@ -128,6 +130,9 @@ const AppRouter: React.FC = () => {
                     <Route path="audit-logs" element={<AdminAuditLogsPage />} />
                     <Route path="content" element={<AdminContentManagerPage />} />
                     <Route path="moderation" element={<AdminModerationPage />} />
+                    <Route path="practice" element={<AdminPracticePage />} />
+                    <Route path="practice/new" element={<AdminPracticeEditorPage />} />
+                    <Route path="practice/:id" element={<AdminPracticeEditorPage />} />
                   </Routes>
                 </Suspense>
               </AdminLayout>

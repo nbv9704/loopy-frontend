@@ -8,6 +8,7 @@ import TerminalOutput from './TerminalOutput'
 import NewFileModal from './NewFileModal'
 import { detectLanguage, getLanguageConfig, getLanguageExtension } from '../../utils/languageConfig'
 import { api } from '../../lib/api'
+import { useContentPreloader } from '../../hooks/useContentPreloader'
 import toast from 'react-hot-toast'
 import { Beaker, Lightbulb, PlayCircle, RotateCcw, Sparkles } from 'lucide-react'
 import {
@@ -26,7 +27,7 @@ interface MultiFileEditorProps {
 }
 
 const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, initialLanguage, initialTitle }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [files, setFiles] = useState<CodeFile[]>(() => {
     if (initialCode && initialLanguage) {
       const ext = initialLanguage === 'python' ? 'py' : initialLanguage === 'cpp' ? 'cpp' : 'js'
@@ -46,10 +47,39 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
 
   const activeFile = files.find(f => f.id === activeFileId) || files[0]
   const maxFiles = 10
+  const contentKeys = [
+    'playground.lab.title',
+    'playground.lab.from_lesson',
+    'playground.lab.desc',
+    'playground.lab.auth_notice',
+    'playground.lab.login_to_run',
+    'playground.lab.experiment_label',
+    'playground.lab.experiment1',
+    'playground.lab.experiment2',
+    'playground.lab.experiment3',
+    'playground.lab.action_create_file',
+    'playground.lab.action_delete_all',
+    'playground.lab.action_run_code',
+    'playground.lab.delete_confirm',
+    'playground.lab.delete_button',
+    'playground.lab.cancel_button',
+    'playground.lab.run_error',
+    'playground.lab.run_failed',
+    'playground.lab.login_required',
+  ]
+  const { content } = useContentPreloader(contentKeys, i18n.language)
+  const text = (key: string, fallback: string) => content[key] || fallback
+  const formatText = (key: string, fallback: string, values: Record<string, string | number>) => {
+    let value = text(key, fallback)
+    Object.entries(values).forEach(([token, replacement]) => {
+      value = value.split(`{${token}}`).join(String(replacement))
+    })
+    return value
+  }
   const experiments = [
-    'Đổi một giá trị và dự đoán output trước khi chạy.',
-    'Thêm một dòng print/log để kiểm tra suy nghĩ của bạn.',
-    'Cố tình tạo một lỗi nhỏ rồi đọc terminal để sửa.',
+    text('playground.lab.experiment1', 'Đổi một giá trị và dự đoán output trước khi chạy.'),
+    text('playground.lab.experiment2', 'Thêm một dòng print/log để kiểm tra suy nghĩ của bạn.'),
+    text('playground.lab.experiment3', 'Cố tình tạo một lỗi nhỏ rồi đọc terminal để sửa.'),
   ]
 
   // Save files to localStorage whenever they change
@@ -68,7 +98,7 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
 
   const requireAuth = (actionName: string) => {
     if (!user) {
-      toast.error(`Vui lòng đăng nhập để ${actionName}`)
+      toast.error(formatText('playground.lab.login_required', 'Vui lòng đăng nhập để {action}', { action: actionName }))
       navigate('/auth', { state: { from: { pathname: '/playground' } } })
       return false
     }
@@ -76,7 +106,7 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
   }
 
   const handleShowNewFileModal = () => {
-    if (requireAuth('tạo file mới')) {
+    if (requireAuth(text('playground.lab.action_create_file', 'tạo file mới'))) {
       setShowNewFileModal(true)
     }
   }
@@ -111,11 +141,11 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
   }
 
   const clearAllFiles = () => {
-    if (!requireAuth('xóa tất cả file')) return
+    if (!requireAuth(text('playground.lab.action_delete_all', 'xóa tất cả file'))) return
     toast(
       (toastInstance) => (
         <span className="flex flex-col gap-2">
-          <span>{t('playground.confirmDeleteAll')}</span>
+          <span>{text('playground.lab.delete_confirm', t('playground.confirmDeleteAll'))}</span>
           <span className="flex gap-2">
             <button
               className="px-3 py-1 bg-red-500 text-white rounded text-xs font-semibold"
@@ -128,13 +158,13 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
                 setOutputLogs([])
               }}
             >
-              Xóa
+              {text('playground.lab.delete_button', 'Xóa')}
             </button>
             <button
               className="px-3 py-1 bg-slate-700 text-white rounded text-xs"
               onClick={() => toast.dismiss(toastInstance.id)}
             >
-              Hủy
+              {text('playground.lab.cancel_button', 'Hủy')}
             </button>
           </span>
         </span>
@@ -144,7 +174,7 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
   }
 
   const runCode = async () => {
-    if (!requireAuth('chạy code')) return
+    if (!requireAuth(text('playground.lab.action_run_code', 'chạy code'))) return
     setOutputLogs(['> ' + t('common.loading') + '...'])
     
     try {
@@ -157,10 +187,10 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
           setOutputLogs(output ? output.split('\n') : [t('playground.runSuccessNoOutput')])
         }
       } else {
-        setOutputLogs(['❌ LỖI: Không thể thực thi mã nguồn.'])
+        setOutputLogs([`❌ ${text('playground.lab.run_error', 'LỖI')}: ${text('playground.lab.run_failed', 'Không thể thực thi mã nguồn.')}`])
       }
     } catch (err: any) {
-      setOutputLogs([`❌ LỖI: ${err.message}`])
+      setOutputLogs([`❌ ${text('playground.lab.run_error', 'LỖI')}: ${err.message}`])
     }
   }
 
@@ -189,15 +219,15 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
               </div>
               <div className="flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <h1 className="text-white text-2xl font-black">Loopy Lab</h1>
+                  <h1 className="text-white text-2xl font-black">{text('playground.lab.title', 'Loopy Lab')}</h1>
                   {initialTitle && (
                     <span className="rounded-full border border-brand-teal/30 bg-brand-teal/10 px-3 py-1 text-xs font-bold text-brand-teal">
-                      Từ bài học: {initialTitle}
+                      {formatText('playground.lab.from_lesson', 'Từ bài học: {title}', { title: initialTitle })}
                     </span>
                   )}
                 </div>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  Thử nghiệm tự do với code. Loopy chỉ chạy file đang mở: <span className="font-bold text-white">{activeFile.name}</span>.
+                  {formatText('playground.lab.desc', 'Thử nghiệm tự do với code. Loopy chỉ chạy file đang mở: {file}.', { file: activeFile.name })}
                 </p>
                 <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
@@ -213,7 +243,7 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
                     {index === 0 && <Lightbulb className="h-3.5 w-3.5" />}
                     {index === 1 && <PlayCircle className="h-3.5 w-3.5" />}
                     {index === 2 && <RotateCcw className="h-3.5 w-3.5" />}
-                    Thử {index + 1}
+                    {text('playground.lab.experiment_label', 'Thử')} {index + 1}
                   </div>
                   <p className="text-xs leading-5 text-slate-400">{experiment}</p>
                 </div>
@@ -226,12 +256,12 @@ const PlaygroundMultiFileUI: React.FC<MultiFileEditorProps> = ({ initialCode, in
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
                 <div>
-                  <div className="font-bold">Bạn có thể xem và sửa code. Đăng nhập để chạy và lưu Lab.</div>
+                  <div className="font-bold">{text('playground.lab.auth_notice', 'Bạn có thể xem và sửa code. Đăng nhập để chạy và lưu Lab.')}</div>
                   <button
                     onClick={() => navigate('/auth', { state: { from: { pathname: '/playground' } } })}
                     className="mt-2 text-xs font-black uppercase tracking-widest text-yellow-300 underline"
                   >
-                    Đăng nhập để chạy code
+                    {text('playground.lab.login_to_run', 'Đăng nhập để chạy code')}
                   </button>
                 </div>
               </div>

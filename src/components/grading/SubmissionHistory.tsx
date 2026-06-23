@@ -122,6 +122,7 @@ interface SubmissionRowProps {
 }
 
 const SubmissionRow: React.FC<SubmissionRowProps> = ({ submission, isBest, onClick }) => {
+  const { t } = useTranslation()
   const gradeColor = submission.gradeLevel ? GRADE_COLORS[submission.gradeLevel] : '#6b7280'
   const gradeLabel = submission.gradeLevel ? GRADE_LABELS[submission.gradeLevel] : '—'
 
@@ -169,7 +170,7 @@ const SubmissionRow: React.FC<SubmissionRowProps> = ({ submission, isBest, onCli
       <div className="flex items-center gap-4">
         {submission.testScore !== null && (
           <div className="text-right">
-            <p className="text-[10px] text-gray-500">Test</p>
+            <p className="text-[10px] text-gray-500">{t('grading.submission.test_label', 'Test')}</p>
             <p className="text-xs text-gray-300">{submission.testScore}</p>
           </div>
         )}

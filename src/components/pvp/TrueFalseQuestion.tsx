@@ -25,11 +25,17 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   submissionResult,
 }) => {
   const { t } = useTranslation()
-  // Fixed order: TRUE first, FALSE second (no shuffle)
-  const options = question.options || [
-    { id: 'true', text: 'True' },
-    { id: 'false', text: 'False' },
-  ]
+  // Fixed order: TRUE first, FALSE second (no shuffle).
+  // PvP can receive true/false options as either ['true', 'false'] from raw data
+  // or [{ id, text }] from the mapped API payload, so normalize defensively.
+  const options = (question.options?.length ? question.options : ['true', 'false']).map((option: any) => {
+    const rawId = typeof option === 'string' ? option : option.id
+    const id = String(rawId).trim().toLowerCase() === 'true' ? 'true' : 'false'
+    return {
+      id,
+      text: id === 'true' ? 'TRUE' : 'FALSE',
+    }
+  })
 
   const getButtonStyle = (optionId: string) => {
     const isSelected = selectedAnswer === optionId
@@ -73,7 +79,7 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
         {options.map((option: any) => {
           const isTrue = option.id === 'true'
           const Icon = isTrue ? Check : X
-          const label = isTrue ? 'TRUE' : 'FALSE'
+          const label = option.text
 
           return (
             <motion.button

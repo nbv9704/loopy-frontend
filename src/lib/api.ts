@@ -248,6 +248,11 @@ class ApiClient {
     return this.request(`/api/languages/${languageId}/curriculum`)
   }
 
+  /** Batch: chapters + lessons filtered by learning path */
+  async getCurriculumByPath(languageId: string, learningPath: string) {
+    return this.request(`/api/languages/${languageId}/path/${learningPath}/curriculum`)
+  }
+
   // Chapters
   async getChapter(id: string) {
     return this.request(`/api/chapters/${id}`)
@@ -272,6 +277,18 @@ class ApiClient {
   }
 
   // Learning paths
+  async getPaths(params?: { languageId?: string; goalId?: string }) {
+    const searchParams = new URLSearchParams()
+    if (params?.languageId) searchParams.set('languageId', params.languageId)
+    if (params?.goalId) searchParams.set('goalId', params.goalId)
+    const query = searchParams.toString()
+    return this.request(`/api/paths${query ? `?${query}` : ''}`)
+  }
+
+  async getPath(pathId: string) {
+    return this.request(`/api/paths/${pathId}`)
+  }
+
   async getPathsByGoal(goalId: string) {
     return this.request(`/api/paths/goal/${goalId}`)
   }
@@ -393,6 +410,22 @@ class ApiClient {
     return this.request(`/api/grading/exercises/${exerciseId}/submissions/${submissionId}`)
   }
 
+  async requestLessonHint(lessonId: string, code: string, language: string, context?: {
+    starterCode?: string
+    lessonTitle?: string
+    lessonDescription?: string
+    outputLogs?: string[]
+  }): Promise<ApiResponse<{ hint: string }>> {
+    return this.request(`/api/lessons/${lessonId}/hint`, {
+      method: 'POST',
+      body: JSON.stringify({
+        code,
+        language,
+        ...(context || {}),
+      }),
+    })
+  }
+
   async getAIHint(exerciseId: string, code: string, language: string, context?: {
     starterCode?: string
     lessonTitle?: string
@@ -419,6 +452,7 @@ class ApiClient {
     avatarUrl?: string
     bio?: string
     preferredLanguage?: string
+    learningPath?: string
     learningGoal?: string
     onboardingCompleted?: boolean
     experienceLevel?: string

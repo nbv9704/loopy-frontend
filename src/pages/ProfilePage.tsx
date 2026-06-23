@@ -17,37 +17,40 @@ const sideNav: Array<{ id: ProfileTab; labelKey: string; fallback: string; icon:
   { id: 'settings', labelKey: 'profile.tab.settings', fallback: 'Settings', icon: FiSettings },
 ]
 
-const goalLabels: Record<string, string> = {
-  start_from_zero: 'Start from zero',
-  build_web: 'Build web apps',
-  school_work: 'School work',
-  explore: 'Explore coding',
-}
 
 const AVATAR_PRESETS = [
-  'https://api.dicebear.com/7.x/bottts/svg?seed=loopy1',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=loopy2',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=loopy3',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=loopy4',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=loopy5',
+  '/images/avatar/croc.webp',
+  '/images/avatar/fox.webp',
+  '/images/avatar/penguin.webp',
+  '/images/avatar/tiger.webp',
 ]
+
+const DEFAULT_AVATAR_PRESET = AVATAR_PRESETS[0]
+
+const normalizeAvatarUrl = (avatarUrl?: string) => {
+  if (!avatarUrl) return ''
+  if (avatarUrl.includes('dicebear.com') || avatarUrl.includes('bottts')) {
+    return DEFAULT_AVATAR_PRESET
+  }
+  return avatarUrl
+}
 
 const TabPanel = ({ icon: Icon, title, desc, children }: { icon: typeof FiActivity; title: string; desc: string; children: React.ReactNode }) => (
   <div className="grid gap-6">
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
+    <div className="loopy-card rounded-[2rem] border p-6 shadow-xl md:p-8">
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><Icon /></div>
-      <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">{title}</h1>
-      <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">{desc}</p>
+      <h1 className="loopy-heading text-4xl font-black tracking-tight md:text-6xl">{title}</h1>
+      <p className="loopy-body mt-4 max-w-3xl text-base leading-8">{desc}</p>
     </div>
     {children}
   </div>
 )
 
 const MiniStat = ({ label, value, icon: Icon, note }: { label: string; value: string; icon: typeof FiActivity; note: string }) => (
-  <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+  <div className="loopy-card rounded-[2rem] border p-5 shadow-sm">
     <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-brand-teal"><Icon /></div>
-    <div className="text-3xl font-black">{value}</div>
-    <div className="mt-1 font-black text-slate-700">{label}</div>
+    <div className="text-3xl font-black loopy-heading">{value}</div>
+    <div className="mt-1 font-black loopy-muted">{label}</div>
     <div className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">{note}</div>
   </div>
 )
@@ -55,23 +58,27 @@ const MiniStat = ({ label, value, icon: Icon, note }: { label: string; value: st
 const InfoGrid = ({ items }: { items: Array<[string, string, typeof FiActivity]> }) => (
   <div className="grid gap-4 md:grid-cols-3">
     {items.map(([label, value, Icon]) => (
-      <div key={label} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div key={label} className="loopy-card rounded-[2rem] border p-5 shadow-sm">
         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-teal/20 text-brand-ocean"><Icon /></div>
         <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</div>
-        <div className="mt-2 text-2xl font-black text-slate-950">{value}</div>
+        <div className="loopy-heading mt-2 text-2xl font-black">{value}</div>
       </div>
     ))}
   </div>
 )
 
 const NoticeCard = ({ hasProgressData, text }: { hasProgressData: boolean; text: (key: string, fb: string) => string }) => (
-  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+  <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
     <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBell /> {text('profile.notify.badge', 'Notice')}</div>
     <div className="grid gap-3">
-      <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">
-        {hasProgressData ? 'Progress đang đọc từ backend. Mở Journey Map để tiếp tục đúng bước.' : 'Chưa có progress backend; hoàn thành lesson đầu tiên để profile cập nhật.'}
+      <div className="loopy-card-soft rounded-2xl border p-4 text-sm leading-6 loopy-body">
+        {hasProgressData
+          ? text('profile.notice.progress_saved', 'Progress đang đọc từ backend. Mở Journey Map để tiếp tục đúng bước.')
+          : text('profile.notice.no_progress', 'Chưa có progress backend; hoàn thành lesson đầu tiên để profile cập nhật.')}
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-4 text-sm leading-6 text-slate-600">Docs là tài liệu tham khảo; progress chỉ lưu sau khi lesson được Kiểm tra thành công.</div>
+      <div className="loopy-card-soft rounded-2xl border p-4 text-sm leading-6 loopy-body">
+        {text('profile.notice.docs_rule', 'Docs là tài liệu tham khảo; progress chỉ lưu sau khi lesson được Kiểm tra thành công.')}
+      </div>
     </div>
   </div>
 )
@@ -109,8 +116,17 @@ const ProfilePage: React.FC = () => {
     'profile.today.badge', 'profile.today.title', 'profile.today.desc', 'profile.today.progress',
     'profile.notify.badge', 'profile.notice.title', 'profile.notice.desc',
     'profile.journey.tab.title', 'profile.journey.tab.desc', 'profile.journey.tab.card1', 'profile.journey.tab.card2', 'profile.journey.tab.card3',
-    'profile.goals.tab.title', 'profile.goals.tab.desc', 'profile.goals.current_goal', 'profile.goals.preferred_language', 'profile.goals.update_btn',
+    'profile.goals.tab.title', 'profile.goals.tab.desc', 'profile.goals.current_goal', 'profile.goals.preferred_language', 'profile.goals.experience_level', 'profile.goals.experience_empty', 'profile.goals.newbie_path_title', 'profile.goals.newbie_path_desc', 'profile.goals.update_btn', 'profile.goals.view_all_paths',
+    'profile.goal.start_from_zero', 'profile.goal.build_web', 'profile.goal.school_work', 'profile.goal.explore',
     'profile.settings.tab.title', 'profile.settings.tab.desc', 'profile.settings.account', 'profile.settings.onboarding', 'profile.settings.language',
+    'profile.loading', 'profile.toast.save_success', 'profile.toast.save_error', 'profile.toast.connection_error', 'profile.toast.image_only',
+    'profile.notice.progress_saved', 'profile.notice.no_progress', 'profile.notice.docs_rule', 'profile.journey.empty',
+    'profile.metric.note.complete_lesson', 'profile.metric.note.daily_habit', 'profile.metric.note.saved_lessons', 'profile.saved_lessons.singular', 'profile.saved_lessons.plural',
+    'profile.activity.progress_saved_title', 'profile.activity.progress_saved_desc', 'profile.activity.no_progress_title', 'profile.activity.no_progress_desc', 'profile.activity.onboarding_done_title', 'profile.activity.onboarding_done_desc', 'profile.activity.onboarding_missing_title', 'profile.activity.onboarding_missing_desc', 'profile.activity.current_journey_title', 'profile.activity.current_journey_desc',
+    'profile.settings.avatar_title', 'profile.settings.choose_preset', 'profile.settings.remove_avatar', 'profile.settings.upload_label', 'profile.settings.upload_button', 'profile.settings.upload_help',
+    'profile.settings.account_title', 'profile.settings.email_label', 'profile.settings.locked', 'profile.settings.display_name', 'profile.settings.display_name_placeholder', 'profile.settings.bio', 'profile.settings.bio_limit', 'profile.settings.bio_placeholder',
+    'profile.settings.learning_path_title', 'profile.settings.preferred_language', 'profile.settings.language.javascript', 'profile.settings.language.python', 'profile.settings.language.cpp', 'profile.settings.learning_goal', 'profile.settings.goal.start_from_zero', 'profile.settings.goal.build_web', 'profile.settings.goal.school_work', 'profile.settings.goal.explore',
+    'profile.settings.save_title', 'profile.settings.save_desc', 'profile.settings.saving', 'profile.settings.save_button', 'profile.settings.onboarding_title', 'profile.settings.onboarding_desc', 'profile.settings.onboarding_button', 'profile.sidebar.role',
     'footer.aboutLoopy', 'footer.about', 'footer.team', 'footer.contact', 'footer.resources', 'footer.docs', 'footer.blog', 'footer.faq', 'footer.description', 'footer.allRightsReserved', 'footer.privacy', 'footer.terms',
   ]
 
@@ -164,7 +180,7 @@ const ProfilePage: React.FC = () => {
             bio: p.bio || '',
             preferredLanguage: p.preferredLanguage || p.preferred_language || 'javascript',
             learningGoal: p.learningGoal || p.learning_goal || 'start_from_zero',
-            avatarUrl: p.avatarUrl || p.avatar_url || '',
+            avatarUrl: normalizeAvatarUrl(p.avatarUrl || p.avatar_url || ''),
           })
         }
       } catch (err) {
@@ -184,12 +200,15 @@ const ProfilePage: React.FC = () => {
         body: JSON.stringify(profileData),
       })
       if (res.success) {
-        toast.success('Cập nhật thông tin thành công!')
+        toast.success(text('profile.toast.save_success', 'Cập nhật thông tin thành công! Trang sẽ tự làm mới...'))
+        window.setTimeout(() => {
+          window.location.reload()
+        }, 1200)
       } else {
-        toast.error((res.error as any)?.message || 'Cập nhật thất bại')
+        toast.error((res.error as any)?.message || text('profile.toast.save_error', 'Cập nhật thất bại'))
       }
     } catch {
-      toast.error('Lỗi kết nối. Vui lòng thử lại.')
+      toast.error(text('profile.toast.connection_error', 'Lỗi kết nối. Vui lòng thử lại.'))
     } finally {
       setProfileSaving(false)
     }
@@ -200,7 +219,7 @@ const ProfilePage: React.FC = () => {
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Chỉ hỗ trợ file ảnh')
+      toast.error(text('profile.toast.image_only', 'Chỉ hỗ trợ file ảnh'))
       return
     }
 
@@ -269,58 +288,81 @@ const ProfilePage: React.FC = () => {
   const preferredLanguage = (user as any)?.preferredLanguage || (user as any)?.preferred_language || 'javascript'
   const learningGoal = (user as any)?.learningGoal || (user as any)?.learning_goal || 'start_from_zero'
   const journeyHref = `/library/${preferredLanguage}`
+  const goalLabel = (goal: string) => {
+    const fallbackMap: Record<string, string> = {
+      start_from_zero: 'Start from zero',
+      build_web: 'Build web apps',
+      school_work: 'School work',
+      explore: 'Explore coding',
+    }
+    return text(`profile.goal.${goal}`, fallbackMap[goal] || goal)
+  }
 
   const metricCards = useMemo(() => [
-    { label: text('profile.stats.saved', 'Progress saved'), value: stats.completedLessons.toString(), icon: FiCheckCircle, note: 'completeLesson' },
-    { label: text('profile.stats.streak', 'Streak'), value: stats.currentStreak.toString(), icon: FiZap, note: 'daily habit' },
-    { label: text('profile.stats.points', 'Points'), value: stats.totalPoints.toString(), icon: FiAward, note: 'saved lessons' },
+    { label: text('profile.stats.saved', 'Progress saved'), value: stats.completedLessons.toString(), icon: FiCheckCircle, note: text('profile.metric.note.complete_lesson', 'completeLesson') },
+    { label: text('profile.stats.streak', 'Streak'), value: stats.currentStreak.toString(), icon: FiZap, note: text('profile.metric.note.daily_habit', 'daily habit') },
+    { label: text('profile.stats.points', 'Points'), value: stats.totalPoints.toString(), icon: FiAward, note: text('profile.metric.note.saved_lessons', 'saved lessons') },
   ], [content, stats])
 
-  const savedLessonsLabel = stats.completedLessons === 1 ? '1 saved lesson' : `${stats.completedLessons} saved lessons`
+  const savedLessonsLabel = stats.completedLessons === 1
+    ? text('profile.saved_lessons.singular', '1 saved lesson')
+    : text('profile.saved_lessons.plural', '{count} saved lessons').replace('{count}', stats.completedLessons.toString())
   const todayCompleted = stats.completedToday > 0
   const todayProgressWidth = todayCompleted ? '100%' : '0%'
 
   const activities = [
     stats.hasProgressData
-      ? ['Progress đã lưu', `${savedLessonsLabel} đã được backend ghi nhận qua progress.`]
-      : ['Chưa có progress đã lưu', 'Hoàn thành một lesson bằng nút Kiểm tra để backend ghi nhận tiến độ.'],
-    [(user as any)?.onboardingCompleted ? 'Onboarding đã hoàn tất' : 'Onboarding chưa hoàn tất', (user as any)?.onboardingCompleted ? 'Mục tiêu học và ngôn ngữ ưu tiên đã được lưu trong profile.' : 'Chạy onboarding để Loopy gợi ý lộ trình đầu tiên.'],
-    ['Lộ trình hiện tại', `Journey Map đang mở theo ${preferredLanguage}.`],
+      ? [
+          text('profile.activity.progress_saved_title', 'Progress đã lưu'),
+          text('profile.activity.progress_saved_desc', '{count} đã được backend ghi nhận qua progress.').replace('{count}', savedLessonsLabel),
+        ]
+      : [
+          text('profile.activity.no_progress_title', 'Chưa có progress đã lưu'),
+          text('profile.activity.no_progress_desc', 'Hoàn thành một lesson bằng nút Kiểm tra để backend ghi nhận tiến độ.'),
+        ],
+    [
+      (user as any)?.onboardingCompleted ? text('profile.activity.onboarding_done_title', 'Onboarding đã hoàn tất') : text('profile.activity.onboarding_missing_title', 'Onboarding chưa hoàn tất'),
+      (user as any)?.onboardingCompleted ? text('profile.activity.onboarding_done_desc', 'Mục tiêu học và ngôn ngữ ưu tiên đã được lưu trong profile.') : text('profile.activity.onboarding_missing_desc', 'Chạy onboarding để Loopy gợi ý lộ trình đầu tiên.'),
+    ],
+    [
+      text('profile.activity.current_journey_title', 'Lộ trình hiện tại'),
+      text('profile.activity.current_journey_desc', 'Journey Map đang mở theo {language}.').replace('{language}', preferredLanguage),
+    ],
   ]
 
   if (contentLoading) {
-    return <LoadingScreen message="Loading profile..." />
+    return <LoadingScreen message={text('profile.loading', 'Loading profile...')} />
   }
 
   const renderOverview = () => (
     <div className="grid gap-6">
-      <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
+      <div className="loopy-card relative overflow-hidden rounded-[2rem] border p-6 shadow-xl md:p-8">
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
         <div className="relative grid gap-8 lg:grid-cols-[1fr,360px] lg:items-end">
           <div>
             <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
               {text('profile.badge', 'Profile')}
             </div>
-            <h1 className="max-w-3xl text-5xl font-black tracking-tight text-slate-950 md:text-7xl">
+            <h1 className="loopy-heading max-w-3xl text-5xl font-black tracking-tight md:text-7xl">
               {text('profile.title', 'Your learning profile.')}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+            <p className="loopy-body mt-6 max-w-2xl text-lg leading-8">
               {text('profile.subtitle', 'Review your progress, streak, points, and the next lesson in your Loopy journey.')}
             </p>
           </div>
-          <div className="rounded-[1.5rem] border border-slate-200 bg-[#f8fafc] p-5">
+          <div className="loopy-card-soft rounded-[1.5rem] border p-5">
             <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{text('profile.journey.badge', 'Journey progress')}</div>
-            <h2 className="mt-2 text-2xl font-black">{text('profile.journey.title', 'You are building a coding habit one step at a time.')}</h2>
+            <h2 className="loopy-heading mt-2 text-2xl font-black">{text('profile.journey.title', 'You are building a coding habit one step at a time.')}</h2>
             {stats.hasProgressData ? (
-              <div className="mt-4 rounded-2xl border border-brand-teal/30 bg-white p-4 text-sm font-black text-brand-ocean">
+              <div className="mt-4 rounded-2xl border border-brand-teal/30 loopy-surface p-4 text-sm font-black text-brand-ocean">
                 {savedLessonsLabel}
               </div>
             ) : (
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-500">
-                Chưa có lesson nào được lưu. Hãy hoàn thành bài đầu tiên bằng nút Kiểm tra.
+              <div className="loopy-surface mt-4 rounded-2xl border loopy-border p-4 text-sm font-bold loopy-muted">
+                {text('profile.journey.empty', 'Chưa có lesson nào được lưu. Hãy hoàn thành bài đầu tiên bằng nút Kiểm tra.')}
               </div>
             )}
-            <p className="mt-3 text-sm text-slate-600">{stats.completedLessons} {text('profile.journey.lessons_done', 'lessons completed')}</p>
+            <p className="loopy-body mt-3 text-sm">{stats.completedLessons} {text('profile.journey.lessons_done', 'lessons completed')}</p>
           </div>
         </div>
       </div>
@@ -329,10 +371,10 @@ const ProfilePage: React.FC = () => {
         {metricCards.map(stat => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/80">
+            <div key={stat.label} className="loopy-card rounded-[2rem] border p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-brand-teal shadow-[0_4px_0_#54d9c4]"><Icon /></div>
-              <div className="text-4xl font-black">{stat.value}</div>
-              <div className="mt-1 font-black text-slate-700">{stat.label}</div>
+              <div className="loopy-heading text-4xl font-black">{stat.value}</div>
+              <div className="mt-1 font-black loopy-muted">{stat.label}</div>
               <div className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">{stat.note}</div>
             </div>
           )
@@ -340,12 +382,12 @@ const ProfilePage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr,380px]">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
           <div className="mb-5 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiPlay /> {text('profile.next.title', 'Recommended next lesson')}</div>
           <div className="rounded-[1.5rem] border border-brand-teal/30 bg-brand-teal/10 p-5">
             <div className="text-xs font-black uppercase tracking-[0.18em] text-brand-ocean">{text('profile.next.badge', 'Next lesson')}</div>
-            <h2 className="mt-2 text-3xl font-black text-slate-950">{text('profile.next.headline', 'Return to the step that is already open.')}</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{text('profile.next.desc', 'Continue the active lesson instead of picking a random new topic.')}</p>
+            <h2 className="loopy-heading mt-2 text-3xl font-black">{text('profile.next.headline', 'Return to the step that is already open.')}</h2>
+            <p className="loopy-body mt-3 text-sm leading-6">{text('profile.next.desc', 'Continue the active lesson instead of picking a random new topic.')}</p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <PressedButton to="/languages">{text('profile.next.btn_path', 'View paths')}</PressedButton>
               <PressedButton to={journeyHref} variant="secondary">{text('profile.next.btn_journey', 'Go to Journey Map')}</PressedButton>
@@ -353,15 +395,15 @@ const ProfilePage: React.FC = () => {
           </div>
           <div className="mt-6 grid gap-3">
             {activities.map(([title, description]) => (
-              <div key={title} className="flex gap-3 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
+              <div key={title} className="loopy-card-soft flex gap-3 rounded-2xl border p-4">
                 <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-teal text-slate-950"><FiCheckCircle /></div>
-                <div><div className="font-black text-slate-800">{title}</div><div className="mt-1 text-sm leading-6 text-slate-600">{description}</div></div>
+                <div><div className="font-black loopy-heading">{title}</div><div className="loopy-body mt-1 text-sm leading-6">{description}</div></div>
               </div>
             ))}
           </div>
         </div>
         <aside className="grid gap-4">
-          <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
+          <div className="rounded-[2rem] border border-white/10 bg-slate-950 p-6 text-white shadow-sm">
             <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-brand-teal"><FiTarget /> {text('profile.today.badge', 'Today focus')}</div>
             <h2 className="text-3xl font-black">{text('profile.today.title', 'One small lesson is enough.')}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{text('profile.today.desc', 'Today’s goal: complete one lesson with a successful Check.')}</p>
@@ -384,8 +426,8 @@ const ProfilePage: React.FC = () => {
         {metricCards.map(stat => <MiniStat key={stat.label} {...stat} />)}
       </div>
       <div className="rounded-[2rem] border border-brand-teal/30 bg-brand-teal/10 p-6">
-        <h3 className="text-2xl font-black text-slate-950">{text('profile.journey.tab.card1', 'Continue from the Journey Map')}</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{text('profile.journey.tab.card2', 'The library page separates completed, current, next, and locked lessons so you do not have to guess.')}</p>
+        <h3 className="loopy-heading text-2xl font-black">{text('profile.journey.tab.card1', 'Continue from the Journey Map')}</h3>
+        <p className="loopy-body mt-3 text-sm leading-6">{text('profile.journey.tab.card2', 'The library page separates completed, current, next, and locked lessons so you do not have to guess.')}</p>
         <div className="mt-5"><PressedButton to={journeyHref}>{text('profile.journey.tab.card3', 'Open Journey Map')}</PressedButton></div>
       </div>
     </TabPanel>
@@ -394,14 +436,14 @@ const ProfilePage: React.FC = () => {
   const renderGoals = () => (
     <TabPanel icon={FiTarget} title={text('profile.goals.tab.title', 'Learning goals')} desc={text('profile.goals.tab.desc', 'Keep the goal small enough to act on today. You can update your path without losing saved progress.')}>
       <InfoGrid items={[
-        [text('profile.goals.current_goal', 'Current goal'), goalLabels[learningGoal] || learningGoal, FiTarget],
+        [text('profile.goals.current_goal', 'Current goal'), goalLabel(learningGoal), FiTarget],
         [text('profile.goals.preferred_language', 'Preferred language'), preferredLanguage, FiGlobe],
-        ['Mức kinh nghiệm', (user as any)?.experienceLevel || (user as any)?.experience_level || 'Chưa chọn', FiCheckCircle],
+        [text('profile.goals.experience_level', 'Mức kinh nghiệm'), (user as any)?.experienceLevel || (user as any)?.experience_level || text('profile.goals.experience_empty', 'Chưa chọn'), FiCheckCircle],
       ]} />
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-2xl font-black">Newbie-first path</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-600">Loopy ưu tiên một bước tiếp theo rõ ràng thay vì bắt bạn tự chọn giữa nhiều chủ đề.</p>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row"><PressedButton to="/onboarding">{text('profile.goals.update_btn', 'Update my path')}</PressedButton><PressedButton to="/languages" variant="secondary">View all paths</PressedButton></div>
+      <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
+        <h3 className="loopy-heading text-2xl font-black">{text('profile.goals.newbie_path_title', 'Newbie-first path')}</h3>
+        <p className="loopy-body mt-3 text-sm leading-6">{text('profile.goals.newbie_path_desc', 'Loopy ưu tiên một bước tiếp theo rõ ràng thay vì bắt bạn tự chọn giữa nhiều chủ đề.')}</p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row"><PressedButton to="/onboarding">{text('profile.goals.update_btn', 'Update my path')}</PressedButton><PressedButton to="/languages" variant="secondary">{text('profile.goals.view_all_paths', 'View all paths')}</PressedButton></div>
       </div>
     </TabPanel>
   )
@@ -409,7 +451,7 @@ const ProfilePage: React.FC = () => {
 
 
   const renderSettings = () => (
-    <TabPanel icon={FiSettings} title="Cài đặt tài khoản" desc="Chỉnh sửa thông tin cá nhân, ngôn ngữ ưu tiên và mục tiêu học của bạn. Email đăng nhập không thể thay đổi.">
+    <TabPanel icon={FiSettings} title={text('profile.settings.tab.title', 'Cài đặt tài khoản')} desc={text('profile.settings.tab.desc', 'Chỉnh sửa thông tin cá nhân, ngôn ngữ ưu tiên và mục tiêu học của bạn. Email đăng nhập không thể thay đổi.')}>
       {profileLoading ? (
         <div className="flex items-center justify-center py-16">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-teal border-t-transparent" />
@@ -417,12 +459,12 @@ const ProfilePage: React.FC = () => {
       ) : (
         <div className="grid gap-6">
           {/* Avatar Settings */}
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiUser className="h-4 w-4" /> Ảnh đại diện
+              <FiUser className="h-4 w-4" /> {text('profile.settings.avatar_title', 'Ảnh đại diện')}
             </div>
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-2 border-slate-100 bg-slate-50 shadow-sm">
+              <div className="loopy-surface flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-2 loopy-border shadow-sm">
                 {profileData.avatarUrl ? (
                   <img src={profileData.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
@@ -431,13 +473,13 @@ const ProfilePage: React.FC = () => {
               </div>
               <div className="flex-1 grid gap-4">
                 <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">Chọn ảnh có sẵn</label>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.choose_preset', 'Chọn ảnh có sẵn')}</label>
                   <div className="flex flex-wrap gap-3">
                     {AVATAR_PRESETS.map((preset) => (
                       <button
                         key={preset}
                         onClick={() => setProfileData(prev => ({ ...prev, avatarUrl: preset }))}
-                        className={`h-12 w-12 overflow-hidden rounded-xl border-2 transition-all hover:-translate-y-0.5 ${profileData.avatarUrl === preset ? 'border-brand-teal shadow-[0_4px_0_#54d9c4]' : 'border-transparent bg-slate-100 hover:border-slate-300'}`}
+                        className={`h-12 w-12 overflow-hidden rounded-xl border-2 transition-all hover:-translate-y-0.5 ${profileData.avatarUrl === preset ? 'border-brand-teal shadow-[0_4px_0_#54d9c4]' : 'border-transparent loopy-surface hover:border-[color:var(--loopy-border)]'}`}
                       >
                         <img src={preset} alt="Preset avatar" className="h-full w-full object-cover" />
                       </button>
@@ -447,56 +489,56 @@ const ProfilePage: React.FC = () => {
                         onClick={() => setProfileData(prev => ({ ...prev, avatarUrl: '' }))}
                         className="flex h-12 items-center gap-2 rounded-xl border-2 border-transparent bg-rose-50 px-3 text-xs font-bold text-rose-500 transition-all hover:bg-rose-100"
                       >
-                        Xóa ảnh
+                        {text('profile.settings.remove_avatar', 'Xóa ảnh')}
                       </button>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">Hoặc tự tải ảnh lên</label>
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200">
-                    Chọn ảnh... (Tự nén)
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.upload_label', 'Hoặc tự tải ảnh lên')}</label>
+                  <label className="loopy-subtle-button inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors">
+                    {text('profile.settings.upload_button', 'Chọn ảnh... (Tự nén)')}
                     <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleAvatarUpload} />
                   </label>
-                  <p className="mt-2 text-xs text-slate-400">Ảnh sẽ được tự động nén thu nhỏ để tiết kiệm dữ liệu.</p>
+                  <p className="mt-2 text-xs text-slate-400">{text('profile.settings.upload_help', 'Ảnh sẽ được tự động nén thu nhỏ để tiết kiệm dữ liệu.')}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Email – read only */}
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiUser className="h-4 w-4" /> Thông tin tài khoản
+              <FiUser className="h-4 w-4" /> {text('profile.settings.account_title', 'Thông tin tài khoản')}
             </div>
             <div className="grid gap-4">
               <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">Email (không thể thay đổi)</label>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="flex-1 text-sm font-bold text-slate-500">{(user as any)?.email || '—'}</span>
-                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-black text-slate-500">Khóa</span>
+                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.email_label', 'Email (không thể thay đổi)')}</label>
+                <div className="loopy-card-soft flex items-center gap-3 rounded-2xl border px-4 py-3">
+                  <span className="flex-1 text-sm font-bold loopy-muted">{(user as any)?.email || '—'}</span>
+                  <span className="rounded-full loopy-surface px-2 py-0.5 text-xs font-black loopy-muted">{text('profile.settings.locked', 'Khóa')}</span>
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">Tên hiển thị</label>
+                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.display_name', 'Tên hiển thị')}</label>
                 <input
                   type="text"
                   value={profileData.displayName}
                   onChange={e => setProfileData(prev => ({ ...prev, displayName: e.target.value }))}
-                  placeholder="Nhập tên hiển thị..."
+                  placeholder={text('profile.settings.display_name_placeholder', 'Nhập tên hiển thị...')}
                   maxLength={50}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
+                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">Bio <span className="normal-case font-normal text-slate-400">(tối đa 500 ký tự)</span></label>
+                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.bio', 'Bio')} <span className="normal-case font-normal text-slate-400">{text('profile.settings.bio_limit', '(tối đa 500 ký tự)')}</span></label>
                 <textarea
                   value={profileData.bio}
                   onChange={e => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Giới thiệu ngắn về bản thân..."
+                  placeholder={text('profile.settings.bio_placeholder', 'Giới thiệu ngắn về bản thân...')}
                   maxLength={500}
                   rows={3}
-                  className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
+                  className="w-full resize-none rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
                 />
                 <div className="mt-1 text-right text-xs text-slate-400">{profileData.bio.length}/500</div>
               </div>
@@ -504,44 +546,44 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* Learning preferences */}
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiTarget className="h-4 w-4" /> Lộ trình học
+              <FiTarget className="h-4 w-4" /> {text('profile.settings.learning_path_title', 'Lộ trình học')}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">Ngôn ngữ ưu tiên</label>
+                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.preferred_language', 'Ngôn ngữ ưu tiên')}</label>
                 <select
                   value={profileData.preferredLanguage}
                   onChange={e => setProfileData(prev => ({ ...prev, preferredLanguage: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
+                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
                 >
-                  <option value="javascript">JavaScript Web Starter</option>
-                  <option value="python">Python Foundations</option>
-                  <option value="cpp">C++ School Foundations</option>
+                  <option value="javascript">{text('profile.settings.language.javascript', 'JavaScript Web Starter')}</option>
+                  <option value="python">{text('profile.settings.language.python', 'Python Foundations')}</option>
+                  <option value="cpp">{text('profile.settings.language.cpp', 'C++ School Foundations')}</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">Mục tiêu học</label>
+                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.learning_goal', 'Mục tiêu học')}</label>
                 <select
                   value={profileData.learningGoal}
                   onChange={e => setProfileData(prev => ({ ...prev, learningGoal: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
+                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
                 >
-                  <option value="start_from_zero">Bắt đầu từ số 0</option>
-                  <option value="build_web">Làm website</option>
-                  <option value="school_work">Phục vụ việc học ở trường</option>
-                  <option value="explore">Khám phá xem code có hợp không</option>
+                  <option value="start_from_zero">{text('profile.settings.goal.start_from_zero', 'Bắt đầu từ số 0')}</option>
+                  <option value="build_web">{text('profile.settings.goal.build_web', 'Làm website')}</option>
+                  <option value="school_work">{text('profile.settings.goal.school_work', 'Phục vụ việc học ở trường')}</option>
+                  <option value="explore">{text('profile.settings.goal.explore', 'Khám phá xem code có hợp không')}</option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* Save button */}
-          <div className="flex items-center justify-between rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="loopy-card flex items-center justify-between rounded-[2rem] border p-6 shadow-sm">
             <div>
-              <div className="font-black text-slate-800">Lưu thay đổi</div>
-              <div className="mt-1 text-sm text-slate-500">Cập nhật tên, bio và lộ trình học của bạn.</div>
+              <div className="font-black loopy-heading">{text('profile.settings.save_title', 'Lưu thay đổi')}</div>
+              <div className="mt-1 text-sm loopy-muted">{text('profile.settings.save_desc', 'Cập nhật tên, bio và lộ trình học của bạn.')}</div>
             </div>
             <button
               onClick={handleSaveProfile}
@@ -549,18 +591,18 @@ const ProfilePage: React.FC = () => {
               className="flex items-center gap-2 rounded-2xl bg-brand-teal px-6 py-3 text-sm font-black text-slate-950 shadow-[0_4px_0_#0b889c] transition hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {profileSaving ? (
-                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" /> Đang lưu...</>
+                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" /> {text('profile.settings.saving', 'Đang lưu...')}</>
               ) : (
-                <><FiSave className="h-4 w-4" /> Lưu thay đổi</>
+                <><FiSave className="h-4 w-4" /> {text('profile.settings.save_button', 'Lưu thay đổi')}</>
               )}
             </button>
           </div>
 
           {/* Onboarding reset */}
-          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-            <h3 className="font-black text-slate-700">Cập nhật onboarding</h3>
-            <p className="mt-2 text-sm text-slate-500">Chạy lại onboarding để Loopy gợi ý lại lộ trình phù hợp nhất với bạn.</p>
-            <div className="mt-4"><PressedButton to="/onboarding" variant="secondary"><FiRefreshCw /> Chạy lại onboarding</PressedButton></div>
+          <div className="loopy-card-soft rounded-[2rem] border p-6">
+            <h3 className="font-black loopy-heading">{text('profile.settings.onboarding_title', 'Cập nhật onboarding')}</h3>
+            <p className="mt-2 text-sm loopy-muted">{text('profile.settings.onboarding_desc', 'Chạy lại onboarding để Loopy gợi ý lại lộ trình phù hợp nhất với bạn.')}</p>
+            <div className="mt-4"><PressedButton to="/onboarding" variant="secondary"><FiRefreshCw /> {text('profile.settings.onboarding_button', 'Chạy lại onboarding')}</PressedButton></div>
           </div>
         </div>
       )}
@@ -583,7 +625,7 @@ const ProfilePage: React.FC = () => {
       <main className="px-4 py-10 md:px-6">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[260px,1fr]">
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-4 text-white shadow-xl shadow-slate-200/70">
+            <div className="rounded-[2rem] border border-white/10 bg-slate-950 p-4 text-white shadow-xl shadow-black/20">
               <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-5">
                 <div className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-teal text-xl font-black text-slate-950 ${(user as any)?.avatarUrl ? 'border-2 border-brand-teal/20' : 'shadow-[0_4px_0_#0b889c]'}`}>
                   {(user as any)?.avatarUrl ? (
@@ -594,7 +636,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="truncate font-black">{userName}</div>
-                  <div className="truncate text-xs font-bold text-slate-500">Loopy learner</div>
+                  <div className="truncate text-xs font-bold text-slate-500">{text('profile.sidebar.role', 'Loopy learner')}</div>
                 </div>
               </div>
               <div className="grid gap-2">

@@ -16,7 +16,7 @@ export interface PracticeSet {
   topic?: string | null
   languageId?: string | null
   difficulty: PracticeDifficulty
-  visibility: 'public' | 'private' | 'unlisted'
+  visibility: 'public' | 'private' | 'unlisted' | 'official'
   status: 'draft' | 'published' | 'archived'
   requirements: PracticeRequirement
   questionCount?: number

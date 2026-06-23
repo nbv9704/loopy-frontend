@@ -29,6 +29,8 @@ interface Chapter {
   orderIndex: number
 }
 
+type ContentMap = Record<string, string | null | undefined>
+
 interface LessonSidebarProps {
   lessons: Lesson[]
   chapters: Chapter[]
@@ -37,6 +39,7 @@ interface LessonSidebarProps {
   currentLesson: Lesson | undefined
   completedLessons: Set<string>
   onSelectLesson: (lessonId: string) => void
+  content?: ContentMap
 }
 
 const LessonSidebar: React.FC<LessonSidebarProps> = ({
@@ -47,8 +50,10 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
   currentLesson,
   completedLessons,
   onSelectLesson,
+  content,
 }) => {
   const { t } = useTranslation()
+  const getContent = (key: string, fallback: string) => content?.[key] || fallback
   const hasLessons = lessons.length > 0
 
   // State để quản lý chương nào đang mở
@@ -128,7 +133,9 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
             className="w-full py-3 px-4 rounded-xl bg-brand-teal/10 border border-brand-teal/30 hover:bg-brand-teal/20 transition-colors flex items-center justify-between group cursor-pointer"
           >
             <div className="flex flex-col items-start">
-              <span className="text-brand-teal text-xs font-bold uppercase tracking-wider mb-0.5">Tiếp tục học</span>
+              <span className="text-brand-teal text-xs font-bold uppercase tracking-wider mb-0.5">
+                {getContent('learn.sidebar.continue', 'Tiếp tục học')}
+              </span>
               <span className="text-white text-sm font-medium text-left line-clamp-1">{nextActionLesson.title}</span>
             </div>
             <ArrowRight className="w-5 h-5 text-brand-teal group-hover:translate-x-1 transition-transform" />
@@ -227,10 +234,10 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
                                 <span className="text-[10px] text-slate-600">{lesson.estimated_time} phút</span>
                               )}
                               {lesson.isAhaLesson && (
-                                <span className="text-[10px] text-yellow-400/80 font-bold">⚡ Aha!</span>
+                                <span className="text-[10px] text-yellow-400/80 font-bold">⚡ {getContent('learn.sidebar.aha', 'Aha!')}</span>
                               )}
                               {isNext && (
-                                <span className="text-[10px] text-brand-cyan font-bold">→ Tiếp theo</span>
+                                <span className="text-[10px] text-brand-cyan font-bold">→ {getContent('learn.sidebar.next', 'Tiếp theo')}</span>
                               )}
                             </div>
                           </div>
