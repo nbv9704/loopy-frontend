@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 
 interface SEOProps {
   title?: string
@@ -10,19 +11,22 @@ interface SEOProps {
   author?: string
   publishedTime?: string
   modifiedTime?: string
+  noIndex?: boolean
 }
 
 const SEO: React.FC<SEOProps> = ({
   title = 'Loopy - Interactive Multi-Language Coding Playground',
-  description = 'Nền tảng học lập trình tương tác với thực thi code trực tiếp trên trình duyệt. Hỗ trợ JavaScript, Python, C++ và nhiều ngôn ngữ khác.',
-  keywords = 'học lập trình, coding playground, JavaScript, Python, C++, code editor, online IDE, học code online, lập trình Việt Nam',
+  description = 'Learn programming step by step, practice with real code, and follow a guided learning path.',
+  keywords = 'learn programming, coding playground, JavaScript, Python, C++, code editor, guided learning',
   image = 'https://loopy.dev/og-image.png',
   url = 'https://loopy.dev',
   type = 'website',
   author = 'Loopy Team',
   publishedTime,
   modifiedTime,
+  noIndex = false,
 }) => {
+  const { i18n } = useTranslation()
   const fullTitle = title.includes('Loopy') ? title : `${title} | Loopy`
   const canonicalUrl = url.startsWith('http') ? url : `https://loopy.dev${url}`
 
@@ -44,7 +48,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:image" content={image} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:locale" content="vi_VN" />
+      <meta property="og:locale" content={i18n.language === 'vi' ? 'vi_VN' : 'en_US'} />
       <meta property="og:site_name" content="Loopy" />
 
       {/* Article specific */}
@@ -64,7 +68,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:image" content={image} />
 
       {/* Additional Meta Tags */}
-      <meta name="robots" content="index, follow" />
+      <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
       <meta name="language" content="Vietnamese" />
       <meta name="revisit-after" content="7 days" />
     </Helmet>

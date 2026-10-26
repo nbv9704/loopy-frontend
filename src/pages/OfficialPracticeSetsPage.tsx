@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ShieldCheck, Filter, Lock, Play, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -6,14 +6,11 @@ import SEO from '../components/common/SEO'
 import { PublicShell } from '../components/PublicShell'
 import { LoadingScreen } from '../components/LoadingScreen'
 import { useContentPreloader } from '../hooks/useContentPreloader'
-import { practiceService } from '../services/practice.service'
-import type { PracticeSet } from '../types/practice.types'
+import { usePracticeSets } from '../hooks/usePracticeSets'
 
 const OfficialPracticeSetsPage: React.FC = () => {
   const navigate = useNavigate()
   const { i18n } = useTranslation()
-  const [sets, setSets] = useState<PracticeSet[]>([])
-  const [setsLoading, setSetsLoading] = useState(true)
   const [topicFilter, setTopicFilter] = useState('')
   const [languageFilter, setLanguageFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
@@ -59,29 +56,13 @@ const OfficialPracticeSetsPage: React.FC = () => {
 
   const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
 
-  useEffect(() => {
-    let mounted = true
-    const loadSets = async () => {
-      setSetsLoading(true)
-      try {
-        const result = await practiceService.listSets({
-          limit: 24,
-          topic: topicFilter.trim() || undefined,
-          languageId: languageFilter.trim() || undefined,
-          difficulty: difficultyFilter === 'all' ? undefined : difficultyFilter,
-          official: true,
-        })
-        if (mounted) setSets(result.items)
-      } finally {
-        if (mounted) setSetsLoading(false)
-      }
-    }
-
-    loadSets()
-    return () => {
-      mounted = false
-    }
-  }, [difficultyFilter, languageFilter, topicFilter])
+  const { sets, setsLoading, setsError, retrySets } = usePracticeSets({
+    limit: 24,
+    topic: topicFilter.trim() || undefined,
+    languageId: languageFilter.trim() || undefined,
+    difficulty: difficultyFilter === 'all' ? undefined : difficultyFilter,
+    official: true,
+  })
 
   if (contentLoading) {
     return <LoadingScreen message={content['practice.official.loading'] || 'Loading official sets...'} />
@@ -184,6 +165,13 @@ const OfficialPracticeSetsPage: React.FC = () => {
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="loopy-skeleton h-48 animate-pulse rounded-lg border loopy-border" />
               ))}
+            </div>
+          ) : setsError ? (
+            <div role="alert" className="loopy-card mt-8 rounded-lg border px-6 py-12 text-center">
+              <p>{setsError}</p>
+              <button onClick={retrySets} className="mt-4 rounded-lg bg-brand-teal px-5 py-3 font-bold text-slate-950">
+                {i18n.language.startsWith('vi') ? 'Thử lại' : 'Retry'}
+              </button>
             </div>
           ) : sets.length === 0 ? (
             <div className="loopy-card mt-8 rounded-lg border border-dashed px-6 py-12 text-center">

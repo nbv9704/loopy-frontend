@@ -1,12 +1,21 @@
-import { useEffect, useState } from 'react'
+import CatalogPagination from '../../components/admin/CatalogPagination'
+import { ADMIN_PAGE_SIZE } from '../../lib/adminPagination'
+import AdminButton from '../../components/admin/AdminButton'
+import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import AdminFilterBar from '../../components/admin/AdminFilterBar'
+import { useCallback, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useAsyncResource } from '../../hooks/useAsyncResource'
+import { useAuthStore } from '../../store/admin/authStore'
+import { getAdminErrorMessage } from '../../services/admin/errors'
 import { Upload, Filter, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
-import { importHistoryService, ImportHistoryRecord, ImportStats } from '../../services/admin/import-history.service'
+import { importHistoryService } from '../../services/admin/import-history.service'
 
 const ImportStatsSkeleton = () => (
-  <div className="grid gap-4 md:grid-cols-5">
+  <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
     {Array.from({ length: 5 }).map((_, index) => (
       <div key={index} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+        <div className="h-3 w-full max-w-24 animate-pulse rounded bg-slate-100" />
         <div className="mt-3 h-7 w-12 animate-pulse rounded bg-slate-100" />
       </div>
     ))}
@@ -14,14 +23,17 @@ const ImportStatsSkeleton = () => (
 )
 
 const ImportHistorySkeletonRows = () => (
-  <div className="space-y-2">
+  <div role="status" aria-label="Đang tải lịch sử import" className="space-y-2">
     {Array.from({ length: 5 }).map((_, index) => (
-      <div key={index} className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-1 items-start gap-4">
+      <div
+        key={index}
+        className="flex min-w-0 flex-col items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 sm:flex-row shadow-sm"
+      >
+        <div className="flex min-w-0 w-full flex-1 items-start gap-4">
           <div className="h-7 w-24 animate-pulse rounded-lg bg-slate-100" />
-          <div className="flex-1">
-            <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
-            <div className="mt-3 flex gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="h-4 w-full max-w-72 animate-pulse rounded bg-slate-100" />
+            <div className="mt-3 flex flex-wrap gap-3">
               <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
               <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
               <div className="h-3 w-16 animate-pulse rounded bg-slate-100" />
@@ -37,42 +49,37 @@ const ImportHistorySkeletonRows = () => (
   </div>
 )
 
-const ImportHistoryPage: React.FC = () => {
-  const [imports, setImports] = useState<ImportHistoryRecord[]>([])
-  const [stats, setStats] = useState<ImportStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string>('')
+const ImportHistoryView: React.FC = () => {
+  const [status, setStatus] = useState('')
   const [offset, setOffset] = useState(0)
-  const [total, setTotal] = useState(0)
-
-  const limit = 50
-
-  useEffect(() => {
-    loadData()
-  }, [status, offset])
-
-  const loadData = async () => {
+  const limit = ADMIN_PAGE_SIZE
+  const loadHistory = useCallback(
+    async (signal: AbortSignal) => {
+      try {
+        return await importHistoryService.getHistory(
+          { status: status || undefined, limit, offset },
+          signal
+        )
+      } catch (cause) {
+        throw new Error(getAdminErrorMessage(cause, 'Không tải được lịch sử import.'))
+      }
+    },
+    [status, offset]
+  )
+  const loadStats = useCallback(async (signal: AbortSignal) => {
     try {
-      setIsLoading(true)
-      setError(null)
-      const [historyData, statsData] = await Promise.all([
-        importHistoryService.getHistory({
-          status: status || undefined,
-          limit,
-          offset,
-        }),
-        importHistoryService.getStats(),
-      ])
-      setImports(historyData.imports)
-      setTotal(historyData.total)
-      setStats(statsData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load import history')
-    } finally {
-      setIsLoading(false)
+      return await importHistoryService.getStats(signal)
+    } catch (cause) {
+      throw new Error(getAdminErrorMessage(cause, 'Không tải được thống kê import.'))
     }
-  }
+  }, [])
+  const history = useAsyncResource(JSON.stringify([status, offset]), loadHistory)
+  const statistics = useAsyncResource('import-stats', loadStats)
+  const imports = history.data?.imports ?? []
+  const total = history.data?.total ?? 0
+  const stats = statistics.data
+  const isLoading = history.loading
+  const error = history.error
 
   const statusColors: Record<string, string> = {
     success: 'bg-green-50 text-green-700',
@@ -93,51 +100,69 @@ const ImportHistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-purple-700">
-          <Upload className="h-3.5 w-3.5" />
-          Import history
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">Lịch sử nhập dữ liệu</h1>
-        <p className="mt-2 max-w-2xl text-base font-medium text-slate-600">
-          Theo dõi tất cả các lần bulk import: thời gian, số bài học, test case, trạng thái và lỗi.
-        </p>
-      </div>
+    <div className="min-w-0 space-y-6">
+      <AdminPageHeader
+        title="Lịch sử nhập dữ liệu"
+        eyebrow="Nhật ký vận hành"
+        description="Theo dõi các lần import đã ghi log. Log là thông tin bổ sung; log trống không chứng minh request đã rollback."
+      />
 
       {/* Stats */}
-      {isLoading && !stats ? (
+      {statistics.loading ? (
         <ImportStatsSkeleton />
-      ) : stats && (
-        <div className="grid gap-4 md:grid-cols-5">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Tổng import</p>
-            <p className="mt-2 text-2xl font-black text-slate-950">{stats.totalImports}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Thành công</p>
-            <p className="mt-2 text-2xl font-black text-green-700">{stats.successfulImports}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Thất bại</p>
-            <p className="mt-2 text-2xl font-black text-red-700">{stats.failedImports}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Bài học</p>
-            <p className="mt-2 text-2xl font-black text-blue-700">{stats.totalLessonsImported}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Test case</p>
-            <p className="mt-2 text-2xl font-black text-cyan-700">{stats.totalTestCasesImported}</p>
-          </div>
+      ) : statistics.error ? (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+          <p>{statistics.error}</p>
+          <AdminButton className="mt-2" type="button" onClick={statistics.retry}>
+            Tải lại thống kê
+          </AdminButton>
         </div>
+      ) : (
+        stats && (
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                Tổng import
+              </p>
+              <p className="mt-2 text-2xl font-black text-slate-950">{stats.totalImports}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                Thành công / một phần
+              </p>
+              <p className="mt-2 text-2xl font-black text-green-700">{stats.successfulImports}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Thất bại</p>
+              <p className="mt-2 text-2xl font-black text-red-700">{stats.failedImports}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Bài học</p>
+              <p className="mt-2 text-2xl font-black text-blue-700">{stats.totalLessonsImported}</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                Test case
+              </p>
+              <p className="mt-2 text-2xl font-black text-cyan-700">
+                {stats.totalTestCasesImported}
+              </p>
+            </div>
+          </div>
+        )
       )}
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-end">
-        <div className="flex-1">
-          <label className="block text-xs font-black uppercase tracking-widest text-slate-500">Trạng thái</label>
+      <AdminFilterBar>
+        <div className="min-w-0 flex-1">
+          <label
+            htmlFor="import-status"
+            className="block text-xs font-black uppercase tracking-widest text-slate-500"
+          >
+            Trạng thái
+          </label>
           <select
+            id="import-status"
             value={status}
             onChange={e => {
               setStatus(e.target.value)
@@ -152,17 +177,16 @@ const ImportHistoryPage: React.FC = () => {
           </select>
         </div>
 
-        <button
+        <AdminButton
           onClick={() => {
             setStatus('')
             setOffset(0)
           }}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"
         >
           <Filter className="h-4 w-4" />
           Xóa bộ lọc
-        </button>
-      </div>
+        </AdminButton>
+      </AdminFilterBar>
 
       {/* History Table */}
       {isLoading ? (
@@ -173,29 +197,36 @@ const ImportHistoryPage: React.FC = () => {
           <div>
             <p className="font-black">Lỗi tải dữ liệu</p>
             <p className="text-sm font-medium">{error}</p>
+            <AdminButton className="mt-2" type="button" onClick={history.retry}>
+              Tải lại lịch sử
+            </AdminButton>
           </div>
         </div>
       ) : imports.length === 0 ? (
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
           <Upload className="mx-auto mb-3 h-8 w-8 text-slate-300" />
           <p className="font-black text-slate-950">Không có lịch sử import</p>
-          <p className="mt-1 text-sm font-medium text-slate-500">Chưa có lần bulk import nào được thực hiện.</p>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Không có log khớp bộ lọc hiện tại.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
           {imports.map(record => (
             <div
               key={record.id}
-              className="flex items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 transition-colors hover:border-slate-200 hover:bg-slate-50"
+              className="flex min-w-0 flex-col items-start justify-between gap-4 rounded-lg border border-slate-100 bg-white p-4 sm:flex-row transition-colors hover:border-slate-200 hover:bg-slate-50"
             >
-              <div className="flex items-start gap-4 flex-1">
-                <div className={`rounded-lg px-2.5 py-1 text-xs font-black inline-flex items-center gap-1 ${statusColors[record.status] || 'bg-slate-50 text-slate-700'}`}>
+              <div className="flex min-w-0 w-full flex-1 flex-col items-start gap-3 sm:flex-row">
+                <div
+                  className={`rounded-lg px-2.5 py-1 text-xs font-black inline-flex items-center gap-1 ${statusColors[record.status] || 'bg-slate-50 text-slate-700'}`}
+                >
                   {statusIcons[record.status]}
                   {statusLabels[record.status] || record.status}
                 </div>
 
-                <div className="flex-1">
-                  <div className="text-sm font-black text-slate-950">
+                <div className="min-w-0 flex-1">
+                  <div className="break-all text-sm font-black text-slate-950">
                     {record.chapters?.title || 'Unknown Chapter'} • {record.file_name}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
@@ -209,7 +240,7 @@ const ImportHistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="shrink-0 text-right">
+              <div className="shrink-0 text-left sm:text-right">
                 <div className="text-xs font-bold text-slate-400">
                   {new Date(record.created_at).toLocaleString('vi-VN')}
                 </div>
@@ -224,32 +255,20 @@ const ImportHistoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {total > limit && (
-        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-sm font-medium text-slate-600">
-            Hiển thị {offset + 1} - {Math.min(offset + limit, total)} trong {total} mục
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setOffset(Math.max(0, offset - limit))}
-              disabled={offset === 0}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Trước
-            </button>
-            <button
-              onClick={() => setOffset(offset + limit)}
-              disabled={offset + limit >= total}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Tiếp
-            </button>
-          </div>
-        </div>
+      {!isLoading && !error && history.data && (
+        <CatalogPagination
+          page={offset / limit}
+          total={total}
+          count={imports.length}
+          onChange={page => setOffset(page * limit)}
+        />
       )}
     </div>
   )
 }
 
-export default ImportHistoryPage
+export default function ImportHistoryPage() {
+  const revision = useAuthStore(state => state.sessionRevision)
+  const location = useLocation()
+  return <ImportHistoryView key={`${revision}:${location.key}`} />
+}

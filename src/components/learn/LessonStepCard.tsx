@@ -1,6 +1,8 @@
 import { FiCheckCircle, FiHelpCircle } from 'react-icons/fi'
+import { answerOptions } from '../../features/learn/answerQuestion'
 
-export type LessonStepType = 'note' | 'multiple_choice' | 'true_false' | 'fill_blank' | 'short_answer' | 'code_prompt'
+export type LessonStepType =
+  'note' | 'multiple_choice' | 'true_false' | 'fill_blank' | 'short_answer' | 'code_prompt'
 
 export interface LessonStepItem {
   id: string
@@ -8,8 +10,6 @@ export interface LessonStepItem {
   title?: string
   prompt: string
   options?: unknown[]
-  correctAnswer?: unknown
-  explanation?: string
   hint?: string
   isRequired?: boolean
   orderIndex: number
@@ -33,6 +33,7 @@ interface LessonStepCardProps {
   step: LessonStepItem
   answer?: string
   feedback?: LessonStepFeedback
+  disabled?: boolean
   onAnswerChange: (stepId: string, value: string) => void
   onCheck: (step: LessonStepItem) => void
 }
@@ -41,15 +42,19 @@ const LessonStepCard: React.FC<LessonStepCardProps> = ({
   step,
   answer = '',
   feedback,
+  disabled = false,
   onAnswerChange,
   onCheck,
 }) => {
-  const options = Array.isArray(step.options) ? step.options : []
+  const options = answerOptions(step.type, Array.isArray(step.options) ? step.options : [])
   const requiresTypedAnswer = ['fill_blank', 'short_answer'].includes(step.type)
   const usesOptions = ['multiple_choice', 'true_false'].includes(step.type) && options.length > 0
 
   return (
-    <article className="group loopy-surface-soft rounded-2xl border loopy-border p-4 shadow-sm transition-colors hover:border-brand-teal/40">
+    <fieldset
+      disabled={disabled}
+      className="group min-w-0 loopy-surface-soft rounded-2xl border loopy-border p-4 shadow-sm transition-colors hover:border-brand-teal/40"
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-brand-teal/20 bg-brand-teal/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-teal">
           <FiHelpCircle className="h-3.5 w-3.5" /> {stepTypeLabel[step.type] || 'Checkpoint'}
@@ -67,7 +72,7 @@ const LessonStepCard: React.FC<LessonStepCardProps> = ({
       {usesOptions && (
         <div className="mt-4 space-y-2">
           {options.map(option => {
-            const value = String(option)
+            const value = option.value
             const selected = answer === value
             return (
               <label
@@ -86,7 +91,7 @@ const LessonStepCard: React.FC<LessonStepCardProps> = ({
                   onChange={event => onAnswerChange(step.id, event.target.value)}
                   className="accent-brand-teal"
                 />
-                <span>{value}</span>
+                <span>{option.label}</span>
               </label>
             )
           })}
@@ -99,6 +104,7 @@ const LessonStepCard: React.FC<LessonStepCardProps> = ({
           onChange={event => onAnswerChange(step.id, event.target.value)}
           className="mt-4 w-full rounded-xl border loopy-border loopy-surface px-3 py-2 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand-teal"
           placeholder="Nhập câu trả lời của bạn"
+          aria-label={step.title || step.prompt}
         />
       )}
 
@@ -107,15 +113,19 @@ const LessonStepCard: React.FC<LessonStepCardProps> = ({
         className="mt-4 inline-flex items-center gap-2 rounded-xl border border-brand-teal/30 bg-brand-teal/5 px-3 py-2 text-xs font-black text-brand-teal transition-colors hover:bg-brand-teal/10"
       >
         <FiCheckCircle className="h-3.5 w-3.5" />
-        {step.type === 'note' || step.type === 'code_prompt' ? 'Đã hiểu bước này' : 'Kiểm tra nhanh'}
+        {step.type === 'note' || step.type === 'code_prompt'
+          ? 'Đã hiểu bước này'
+          : 'Kiểm tra nhanh'}
       </button>
 
       {feedback && (
-        <div className={`mt-3 rounded-xl border p-3 text-xs font-bold leading-5 ${feedback.passed ? 'border-green-400/30 bg-green-50 text-green-700' : 'border-amber-400/30 bg-amber-50 text-amber-700'}`}>
+        <div
+          className={`mt-3 rounded-xl border p-3 text-xs font-bold leading-5 ${feedback.passed ? 'border-green-400/30 bg-green-50 text-green-700' : 'border-amber-400/30 bg-amber-50 text-amber-700'}`}
+        >
           {feedback.message}
         </div>
       )}
-    </article>
+    </fieldset>
   )
 }
 

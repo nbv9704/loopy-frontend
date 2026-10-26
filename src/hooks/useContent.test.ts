@@ -32,8 +32,8 @@ const mockLocalStorage = (() => {
 })()
 
 // Polyfill localStorage for Node environment
-if (typeof global !== 'undefined' && !global.localStorage) {
-  ;(global as any).localStorage = mockLocalStorage
+if (!globalThis.localStorage) {
+  Object.defineProperty(globalThis, 'localStorage', { value: mockLocalStorage, configurable: true })
 }
 
 // Test cache utility functions

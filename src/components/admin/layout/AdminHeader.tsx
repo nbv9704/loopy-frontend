@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast'
 import { useAuth } from '../../../contexts/AuthContext'
 import { LogOut, User, Shield } from 'lucide-react'
 
@@ -5,7 +6,12 @@ const AdminHeader: React.FC = () => {
   const { user, signOut } = useAuth()
 
   const handleSignOut = async () => {
-    await signOut()
+    try {
+      const result = await signOut()
+      if (result?.warning) toast.error(result.warning)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Chưa đăng xuất được. Vui lòng thử lại.')
+    }
   }
 
   return (

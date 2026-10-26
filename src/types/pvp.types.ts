@@ -166,6 +166,7 @@ export interface QuestionChangedPayload {
   match: PvPMatch
   question: PvPQuestion
   timeRemaining: number
+  submission?: PvPSubmission
 }
 
 export interface MatchCompletedPayload {

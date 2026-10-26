@@ -5,6 +5,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The initial HTML and React use the same loading view and selected language. */
+html[lang='vi'] [data-bootstrap-language='en'],
+html:not([lang='vi']) [data-bootstrap-language='vi'] {
+  display: none;
+}
+
 :root {
   --loopy-page: #f7fbff;
   --loopy-surface: #ffffff;
@@ -93,6 +99,15 @@
 
   .loopy-muted {
     color: var(--loopy-text-muted);
+  }
+
+  /* Small labels on the two learning entry pages follow the selected app theme. */
+  .learning-entry-accent {
+    color: #085361;
+  }
+
+  [data-theme='dark'] .learning-entry-accent {
+    color: #54d9c4;
   }
 
   .loopy-border {
@@ -276,13 +291,28 @@
 
   @keyframes v2LoadingGlow {
     0%, 100% {
-      opacity: 0.45;
-      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.4;
     }
     50% {
-      opacity: 0.9;
-      transform: translate3d(0, 10px, 0) scale(1.08);
+      opacity: 0.7;
     }
+  }
+
+  @keyframes loopyLoadingPulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.72;
+    }
+  }
+
+  .loopy-loading-screen {
+    --loopy-loading-duration: 3.2s;
+  }
+
+  .loopy-loading-screen .animate-pulse {
+    animation: loopyLoadingPulse var(--loopy-loading-duration) ease-in-out infinite;
   }
 
   .animate-v2-page-enter {
@@ -314,7 +344,25 @@
   }
 
   .animate-v2-loading-glow {
-    animation: v2LoadingGlow 2.2s ease-in-out infinite;
+    opacity: 0.4;
+    animation: v2LoadingGlow var(--loopy-loading-duration) ease-in-out infinite;
+  }
+
+  @keyframes v2LoadingTextGlow {
+    0%, 100% {
+      opacity: 1;
+      text-shadow: 0 0 10px rgb(84 217 196 / 0.2), 0 0 20px rgb(4 197 232 / 0.1);
+    }
+    50% {
+      opacity: 0.82;
+      text-shadow: 0 0 10px rgb(84 217 196 / 0.4), 0 0 20px rgb(4 197 232 / 0.2);
+    }
+  }
+
+  .loopy-loading-message {
+    color: var(--loopy-text-muted);
+    text-shadow: 0 0 10px rgb(84 217 196 / 0.2), 0 0 20px rgb(4 197 232 / 0.1);
+    animation: v2LoadingTextGlow var(--loopy-loading-duration) ease-in-out infinite;
   }
 }
 
@@ -322,11 +370,16 @@
   .animate-v2-page-enter,
   .animate-v2-tab-panel-enter,
   .animate-v2-dropdown-enter,
-  .animate-v2-menu-item-enter,
-  .animate-v2-loading-glow {
+  .animate-v2-menu-item-enter {
     animation: none !important;
     transform: none !important;
     filter: none !important;
+  }
+
+  .animate-v2-loading-glow,
+  .loopy-loading-screen .animate-pulse,
+  .loopy-loading-message {
+    animation: none !important;
   }
 }
 

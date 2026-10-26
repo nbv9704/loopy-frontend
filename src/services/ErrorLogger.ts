@@ -1,3 +1,4 @@
+import { readBrowserStorage, writeBrowserStorage } from '../lib/browserStorage'
 /**
  * ErrorLogger Service
  * Structured error logging system with batching and global error handlers
@@ -163,10 +164,10 @@ export class ErrorLogger {
   }
 
   private generateSessionId(): string {
-    const stored = sessionStorage.getItem('log-session-id')
+    const stored = readBrowserStorage('log-session-id', 'sessionStorage')
     if (stored) return stored
     const newId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    sessionStorage.setItem('log-session-id', newId)
+    writeBrowserStorage('log-session-id', newId, 'sessionStorage')
     return newId
   }
 

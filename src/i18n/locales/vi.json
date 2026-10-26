@@ -8,7 +8,8 @@
     "docs": "Tài liệu",
     "settings": "Cài đặt",
     "admin": "Quản trị",
-    "practice": "Luyện tập"
+    "practice": "Luyện tập",
+    "logout": "Đăng xuất"
   },
   "hero": {
     "titlePrefix": "Học lập trình",
@@ -48,22 +49,22 @@
     "processing": "Đang xử lý...",
     "checkEmail": "Vui lòng kiểm tra email để xác nhận tài khoản",
     "devLoginOnly": "Chỉ hiển thị trong môi trường development",
-    "feat4": "AUTH.FEAT4 VI",
-    "feat3": "AUTH.FEAT3 VI",
-    "feat2": "AUTH.FEAT2 VI",
-    "feat1": "AUTH.FEAT1 VI",
+    "feat4": "Lộ trình cốt lõi miễn phí để bắt đầu",
+    "feat3": "Theo dõi streak, điểm và thử thách",
+    "feat2": "Tiếp tục đúng bước tiếp theo",
+    "feat1": "Lưu tiến độ bài học",
     "title": {
-      "signup2": "AUTH.TITLE.SIGNUP2 VI",
-      "login2": "AUTH.TITLE.LOGIN2 VI",
-      "signup1": "AUTH.TITLE.SIGNUP1 VI",
-      "login1": "AUTH.TITLE.LOGIN1 VI"
+      "signup2": "Tạo tài khoản Loopy",
+      "login2": "Chào mừng trở lại",
+      "signup1": "Tạo tài khoản để lưu hành trình.",
+      "login1": "Chào mừng trở lại."
     },
     "ctx": {
-      "default": "AUTH.CTX.DEFAULT VI",
-      "onboarding2": "AUTH.CTX.ONBOARDING2 VI",
-      "learn": "AUTH.CTX.LEARN VI",
-      "pvp": "AUTH.CTX.PVP VI",
-      "onboarding": "AUTH.CTX.ONBOARDING VI"
+      "default": "Tiếp tục hành trình học code của bạn.",
+      "onboarding2": "Đăng nhập để lưu lộ trình đã chọn.",
+      "learn": "Đăng nhập để lưu tiến độ và tiếp tục bài đang học.",
+      "pvp": "Đăng nhập để tham gia thử thách và lưu kết quả.",
+      "onboarding": "Lưu bài học đầu tiên của bạn và học tiếp đúng lộ trình."
     }
   },
   "common": {
@@ -422,67 +423,67 @@
     "retry": "Thử lại",
     "previous": "Trước",
     "next": {
-      "btn2": "DOCS.NEXT.BTN2 VI",
-      "btn1": "DOCS.NEXT.BTN1 VI",
-      "desc": "DOCS.NEXT.DESC VI",
-      "title": "DOCS.NEXT.TITLE VI",
-      "badge": "DOCS.NEXT.BADGE VI"
+      "btn2": "Vào Journey Map",
+      "btn1": "Mở Playground",
+      "desc": "Dùng Playground để thử khái niệm, hoặc vào Learn để được kiểm tra và lưu tiến độ.",
+      "title": "Đọc xong thì code thử.",
+      "badge": "Bước tiếp theo"
     },
     "bottom": {
-      "btn2": "DOCS.BOTTOM.BTN2 VI",
-      "btn1": "DOCS.BOTTOM.BTN1 VI",
-      "desc": "DOCS.BOTTOM.DESC VI",
-      "title": "DOCS.BOTTOM.TITLE VI"
+      "btn2": "Tìm lộ trình",
+      "btn1": "Quay lại Journey Map",
+      "desc": "Khi chưa biết học tiếp gì, hãy quay lại Library thay vì lạc trong tài liệu tham khảo.",
+      "title": "Docs hỗ trợ journey, không thay journey."
     },
     "toc": {
-      "items": "DOCS.TOC.ITEMS VI",
-      "title": "DOCS.TOC.TITLE VI"
+      "items": "Khi nào dùng docs?|Ví dụ console.log|Run khác Check|Đi tiếp ở đâu?",
+      "title": "Trong trang"
     },
     "terminal": {
-      "desc": "DOCS.TERMINAL.DESC VI",
-      "badge": "DOCS.TERMINAL.BADGE VI"
+      "desc": "Docs giúp hiểu khái niệm. Playground giúp thử nhanh. Learn giúp hoàn thành bài có kiểm tra.",
+      "badge": "Từ docs sang thực hành"
     },
     "tips": {
-      "desc": "DOCS.TIPS.DESC VI",
-      "title": "DOCS.TIPS.TITLE VI"
+      "desc": "Nếu output không giống bạn nghĩ, hãy đổi từng biến nhỏ, chạy lại, rồi so sánh. Đừng sửa nhiều dòng cùng lúc khi mới học.",
+      "title": "Mẹo đọc output"
     },
     "check": {
-      "desc": "DOCS.CHECK.DESC VI",
-      "badge": "DOCS.CHECK.BADGE VI"
+      "desc": "Kiểm tra xác nhận yêu cầu bài học bằng quy tắc hoặc test case. Tiến độ được lưu sau khi hoàn tất bài thành công.",
+      "badge": "Khi cần Kiểm tra"
     },
     "play": {
-      "desc": "DOCS.PLAY.DESC VI",
-      "badge": "DOCS.PLAY.BADGE VI"
+      "desc": "Chạy thử thực thi code và hiển thị output. Dùng Kiểm tra trong bài học để xác nhận đáp án.",
+      "badge": "Khi dùng Chạy thử"
     },
     "ref": {
-      "desc": "DOCS.REF.DESC VI",
-      "title": "DOCS.REF.TITLE VI",
-      "badge": "DOCS.REF.BADGE VI"
+      "desc": "Khi mới học, `console.log` là cách đơn giản nhất để kiểm tra một giá trị đang là gì. Nó phù hợp cho Playground và bước `Chạy thử` trong lesson.",
+      "title": "console.log dùng để xem output nhanh.",
+      "badge": "JavaScript reference"
     },
     "group3": {
-      "items": "DOCS.GROUP3.ITEMS VI",
-      "title": "DOCS.GROUP3.TITLE VI"
+      "items": "Đọc error|So sánh output|Dùng Playground",
+      "title": "Khi bị kẹt"
     },
     "group2": {
-      "items": "DOCS.GROUP2.ITEMS VI",
-      "title": "DOCS.GROUP2.TITLE VI"
+      "items": "print()|input()|Biến|f-string|Lỗi thường gặp",
+      "title": "Python cơ bản"
     },
     "group1": {
-      "items": "DOCS.GROUP1.ITEMS VI",
-      "title": "DOCS.GROUP1.TITLE VI"
+      "items": "Console log|Biến|String template|Function|Điều kiện",
+      "title": "JavaScript cơ bản"
     },
     "topic": {
-      "title": "DOCS.TOPIC.TITLE VI"
+      "title": "Chủ đề"
     },
     "search": {
-      "hint": "DOCS.SEARCH.HINT VI",
-      "quick": "DOCS.SEARCH.QUICK VI"
+      "hint": "Thử tìm: console.log, input, đọc lỗi",
+      "quick": "Tìm nhanh"
     },
     "sandbox": {
-      "badge": "DOCS.SANDBOX.BADGE VI"
+      "badge": "Tài liệu lập trình"
     },
     "code": {
-      "output": "DOCS.CODE.OUTPUT VI"
+      "output": "Xin chào Loopy"
     }
   },
   "settings": {
@@ -533,7 +534,13 @@
     "blog": "Blog",
     "faq": "FAQ",
     "terms": "Điều khoản",
-    "privacy": "Quyền riêng tư"
+    "privacy": "Quyền riêng tư",
+    "learning": "Học cùng Loopy",
+    "languages": "Ngôn ngữ lập trình",
+    "paths": "Chọn lộ trình",
+    "practice": "Luyện tập",
+    "playground": "Chạy thử code",
+    "allRightsReserved": "Bảo lưu mọi quyền."
   },
   "landing": {
     "whyChoose": "Tại sao nên chọn",
@@ -549,65 +556,65 @@
     "startLearningFree": "Bắt đầu ngay miễn phí",
     "lessonsCount": "{{count}} bài học",
     "learn": {
-      "title": "tesst",
-      "badge": "LANDING.LEARN.BADGE VI"
+      "title": "Mỗi bài học có một việc rõ ràng.",
+      "badge": "Thực hành từng bước"
     },
     "bottom": {
-      "btn": "bruh",
-      "desc": "LANDING.BOTTOM.DESC VI",
-      "title": "234243"
+      "btn": "Tìm lộ trình phù hợp",
+      "desc": "Chọn một lộ trình, thử bài học đầu tiên và luyện tập từng bước.",
+      "title": "Bắt đầu bằng một bài nhỏ."
     },
     "faq3": {
-      "a": "LANDING.FAQ3.A VI",
-      "q": "LANDING.FAQ3.Q VI"
+      "a": "Tiến độ được lưu sau khi hoàn tất bài thành công. Đăng nhập để tiếp tục hành trình vào lần sau.",
+      "q": "Khi nào tiến độ của tôi được lưu?"
     },
     "faq2": {
-      "a": "LANDING.FAQ2.A VI",
-      "q": "LANDING.FAQ2.Q VI"
+      "a": "Chạy thử hiển thị output của code. Kiểm tra xác nhận yêu cầu bài học trước khi bạn hoàn tất bài.",
+      "q": "Chạy thử và Kiểm tra khác nhau thế nào?"
     },
     "faq1": {
-      "a": "LANDING.FAQ1.A VI",
-      "q": "LANDING.FAQ1.Q VI"
+      "a": "Bạn có thể bắt đầu từ số 0. Chọn ngôn ngữ và lộ trình, rồi làm theo từng bước trong bài học.",
+      "q": "Tôi chưa biết lập trình thì bắt đầu được không?"
     },
     "faq": {
-      "title": "LANDING.FAQ.TITLE VI",
-      "badge": "FAQ"
+      "title": "Trước khi bắt đầu bài đầu tiên",
+      "badge": "Câu hỏi thường gặp"
     },
     "journey": {
-      "desc": "LANDING.JOURNEY.DESC VI",
-      "title": "LANDING.JOURNEY.TITLE VI",
-      "badge": "LANDING.JOURNEY.BADGE VI",
-      "node5": "LANDING.JOURNEY.NODE5 VI",
-      "node4": "LANDING.JOURNEY.NODE4 VI",
-      "node3": "LANDING.JOURNEY.NODE3 VI",
-      "node2": "LANDING.JOURNEY.NODE2 VI",
-      "node1": "LANDING.JOURNEY.NODE1 VI"
+      "desc": "Phân biệt bài đã hoàn thành, đang học và chưa mở để biết rõ bước tiếp theo trong lộ trình.",
+      "title": "Biết mình đang ở đâu, bài nào mở tiếp theo.",
+      "badge": "Journey map",
+      "node5": "Vòng lặp",
+      "node4": "Điều kiện",
+      "node3": "In output",
+      "node2": "Biến",
+      "node1": "Hello code"
     },
     "step3": {
-      "desc": "LANDING.STEP3.DESC VI",
-      "title": "LANDING.STEP3.TITLE VI"
+      "desc": "Gặp lỗi nhỏ có chủ đích, đọc terminal và debug từng bước như khi code thật.",
+      "title": "Sửa lỗi"
     },
     "step2": {
-      "desc": "LANDING.STEP2.DESC VI",
-      "title": "LANDING.STEP2.TITLE VI"
+      "desc": "Sửa một phần nhỏ trong editor. Loopy kiểm tra đúng yêu cầu bằng rule/test case.",
+      "title": "Thay đổi"
     },
     "step1": {
-      "desc": "LANDING.STEP1.DESC VI",
-      "title": "LANDING.STEP1.TITLE VI"
+      "desc": "Đọc một ví dụ ngắn, chạy code mẫu và hiểu output trước khi phải tự viết.",
+      "title": "Quan sát"
     },
     "hero": {
-      "badge": "LANDING.HERO.BADGE VI"
+      "badge": "Học lập trình theo lộ trình"
     },
     "pmock": {
-      "checkbtn": "LANDING.PMOCK.CHECKBTN VI",
-      "item4": "LANDING.PMOCK.ITEM4 VI",
-      "item3": "LANDING.PMOCK.ITEM3 VI",
-      "item2": "LANDING.PMOCK.ITEM2 VI",
-      "item1": "LANDING.PMOCK.ITEM1 VI",
-      "desc": "LANDING.PMOCK.DESC VI",
-      "title": "LANDING.PMOCK.TITLE VI",
-      "role": "LANDING.PMOCK.ROLE VI",
-      "status": "LANDING.PMOCK.STATUS VI"
+      "checkbtn": "Kiểm tra",
+      "item4": "Debug lỗi thật",
+      "item3": "Kiểm tra bằng rule",
+      "item2": "Sửa yêu cầu nhỏ",
+      "item1": "Quan sát code mẫu",
+      "desc": "Loopy không bắt bạn đọc hết lý thuyết trước. Bạn quan sát, sửa code nhỏ, chạy thử, rồi kiểm tra bằng test rõ ràng.",
+      "title": "Thay đổi một dòng, thấy output ngay",
+      "role": "Bài học minh họa",
+      "status": "Đang học"
     }
   },
   "pvp": {
@@ -816,6 +823,25 @@
     "primary": "Thử bài đầu tiên"
   },
   "profile": {
+    "goal": {
+      "first_steps": "Bước đầu học lập trình",
+      "school_foundation": "Xây dựng nền tảng học tập",
+      "project_starter": "Làm dự án đầu tiên",
+      "logic_builder": "Rèn tư duy logic",
+      "start_from_zero": "Bắt đầu từ con số 0",
+      "build_web": "Xây dựng ứng dụng web",
+      "school_work": "Phục vụ việc học ở trường",
+      "explore": "Khám phá lập trình"
+    },
+    "experience": {
+      "first_steps": "Mới bắt đầu",
+      "school_foundation": "Đang xây dựng kiến thức nền tảng",
+      "project_starter": "Làm quen với dự án",
+      "logic_builder": "Đang rèn luyện tư duy logic",
+      "beginner": "Mới bắt đầu",
+      "intermediate": "Trung cấp",
+      "advanced": "Nâng cao"
+    },
     "notice": {
       "desc": "Loopy không celebration trước khi backend xác nhận bài học đã hoàn thành.",
       "title": "Progress chỉ tăng sau khi lưu thành công."
@@ -827,25 +853,25 @@
       "progress": "Tiến độ hôm nay",
       "desc": "Mục tiêu hôm nay: hoàn thành một lesson có kiểm tra thành công.",
       "title": "Một bài nhỏ là đủ.",
-      "badge": "Today focus"
+      "badge": "Mục tiêu hôm nay"
     },
     "next": {
       "btn_journey": "Vào Journey Map",
       "btn_path": "Xem lộ trình",
       "desc": "Tiếp tục bài active thay vì chọn ngẫu nhiên một chủ đề mới.",
       "headline": "Quay lại đúng bước đang mở.",
-      "badge": "Next lesson",
+      "badge": "Bài học tiếp theo",
       "title": "Bài nên học tiếp theo"
     },
     "stats": {
       "points": "Điểm",
-      "streak": "Streak",
+      "streak": "Chuỗi ngày học",
       "saved": "Progress đã lưu"
     },
     "journey": {
       "lessons_done": "bài đã hoàn thành",
       "title": "Bạn đang xây thói quen học code từng bước.",
-      "badge": "Journey progress",
+      "badge": "Tiến độ học tập",
       "tab": {
         "card3": "Mở Journey Map",
         "card2": "Trang library tách bài đã xong, bài hiện tại, bài kế tiếp và bài bị khóa để bạn không phải đoán.",
@@ -854,17 +880,22 @@
         "title": "Hành trình đã lưu"
       }
     },
-    "badge": "Profile",
+    "badge": "Hồ sơ",
     "subtitle": "Xem tiến độ, streak, điểm và bài nên học tiếp theo trong hành trình Loopy.",
     "title": "Hồ sơ học tập của bạn.",
     "settings": {
       "language": "Ngôn ngữ ưu tiên",
-      "onboarding": "Onboarding",
+      "onboarding": "Thiết lập lộ trình",
       "account": "Tài khoản",
       "tab": {
         "desc": "Chỉ hiển thị các thao tác tóm tắt an toàn. Hành động xóa/nhạy cảm cần backend hỗ trợ trước.",
         "title": "Cài đặt tài khoản"
-      }
+      },
+      "save_basic_desc": "Lưu tên, bio và ảnh đại diện của bạn.",
+      "path_help": "Đổi ngôn ngữ và mục tiêu qua onboarding để chọn đúng lộ trình học.",
+      "basic_desc": "Quản lý thông tin cá nhân và cập nhật lộ trình học của bạn.",
+      "processing_avatar": "Đang xử lý ảnh…",
+      "bio": "Giới thiệu"
     },
     "notifications": {
       "item3": "Hiển thị hướng dẫn trước khi vào PvP quá sớm.",
@@ -876,6 +907,12 @@
       }
     },
     "goals": {
+      "selection_empty": "Chưa chọn",
+      "newbie_path_title": "Lộ trình cho người mới",
+      "newbie_path_desc": "Loopy ưu tiên một bước tiếp theo rõ ràng thay vì bắt bạn tự chọn giữa nhiều chủ đề.",
+      "view_all_paths": "Xem tất cả lộ trình",
+      "experience_level": "Mức kinh nghiệm",
+      "selection_unknown": "Cần cập nhật lộ trình",
       "update_btn": "Cập nhật lộ trình",
       "preferred_language": "Ngôn ngữ ưu tiên",
       "current_goal": "Mục tiêu hiện tại",
@@ -890,6 +927,25 @@
       "goals": "Mục tiêu",
       "journey": "Hành trình",
       "overview": "Tổng quan"
+    },
+    "retry": "Thử lại",
+    "toast": {
+      "saved": "Đã cập nhật thông tin cá nhân."
+    },
+    "metric": {
+      "note": {
+        "complete_lesson": "Đã hoàn thành và lưu",
+        "daily_habit": "Thói quen học mỗi ngày",
+        "saved_lessons": "Bài học đã lưu"
+      }
+    },
+    "saved_lessons": {
+      "singular": "1 bài học đã lưu",
+      "plural": "{count} bài học đã lưu"
+    },
+    "loading": "Đang tải hồ sơ…",
+    "sidebar": {
+      "role": "Người học Loopy"
     }
   },
   "library": {
@@ -946,5 +1002,13 @@
       "title": "Bộ cá nhân",
       "desc": "Người dùng tạo bộ luyện tập riêng, đặt tên, chủ đề, yêu cầu mở khóa và tối đa 30 câu."
     }
+  },
+  "interfacePreparation": {
+    "title": "Đang chuẩn bị giao diện",
+    "description": "Đang tải các trang và nội dung tiếng Việt để bạn chuyển trang thuận tiện hơn.",
+    "error": "Chưa chuẩn bị được giao diện",
+    "errorDescription": "Kiểm tra kết nối và thử lại. Trang hiện tại và bản nháp của bạn vẫn được giữ.",
+    "retry": "Thử lại",
+    "reload": "Tải lại ứng dụng"
   }
 }

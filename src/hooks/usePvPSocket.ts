@@ -8,9 +8,12 @@
  * - Backend validates token from cookie
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from '../contexts/AuthContext'
+import { API_ORIGIN as SOCKET_URL } from '../config/api'
+import { subscribePvP } from '../features/pvp/socketSubscriptions'
+import type { PvPSocketEvent, PvPSocketPayload } from '../features/pvp/socketEvents'
 import type {
   PvPMatch,
   PvPParticipant,
@@ -28,21 +31,18 @@ import type {
   MatchForfeitPayload,
 } from '../types/pvp.types'
 
-const SOCKET_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
-
 export interface UsePvPSocketReturn {
   socket: Socket | null
   isConnected: boolean
   error: string | null
+  reconnect: () => void
 
   // Actions
   joinMatch: (matchId: string) => void
   leaveMatch: (matchId: string) => void
-  markReady: (matchId: string) => void
-  submitAnswer: (matchId: string, questionId: string, answer: string, timeTaken: number) => void
-  submitCode: (matchId: string, questionId: string, code: string, timeTaken: number) => void
+  markReady: (matchId: string) => boolean
+  submitAnswer: (matchId: string, questionId: string, answer: string, timeTaken: number) => boolean
+  submitCode: (matchId: string, questionId: string, code: string, timeTaken: number) => boolean
   sendReaction: (matchId: string, emoji: string, targetUserId?: string) => void
   startTyping: (matchId: string) => void
   stopTyping: (matchId: string) => void
@@ -53,13 +53,17 @@ export interface UsePvPSocketReturn {
   onQuestionChanged: (callback: (payload: QuestionChangedPayload) => void) => () => void
   onMatchCompleted: (callback: (payload: MatchCompletedPayload) => void) => () => void
   onParticipantJoined: (callback: (participant: PvPParticipant) => void) => () => void
-  onParticipantLeft: (callback: (participant: PvPParticipant) => void) => () => void
+  onParticipantLeft: (
+    callback: (participant: Pick<PvPParticipant, 'user_id'>) => void
+  ) => () => void
   onParticipantReady: (callback: (participant: PvPParticipant) => void) => () => void
   onParticipantDisconnected: (callback: (userId: string) => void) => () => void
   onParticipantReconnected: (callback: (userId: string) => void) => () => void
   onSubmissionReceived: (callback: (submission: PvPSubmission) => void) => () => void
   onSubmissionRanked: (callback: (payload: SubmissionRankedPayload) => void) => () => void
-  onSubmissionFeedback: (callback: (payload: { questionId: string, correctAnswerId?: string }) => void) => () => void
+  onSubmissionFeedback: (
+    callback: (payload: { questionId: string; correctAnswerId?: string }) => void
+  ) => () => void
   onReactionReceived: (callback: (reaction: PvPReaction) => void) => () => void
   onTypingStarted: (callback: (payload: TypingPayload) => void) => () => void
   onTypingStopped: (callback: (payload: TypingPayload) => void) => () => void
@@ -72,237 +76,177 @@ export interface UsePvPSocketReturn {
 
 export const usePvPSocket = (): UsePvPSocketReturn => {
   const { user } = useAuth()
+  const userId = user?.id
+  const owner = useRef(userId)
   const socketRef = useRef<Socket | null>(null)
+  const [socket, setSocket] = useState<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const activeMatchRef = useRef<string | null>(null)
 
-  // Initialize socket connection
-  useEffect(() => {
-    if (!user) return
-
-    // Tokens are now in httpOnly cookies
-    // Socket.io will automatically send cookies with connection
-    const socket = io(SOCKET_URL, {
-      auth: {
-        // Backend will read token from cookie
-        // No need to send token explicitly
-      },
+  useLayoutEffect(() => {
+    owner.current = userId
+    activeMatchRef.current = null
+    setIsConnected(false)
+    setError(null)
+    if (!userId) {
+      setSocket(null)
+      return
+    }
+    const transport = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
-      withCredentials: true, // CRITICAL: Send cookies
+      withCredentials: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
     })
-
-    socket.on('connect', () => {
+    socketRef.current = transport
+    setSocket(transport)
+    const current = () => socketRef.current === transport
+    transport.on('connect', () => {
+      if (!current()) return
       setIsConnected(true)
       setError(null)
+      if (activeMatchRef.current) transport.emit('match:join', activeMatchRef.current)
     })
-
-    socket.on('disconnect', () => {
+    transport.on('disconnect', () => {
+      if (current()) setIsConnected(false)
+    })
+    transport.on('connect_error', () => {
+      if (!current()) return
       setIsConnected(false)
+      setError('Không kết nối được phòng PvP. Bạn có thể thử kết nối lại.')
     })
-
-    socket.on('connect_error', err => {
-      console.error('Socket connection error:', err)
-      setError(err.message)
-      setIsConnected(false)
-    })
-
-    socketRef.current = socket
-
-    // Note: Token refresh events are no longer needed
-    // Backend manages token refresh via cookies automatically
-
     return () => {
-      socket.disconnect()
-      socketRef.current = null
+      // Invalidate callbacks before disconnect can synchronously emit another event.
+      if (socketRef.current === transport) socketRef.current = null
+      transport.removeAllListeners()
+      transport.disconnect()
     }
-  }, [user])
+  }, [userId])
 
-  // Actions
-  const joinMatch = useCallback((matchId: string) => {
-    socketRef.current?.emit('match:join', matchId)
-  }, [])
-
-  const leaveMatch = useCallback((matchId: string) => {
-    socketRef.current?.emit('match:leave', matchId)
-  }, [])
-
-  const markReady = useCallback((matchId: string) => {
-    socketRef.current?.emit('match:ready', matchId)
-  }, [])
-
+  const reconnect = useCallback(() => {
+    if (owner.current === userId) socketRef.current?.connect()
+  }, [userId])
+  const joinMatch = useCallback(
+    (matchId: string) => {
+      if (owner.current !== userId || !socketRef.current) return
+      activeMatchRef.current = matchId
+      if (socketRef.current.connected) socketRef.current.emit('match:join', matchId)
+    },
+    [userId]
+  )
+  const leaveMatch = useCallback(
+    (matchId: string) => {
+      if (owner.current !== userId || activeMatchRef.current !== matchId) return
+      activeMatchRef.current = null
+      if (socketRef.current?.connected) socketRef.current.emit('match:leave', matchId)
+    },
+    [userId]
+  )
+  const emit = useCallback(
+    (matchId: string, event: string, payload: unknown) => {
+      const current = socketRef.current
+      // Never add an offline command to Socket.IO's replay buffer.
+      if (owner.current !== userId || !current?.connected || activeMatchRef.current !== matchId)
+        return false
+      current.emit(event, payload)
+      return true
+    },
+    [userId]
+  )
+  const markReady = useCallback((matchId: string) => emit(matchId, 'match:ready', matchId), [emit])
   const submitAnswer = useCallback(
-    (matchId: string, questionId: string, answer: string, timeTaken: number) => {
-      socketRef.current?.emit('submission:answer', { matchId, questionId, answer, timeTaken })
-    },
-    []
+    (matchId: string, questionId: string, answer: string, timeTaken: number) =>
+      emit(matchId, 'submission:answer', { matchId, questionId, answer, timeTaken }),
+    [emit]
   )
-
   const submitCode = useCallback(
-    (matchId: string, questionId: string, code: string, timeTaken: number) => {
-      socketRef.current?.emit('submission:code', { matchId, questionId, code, timeTaken })
+    (matchId: string, questionId: string, code: string, timeTaken: number) =>
+      emit(matchId, 'submission:code', { matchId, questionId, code, timeTaken }),
+    [emit]
+  )
+  const sendReaction = useCallback(
+    (matchId: string, emoji: string, targetUserId?: string) => {
+      emit(matchId, 'reaction:send', { matchId, emoji, targetUserId })
     },
-    []
+    [emit]
+  )
+  const startTyping = useCallback(
+    (matchId: string) => {
+      emit(matchId, 'typing:start', matchId)
+    },
+    [emit]
+  )
+  const stopTyping = useCallback(
+    (matchId: string) => {
+      emit(matchId, 'typing:stop', matchId)
+    },
+    [emit]
   )
 
-  const sendReaction = useCallback((matchId: string, emoji: string, targetUserId?: string) => {
-    socketRef.current?.emit('reaction:send', { matchId, emoji, targetUserId })
-  }, [])
-
-  const startTyping = useCallback((matchId: string) => {
-    socketRef.current?.emit('typing:start', matchId)
-  }, [])
-
-  const stopTyping = useCallback((matchId: string) => {
-    socketRef.current?.emit('typing:stop', matchId)
-  }, [])
-
-  // Event listeners
-  const onMatchUpdated = useCallback((callback: (payload: MatchUpdatedPayload) => void) => {
-    socketRef.current?.on('match:updated', callback)
-    return () => {
-      socketRef.current?.off('match:updated', callback)
+  const listeners = useMemo(() => {
+    function subscribe<K extends PvPSocketEvent>(
+      event: K,
+      callback: (value: PvPSocketPayload<K>) => void
+    ) {
+      const subscribed = socketRef.current
+      return subscribePvP(subscribed, event, callback, {
+        current: () => socketRef.current === subscribed && owner.current === userId,
+        room: () => activeMatchRef.current,
+        userId: () => owner.current,
+        invalid: () => setError('Không đọc được dữ liệu realtime PvP. Hãy đồng bộ lại phòng.'),
+        accepted: () => setError(null),
+      })
     }
-  }, [])
-
-  const onMatchStarted = useCallback((callback: (match: PvPMatch) => void) => {
-    socketRef.current?.on('match:started', callback)
-    return () => {
-      socketRef.current?.off('match:started', callback)
+    return {
+      onMatchUpdated: (callback: (value: PvPSocketPayload<'match:updated'>) => void) =>
+        subscribe('match:updated', callback),
+      onMatchStarted: (callback: (value: PvPSocketPayload<'match:started'>) => void) =>
+        subscribe('match:started', callback),
+      onQuestionChanged: (callback: (value: PvPSocketPayload<'match:question_changed'>) => void) =>
+        subscribe('match:question_changed', callback),
+      onMatchCompleted: (callback: (value: PvPSocketPayload<'match:completed'>) => void) =>
+        subscribe('match:completed', callback),
+      onParticipantJoined: (callback: (value: PvPSocketPayload<'participant:joined'>) => void) =>
+        subscribe('participant:joined', callback),
+      onParticipantLeft: (callback: (value: PvPSocketPayload<'participant:left'>) => void) =>
+        subscribe('participant:left', callback),
+      onParticipantReady: (callback: (value: PvPSocketPayload<'participant:ready'>) => void) =>
+        subscribe('participant:ready', callback),
+      onParticipantDisconnected: (callback: (value: string) => void) =>
+        subscribe('participant:disconnected', callback),
+      onParticipantReconnected: (callback: (value: string) => void) =>
+        subscribe('participant:reconnected', callback),
+      onSubmissionReceived: (callback: (value: PvPSocketPayload<'submission:received'>) => void) =>
+        subscribe('submission:received', callback),
+      onSubmissionRanked: (callback: (value: PvPSocketPayload<'submission:ranked'>) => void) =>
+        subscribe('submission:ranked', callback),
+      onSubmissionFeedback: (callback: (value: PvPSocketPayload<'submission:feedback'>) => void) =>
+        subscribe('submission:feedback', callback),
+      onReactionReceived: (callback: (value: PvPSocketPayload<'reaction:received'>) => void) =>
+        subscribe('reaction:received', callback),
+      onTypingStarted: (callback: (value: PvPSocketPayload<'typing:user_started'>) => void) =>
+        subscribe('typing:user_started', callback),
+      onTypingStopped: (callback: (value: PvPSocketPayload<'typing:user_stopped'>) => void) =>
+        subscribe('typing:user_stopped', callback),
+      onError: (callback: (value: PvPSocketPayload<'error'>) => void) =>
+        subscribe('error', callback),
+      onCooldown: (callback: (value: PvPSocketPayload<'match:cooldown'>) => void) =>
+        subscribe('match:cooldown', callback),
+      onMatchPaused: (callback: (value: PvPSocketPayload<'match:paused'>) => void) =>
+        subscribe('match:paused', callback),
+      onMatchResumed: (callback: (value: PvPSocketPayload<'match:resumed'>) => void) =>
+        subscribe('match:resumed', callback),
+      onMatchForfeit: (callback: (value: PvPSocketPayload<'match:forfeit'>) => void) =>
+        subscribe('match:forfeit', callback),
     }
-  }, [])
-
-  const onQuestionChanged = useCallback((callback: (payload: QuestionChangedPayload) => void) => {
-    socketRef.current?.on('match:question_changed', callback)
-    return () => {
-      socketRef.current?.off('match:question_changed', callback)
-    }
-  }, [])
-
-  const onMatchCompleted = useCallback((callback: (payload: MatchCompletedPayload) => void) => {
-    socketRef.current?.on('match:completed', callback)
-    return () => {
-      socketRef.current?.off('match:completed', callback)
-    }
-  }, [])
-
-  const onParticipantJoined = useCallback((callback: (participant: PvPParticipant) => void) => {
-    socketRef.current?.on('participant:joined', callback)
-    return () => {
-      socketRef.current?.off('participant:joined', callback)
-    }
-  }, [])
-
-  const onParticipantLeft = useCallback((callback: (participant: PvPParticipant) => void) => {
-    socketRef.current?.on('participant:left', callback)
-    return () => {
-      socketRef.current?.off('participant:left', callback)
-    }
-  }, [])
-
-  const onParticipantReady = useCallback((callback: (participant: PvPParticipant) => void) => {
-    socketRef.current?.on('participant:ready', callback)
-    return () => {
-      socketRef.current?.off('participant:ready', callback)
-    }
-  }, [])
-
-  const onParticipantDisconnected = useCallback((callback: (userId: string) => void) => {
-    socketRef.current?.on('participant:disconnected', callback)
-    return () => {
-      socketRef.current?.off('participant:disconnected', callback)
-    }
-  }, [])
-
-  const onParticipantReconnected = useCallback((callback: (userId: string) => void) => {
-    socketRef.current?.on('participant:reconnected', callback)
-    return () => {
-      socketRef.current?.off('participant:reconnected', callback)
-    }
-  }, [])
-
-  const onSubmissionReceived = useCallback((callback: (submission: PvPSubmission) => void) => {
-    socketRef.current?.on('submission:received', callback)
-    return () => {
-      socketRef.current?.off('submission:received', callback)
-    }
-  }, [])
-
-  const onSubmissionRanked = useCallback((callback: (payload: SubmissionRankedPayload) => void) => {
-    socketRef.current?.on('submission:ranked', callback)
-    return () => {
-      socketRef.current?.off('submission:ranked', callback)
-    }
-  }, [])
-
-  const onSubmissionFeedback = useCallback((callback: (payload: { questionId: string, correctAnswerId?: string }) => void) => {
-    socketRef.current?.on('submission:feedback', callback)
-    return () => {
-      socketRef.current?.off('submission:feedback', callback)
-    }
-  }, [])
-
-  const onReactionReceived = useCallback((callback: (reaction: PvPReaction) => void) => {
-    socketRef.current?.on('reaction:received', callback)
-    return () => {
-      socketRef.current?.off('reaction:received', callback)
-    }
-  }, [])
-
-  const onTypingStarted = useCallback((callback: (payload: TypingPayload) => void) => {
-    socketRef.current?.on('typing:user_started', callback)
-    return () => {
-      socketRef.current?.off('typing:user_started', callback)
-    }
-  }, [])
-
-  const onTypingStopped = useCallback((callback: (payload: TypingPayload) => void) => {
-    socketRef.current?.on('typing:user_stopped', callback)
-    return () => {
-      socketRef.current?.off('typing:user_stopped', callback)
-    }
-  }, [])
-
-  const onError = useCallback((callback: (error: ErrorPayload) => void) => {
-    socketRef.current?.on('error', callback)
-    return () => {
-      socketRef.current?.off('error', callback)
-    }
-  }, [])
-
-  const onCooldown = useCallback((callback: (payload: CooldownPayload) => void) => {
-    socketRef.current?.on('match:cooldown', callback)
-    return () => {
-      socketRef.current?.off('match:cooldown', callback)
-    }
-  }, [])
-
-  const onMatchPaused = useCallback((callback: (payload: MatchPausedPayload) => void) => {
-    socketRef.current?.on('match:paused', callback)
-    return () => {
-      socketRef.current?.off('match:paused', callback)
-    }
-  }, [])
-
-  const onMatchResumed = useCallback((callback: (payload: MatchResumedPayload) => void) => {
-    socketRef.current?.on('match:resumed', callback)
-    return () => {
-      socketRef.current?.off('match:resumed', callback)
-    }
-  }, [])
-
-  const onMatchForfeit = useCallback((callback: (payload: MatchForfeitPayload) => void) => {
-    socketRef.current?.on('match:forfeit', callback)
-    return () => {
-      socketRef.current?.off('match:forfeit', callback)
-    }
-  }, [])
-
+  }, [userId])
   return {
-    socket: socketRef.current,
+    socket,
     isConnected,
     error,
-
-    // Actions
+    reconnect,
     joinMatch,
     leaveMatch,
     markReady,
@@ -311,27 +255,6 @@ export const usePvPSocket = (): UsePvPSocketReturn => {
     sendReaction,
     startTyping,
     stopTyping,
-
-    // Event listeners
-    onMatchUpdated,
-    onMatchStarted,
-    onQuestionChanged,
-    onMatchCompleted,
-    onParticipantJoined,
-    onParticipantLeft,
-    onParticipantReady,
-    onParticipantDisconnected,
-    onParticipantReconnected,
-    onSubmissionReceived,
-    onSubmissionRanked,
-    onSubmissionFeedback,
-    onReactionReceived,
-    onTypingStarted,
-    onTypingStopped,
-    onError,
-    onCooldown,
-    onMatchPaused,
-    onMatchResumed,
-    onMatchForfeit,
+    ...listeners,
   }
 }

@@ -52,7 +52,7 @@ const PracticePage: React.FC = () => {
 
 
   if (loading) {
-    return <LoadingScreen message="Loading practice..." />
+    return <LoadingScreen />
   }
 
   const headerContent = {

@@ -1,3 +1,4 @@
+import { useEditorFontSize } from '../../features/preferences/editorFontSize'
 /**
  * CodeEditor — Wrapper around CodeMirror for lesson theory/exercise tabs.
  */
@@ -53,7 +54,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   editable = true,
   language = 'javascript',
 }) => {
-  const [fontSize, setFontSize] = useState(14)
+  const fontSize = useEditorFontSize()
   const [extensions, setExtensions] = useState<Extension[]>([])
 
   useEffect(() => {
@@ -88,18 +89,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   }, [language])
 
-  useEffect(() => {
-    const saved = localStorage.getItem('editor_font_size')
-    if (saved) setFontSize(parseInt(saved))
-
-    const handleFontSizeChange = () => {
-      const saved = localStorage.getItem('editor_font_size')
-      if (saved) setFontSize(parseInt(saved))
-    }
-
-    window.addEventListener('fontSizeChanged', handleFontSizeChange)
-    return () => window.removeEventListener('fontSizeChanged', handleFontSizeChange)
-  }, [])
 
   return (
     <CodeMirror

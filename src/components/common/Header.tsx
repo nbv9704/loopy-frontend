@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast'
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Flame, LogOut, Menu, Settings, Star, User, X } from 'lucide-react'
@@ -43,10 +44,15 @@ const Header: React.FC = () => {
   }, [])
 
   const handleSignOut = async () => {
-    await signOut()
-    setShowDropdown(false)
-    setShowMobileMenu(false)
-    navigate('/')
+    try {
+      const result = await signOut()
+      if (result?.warning) toast.error(result.warning)
+      setShowDropdown(false)
+      setShowMobileMenu(false)
+      navigate('/')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Chưa đăng xuất được. Vui lòng thử lại.')
+    }
   }
 
   const isActive = (path: string) => {

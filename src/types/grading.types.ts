@@ -75,8 +75,8 @@ export interface AIAnalysis {
 
 export interface SubmissionHistoryData {
   submissions: SubmissionSummary[]
-  bestScore: number
-  averageScore: number
+  bestScore: number | null
+  averageScore: number | null
   totalAttempts: number
   page: number
   limit: number
@@ -89,7 +89,7 @@ export interface SubmissionSummary {
   aiScore: number | null
   finalScore: number | null
   gradeLevel: GradeLevel | null
-  gradingMethod: GradingMethod
+  gradingMethod: GradingMethod | null
   gradedAt: string | null
   submittedAt: string
 }
@@ -108,7 +108,7 @@ export interface SubmissionDetail {
   testResults: TestRunResult | null
   aiAnalysis: AIAnalysis | null
   feedback: string | null
-  gradingMethod: GradingMethod
+  gradingMethod: GradingMethod | null
   gradedAt: string | null
   submittedAt: string
   executionTime: number

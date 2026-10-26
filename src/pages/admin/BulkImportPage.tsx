@@ -1,293 +1,139 @@
-import React, { useMemo, useState } from 'react'
-import { Upload, CheckCircle, AlertCircle, FileJson, ArrowRight, Eye } from 'lucide-react'
-import { contentService, BulkImportPayload } from '../../services/admin/content.service'
+import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import AdminButton from '../../components/admin/AdminButton'
+import { Link, useLocation } from 'react-router-dom'
+import { Upload } from 'lucide-react'
+import { useAuthStore } from '../../store/admin/authStore'
+import { ImportPreview } from '../../features/admin-import/BulkImportPreview'
+import { samplePayload } from '../../features/admin-import/samplePayload'
+import { useBulkImport } from '../../features/admin-import/useBulkImport'
 
-const samplePayload = {
-  chapterId: '00000000-0000-0000-0000-000000000000',
-  lessons: [
-    {
-      lessonId: 'xin-chao-console-log',
-      title: 'In dòng chào đầu tiên',
-      description: 'Quan sát cách console.log hiển thị nội dung ra màn hình.',
-      starterCode: 'console.log("Xin chào")',
-      taskDescription: 'Đổi nội dung để chương trình in ra: Xin chào Loopy',
-      hintLevel1: 'Nhìn vào phần chữ nằm trong dấu ngoặc kép.',
-      hintLevel2: 'Bạn chỉ cần thay chuỗi đang được truyền vào console.log.',
-      hintLevel3: 'Dòng code nên gần giống: console.log("Xin chào Loopy")',
-      hint: 'Fallback cho lesson cũ nếu chưa tách 3 mức hint.',
-      commonMistakes: 'Quên dấu ngoặc kép hoặc viết sai chữ hoa/thường.',
-      solutionCode: 'console.log("Xin chào Loopy")',
-      difficulty: 'beginner',
-      gradingMode: 'stdout',
-      status: 'draft',
-      orderIndex: 1,
-      testCases: [
-        {
-          orderIndex: 1,
-          description: 'In đúng nội dung yêu cầu',
-          input: [],
-          expectedOutput: 'Xin chào Loopy',
-          weight: 10,
-          timeout: 1000,
-          isHidden: false,
-        },
-      ],
-      steps: [
-        {
-          type: 'multiple_choice',
-          title: 'console.log dùng để làm gì?',
-          prompt: 'Chọn mô tả đúng nhất trước khi sửa code.',
-          options: ['In dữ liệu ra terminal', 'Tạo biến mới', 'Dừng chương trình'],
-          correctAnswer: 'In dữ liệu ra terminal',
-          explanation: 'Đúng. console.log giúp quan sát output khi học code.',
-          hint: 'Nhìn vào terminal sau khi bấm Chạy thử.',
-          isRequired: false,
-          orderIndex: 1,
-        },
-      ],
-    },
-  ],
-}
-
-const BulkImportPage: React.FC = () => {
-  const [jsonInput, setJsonInput] = useState('')
-  const [isImporting, setIsImporting] = useState(false)
-  const [result, setResult] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const preview = useMemo(() => {
-    if (!jsonInput.trim()) {
-      return null
-    }
-
-    try {
-      const payload = JSON.parse(jsonInput) as BulkImportPayload
-      const lessons = Array.isArray(payload.lessons) ? payload.lessons : []
-      const testCaseCount = lessons.reduce((total, lesson) => {
-        const testCases = lesson.testCases || lesson.test_cases || []
-        return total + testCases.length
-      }, 0)
-      const stepCount = lessons.reduce((total, lesson) => {
-        const steps = lesson.steps || lesson.lessonSteps || []
-        return total + steps.length
-      }, 0)
-      const missingRequired = lessons.filter(lesson => {
-        const lessonId = lesson.lessonId || lesson.lesson_id
-        const starterCode = lesson.starterCode || lesson.starter_code
-        const solutionCode = lesson.solutionCode || lesson.solution_code
-        const orderIndex = lesson.orderIndex ?? lesson.order_index
-        return !lessonId || !lesson.title || !starterCode || !solutionCode || orderIndex === undefined
-      }).length
-
-      return {
-        isValidJson: true,
-        chapterId: payload.chapterId || payload.chapter_id || '',
-        lessonCount: lessons.length,
-        testCaseCount,
-        stepCount,
-        missingRequired,
-        parseError: '',
-      }
-    } catch (err) {
-      return {
-        isValidJson: false,
-        chapterId: '',
-        lessonCount: 0,
-        testCaseCount: 0,
-        stepCount: 0,
-        missingRequired: 0,
-        parseError: err instanceof Error ? err.message : 'JSON không hợp lệ',
-      }
-    }
-  }, [jsonInput])
-
-  const handleImport = async () => {
-    setIsImporting(true)
-    setError(null)
-    setResult(null)
-
-    try {
-      const payload: BulkImportPayload = JSON.parse(jsonInput)
-      const data = await contentService.bulkImport(payload)
-      setResult(data)
-    } catch (err: any) {
-      setError(err.message || 'Lỗi phân tích JSON hoặc lỗi server')
-    } finally {
-      setIsImporting(false)
-    }
-  }
-
+function BulkImportForm() {
+  const form = useBulkImport()
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-cyan-700">
-            <Upload className="h-3.5 w-3.5" />
-            Content ops
+    <div className="min-w-0 space-y-6">
+      <AdminPageHeader
+        title="Bulk Import Lessons"
+        eyebrow="Nhập dữ liệu"
+        description="Dán JSON, kiểm tra preview và dữ liệu sẽ thay thế, rồi xác nhận import."
+      />
+      <form
+        onSubmit={event => {
+          event.preventDefault()
+          form.submit()
+        }}
+        className="grid min-w-0 gap-6 xl:grid-cols-2"
+      >
+        <fieldset
+          disabled={form.pending}
+          className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="import-json" className="font-bold text-slate-900">
+              JSON payload
+            </label>
+            <AdminButton
+              type="button"
+              onClick={() => form.edit(JSON.stringify(samplePayload, null, 2))}
+            >
+              Load example
+            </AdminButton>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-            Bulk Import Lessons
-          </h1>
-          <p className="mt-2 max-w-2xl text-base font-medium text-slate-600">
-            Paste JSON, đọc preview, rồi import vào chapter đã chọn. Import lại sẽ thay test cases trong payload để tránh trùng.
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-6 grid gap-3 md:grid-cols-3">
-        {['1. Chọn chapter trong JSON', '2. Paste và validate payload', '3. Import và đọc kết quả'].map(step => (
-          <div key={step} className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-black text-slate-700 shadow-sm">
-            {step}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Input area */}
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <FileJson className="h-4 w-4 text-teal-700" />
-                <span className="text-sm font-black text-slate-700">JSON payload</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setJsonInput(JSON.stringify(samplePayload, null, 2))}
-                className="rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-black text-teal-700 transition-colors hover:bg-teal-50"
-              >
-                Load example
-              </button>
-            </div>
-            <textarea
-              value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
-              placeholder='{ "chapter_id": "...", "lessons": [...] }'
-              className="h-[520px] w-full resize-none bg-white p-4 font-mono text-sm text-slate-900 outline-none placeholder:text-slate-400"
-            />
-          </div>
-
-          <button
-            onClick={handleImport}
-            disabled={isImporting || !preview?.isValidJson || preview.missingRequired > 0}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 py-4 font-black text-white shadow-sm transition-colors hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+          <textarea
+            id="import-json"
+            value={form.source}
+            onChange={event => form.edit(event.target.value)}
+            spellCheck={false}
+            placeholder='{ "chapter_id": "...", "lessons": [...] }'
+            className="h-80 min-h-64 w-full resize-y xl:h-[480px] rounded-lg border border-slate-300 bg-white p-4 font-mono text-sm text-slate-900 disabled:opacity-60"
+          />
+          {form.preview.payload && (
+            <label className="flex items-start gap-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.reviewed}
+                onChange={event => form.setReviewed(event.target.checked)}
+                className="mt-1"
+              />
+              Tôi đã kiểm tra chapter, trạng thái lesson và dữ liệu sẽ thay thế trong preview.
+            </label>
+          )}
+          <AdminButton
+            variant="primary"
+            type="submit"
+            disabled={form.pending || !form.preview.payload || !form.reviewed || !!form.result}
+            className="w-full"
           >
-            <Upload className={`h-5 w-5 ${isImporting ? 'animate-spin' : ''}`} />
-            <span>{isImporting ? 'Đang import...' : 'Import lessons'}</span>
-          </button>
-        </div>
-
-        {/* Status / Result area */}
-        <div className="space-y-6">
-          {preview && (
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-5 flex items-center gap-3">
-                <Eye className="h-5 w-5 text-teal-700" />
-                <h2 className="text-lg font-black text-slate-950">Preview trước khi import</h2>
-              </div>
-
-              {!preview.isValidJson ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
-                  JSON chưa hợp lệ: {preview.parseError}
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-black uppercase tracking-wider text-slate-500">Lessons</p>
-                      <p className="mt-1 text-2xl font-black text-slate-950">{preview.lessonCount}</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-black uppercase tracking-wider text-slate-500">Test cases</p>
-                      <p className="mt-1 text-2xl font-black text-slate-950">{preview.testCaseCount}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-black uppercase tracking-wider text-slate-500">Chapter ID</p>
-                    <p className="mt-1 break-all font-mono text-sm font-bold text-slate-700">
-                      {preview.chapterId || 'Thiếu chapter_id/chapterId'}
-                    </p>
-                  </div>
-
-                  {preview.missingRequired > 0 ? (
-                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-700">
-                      {preview.missingRequired} lesson thiếu field bắt buộc. Cần có lesson_id, title,
-                      starter_code, solution_code và order_index.
-                    </div>
-                  ) : (
-                    <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-700">
-                      Payload đủ field bắt buộc. Nếu import lại lesson đã có test cases, test cases trong payload sẽ thay thế bộ cũ để tránh trùng.
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <div className="flex gap-4 rounded-lg border border-red-200 bg-red-50 p-6">
-              <AlertCircle className="h-6 w-6 shrink-0 text-red-600" />
-              <div>
-                <h3 className="mb-1 font-black text-red-700">Import lỗi</h3>
-                <p className="text-sm font-bold text-red-600">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {result && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <CheckCircle className="h-6 w-6 text-green-700" />
-                <h3 className="font-black text-green-700">Import thành công</h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="rounded-lg border border-green-200 bg-white p-4">
-                  <p className="mb-1 text-xs font-black uppercase tracking-wider text-slate-500">Lessons</p>
-                  <p className="text-2xl font-black text-slate-950">{result.lessonsCreated}</p>
-                </div>
-                <div className="rounded-lg border border-green-200 bg-white p-4">
-                  <p className="mb-1 text-xs font-black uppercase tracking-wider text-slate-500">Test cases</p>
-                  <p className="text-2xl font-black text-slate-950">{result.testCasesCreated}</p>
-                </div>
-              </div>
-
-              {typeof result.testCasesReplaced === 'number' && result.testCasesReplaced > 0 && (
-                <div className="mb-6 rounded-lg border border-green-200 bg-white p-4">
-                  <p className="mb-1 text-xs font-black uppercase tracking-wider text-slate-500">Đã thay test cases cũ</p>
-                  <p className="text-2xl font-black text-slate-950">{result.testCasesReplaced}</p>
-                </div>
-              )}
-
-              {result.errors && result.errors.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-sm font-black text-slate-950">Lỗi nhỏ</h4>
-                  <ul className="space-y-1">
-                    {result.errors.map((err: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-xs font-bold text-slate-600">
-                        <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-teal-700" />
-                        <span>{err}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!result && !error && (
-            <div className="flex min-h-[260px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-white p-12 text-center">
-              <FileJson className="mb-4 h-16 w-16 text-slate-300" />
-              <p className="max-w-xs text-sm font-bold text-slate-500">
-                Paste JSON để xem preview trước khi import, hoặc bấm Load example để xem format có `hintLevel1/2/3`.
+            <Upload className="h-5 w-5" />
+            {form.pending ? 'Đang import...' : 'Import lessons'}
+          </AdminButton>
+          <p className="text-sm text-slate-600">
+            Sau mỗi lần import thành công, hãy chỉnh payload trước khi thực hiện lượt khác.
+          </p>
+        </fieldset>
+        <div className="min-w-0 space-y-4" aria-live="polite">
+          {!form.source.trim() && (
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm leading-6 text-slate-500">
+              <h2 className="mb-2 font-semibold text-slate-900">Xem trước dữ liệu</h2>
+              <p>
+                Dán JSON hoặc chọn Load example để xem chapter, lesson và các dữ liệu con trước khi
+                ghi.
               </p>
+            </section>
+          )}
+          {form.preview.issues.length > 0 && (
+            <section
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+            >
+              <h2 className="font-bold">Payload chưa hợp lệ</h2>
+              <ul className="mt-2 max-h-80 list-inside list-disc overflow-y-auto break-words text-sm">
+                {form.preview.issues.slice(0, 20).map((issue, index) => (
+                  <li key={index}>{issue}</li>
+                ))}
+              </ul>
+              {form.preview.issues.length > 20 && (
+                <p>Còn {form.preview.issues.length - 20} lỗi khác.</p>
+              )}
+            </section>
+          )}
+          {form.preview.payload && <ImportPreview payload={form.preview.payload} />}
+          {form.error && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+            >
+              <h2 className="font-bold">Import chưa thành công hoặc chưa được xác nhận</h2>
+              <p>{form.error}</p>
             </div>
           )}
+          {form.result && (
+            <section
+              role="status"
+              className="space-y-2 rounded-lg border border-green-200 bg-green-50 p-5 text-green-900"
+            >
+              <h2 className="font-bold">Import thành công</h2>
+              <p>{form.result.lessonsCreated} lesson đã thêm/cập nhật.</p>
+              <p>
+                {form.result.testCasesCreated} test case, {form.result.stepsCreated} step được ghi.
+              </p>
+              <p>
+                Đã thay {form.result.testCasesReplaced} test case cũ và {form.result.stepsReplaced}{' '}
+                step cũ.
+              </p>
+            </section>
+          )}
+          <div className="flex flex-wrap gap-4 text-sm font-bold text-teal-800">
+            <Link to="/admin/lessons">Kiểm tra lesson trong chapter</Link>
+            <Link to="/admin/import-history">Xem lịch sử import</Link>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
 
-export default BulkImportPage
+export default function BulkImportPage() {
+  const revision = useAuthStore(state => state.sessionRevision)
+  const location = useLocation()
+  return <BulkImportForm key={`${revision}:${location.key}`} />
+}

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   AlertTriangle,
@@ -24,6 +24,15 @@ import { useAuth } from '../contexts/AuthContext'
 import { useContentPreloader } from '../hooks/useContentPreloader'
 import { api } from '../lib/api'
 import { practiceService } from '../services/practice.service'
+import { useAsyncResource } from '../hooks/useAsyncResource'
+import { usePracticeWrite } from '../features/practice/usePracticeWrite'
+import {
+  normalizePracticeWrite,
+  practiceRequirementCount,
+} from '../features/practice/practiceWrite'
+import { PracticeSaveRecovery } from '../features/practice/PracticeSaveRecovery'
+import { createPracticeSetDraft } from '../features/practice-builder/setDraft'
+import { findModerationKeywords as findBannedKeywords } from '../utils/moderation'
 import type { PracticeQuestion, PracticeSet } from '../types/practice.types'
 
 type QuestionType = 'true_false' | 'multiple_choice' | 'multiple_select' | 'fill_blank'
@@ -51,11 +60,22 @@ type LanguageOption = {
   label: string
 }
 
-const typeMeta: Record<QuestionType, { label: string; shortLabel: string; icon: typeof HelpCircle }> = {
+const typeMeta: Record<
+  QuestionType,
+  { label: string; shortLabel: string; icon: typeof HelpCircle }
+> = {
   true_false: { label: 'True or False', shortLabel: 'TRUE / FALSE', icon: HelpCircle },
-  multiple_choice: { label: 'Multiple questions', shortLabel: 'MULTIPLE CHOICE', icon: CheckCircle },
+  multiple_choice: {
+    label: 'Multiple questions',
+    shortLabel: 'MULTIPLE CHOICE',
+    icon: CheckCircle,
+  },
   multiple_select: { label: 'Multiple selects', shortLabel: 'MULTIPLE SELECT', icon: CheckSquare },
-  fill_blank: { label: 'Fill in the blanks', shortLabel: 'FILL IN THE BLANKS', icon: TextCursorInput },
+  fill_blank: {
+    label: 'Fill in the blanks',
+    shortLabel: 'FILL IN THE BLANKS',
+    icon: TextCursorInput,
+  },
 }
 
 const fallbackLanguages: LanguageOption[] = [
@@ -64,23 +84,11 @@ const fallbackLanguages: LanguageOption[] = [
   { id: 'cpp', label: 'C++' },
 ]
 
-const normalizeModerationText = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-
-const findBannedKeywords = (values: string[], keywords: string[]) => {
-  const normalizedText = normalizeModerationText(values.filter(Boolean).join(' '))
-  if (!normalizedText.trim() || !keywords.length) return []
-
-  return keywords.filter(keyword => {
-    const pattern = new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`, 'i')
-    return pattern.test(normalizedText)
-  })
-}
-
-const ModerationWarning: React.FC<{ matches: string[]; title: string; message: string }> = ({ matches, title, message }) => {
+const ModerationWarning: React.FC<{ matches: string[]; title: string; message: string }> = ({
+  matches,
+  title,
+  message,
+}) => {
   if (!matches.length) return null
 
   return (
@@ -88,7 +96,11 @@ const ModerationWarning: React.FC<{ matches: string[]; title: string; message: s
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
       <div>
         <div className="font-black">{title}</div>
-        <div>{message.replace('{keywords}', matches.join(', ')).replace('{s}', matches.length > 1 ? 's' : '')}</div>
+        <div>
+          {message
+            .replace('{keywords}', matches.join(', '))
+            .replace('{s}', matches.length > 1 ? 's' : '')}
+        </div>
       </div>
     </div>
   )
@@ -112,7 +124,10 @@ const parseAnswerArray = (value?: string | null) => {
     const parsed = JSON.parse(value)
     return Array.isArray(parsed) ? parsed.map(item => String(item)).filter(Boolean) : []
   } catch {
-    return value.split('|').map(item => item.trim()).filter(Boolean)
+    return value
+      .split('|')
+      .map(item => item.trim())
+      .filter(Boolean)
   }
 }
 
@@ -121,83 +136,149 @@ const fromPracticeQuestion = (question: PracticeQuestion): QuestionDraft => ({
   type: question.type as QuestionType,
   title: question.title || '',
   prompt: question.prompt,
-  options: question.type === 'true_false' ? ['true', 'false', '', ''] : [...(question.options || []), '', '', '', ''].slice(0, 4),
+  options:
+    question.type === 'true_false'
+      ? ['true', 'false', '', '']
+      : [...(question.options || []), '', '', '', ''].slice(0, 4),
   correctAnswer: question.type === 'multiple_select' ? '' : question.correctAnswer || '',
-  correctAnswers: question.type === 'multiple_select' ? parseAnswerArray(question.correctAnswer) : [],
+  correctAnswers:
+    question.type === 'multiple_select' ? parseAnswerArray(question.correctAnswer) : [],
   explanation: question.explanation || '',
   points: question.points || 1,
 })
 
-const PracticeSetCreatePage: React.FC = () => {
+const PracticeSetBuilder = ({
+  setId,
+  initialSet,
+}: {
+  setId?: string
+  initialSet?: PracticeSet
+}) => {
   const navigate = useNavigate()
-  const location = useLocation()
-  const { setId } = useParams<{ setId: string }>()
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const isAdmin = user?.isAdmin === true
-  const [initialLoading, setInitialLoading] = useState(!!setId)
   const [bannedKeywords, setBannedKeywords] = useState<string[]>([])
 
   useEffect(() => {
-    api.getPublicModerationKeywords().then(res => {
-      if (res.success && res.data) {
-        setBannedKeywords(res.data)
-      }
-    }).catch(console.error)
+    api
+      .getPublicModerationKeywords()
+      .then(res => {
+        if (res.success && res.data) {
+          setBannedKeywords(res.data)
+        }
+      })
+      .catch(console.error)
   }, [])
   const { i18n } = useTranslation()
   const [mode, setMode] = useState<BuilderMode>('preview')
-  const [saving, setSaving] = useState(false)
+  const write = usePracticeWrite(JSON.stringify([user?.id, setId]))
+  const saving = write.pending
+  const blocked = write.blocked
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   const [editorQuestion, setEditorQuestion] = useState<QuestionDraft>(newQuestion())
   const [libraryKeyword, setLibraryKeyword] = useState('')
   const [libraryLoading, setLibraryLoading] = useState(false)
+  const [libraryError, setLibraryError] = useState<string | null>(null)
   const [libraryResults, setLibraryResults] = useState<LibraryQuestion[]>([])
   const [languageOptions, setLanguageOptions] = useState<LanguageOption[]>(fallbackLanguages)
-  const [setForm, setSetForm] = useState({
-    title: 'Untitled Quiz',
-    description: '',
-    topic: '',
-    languageId: 'javascript',
-    difficulty: 'easy' as 'easy' | 'medium' | 'hard',
-    visibility: 'public' as 'public' | 'private' | 'unlisted' | 'official',
-    status: 'published' as 'draft' | 'published',
-    requirementCount: '',
-  })
+  const [setForm, setSetForm] = useState(() => createPracticeSetDraft(initialSet))
   const [settingsDraft, setSettingsDraft] = useState(setForm)
-  const [questions, setQuestions] = useState<QuestionDraft[]>([])
+  const [questions, setQuestions] = useState<QuestionDraft[]>(
+    () => initialSet?.questions?.map(fromPracticeQuestion) || []
+  )
 
-  const contentKeys = useMemo(() => [
-    'nav.learn',
-    'nav.playground',
-    'nav.practice',
-    'nav.docs',
-    'nav.settings',
-    'nav.logout',
-    'footer.aboutLoopy',
-    'footer.about',
-    'footer.team',
-    'footer.contact',
-    'footer.resources',
-    'footer.docs',
-    'footer.blog',
-    'footer.faq',
-    'footer.description',
-    'footer.allRightsReserved',
-    'footer.privacy',
-    'footer.terms',
-    'practice.create.warning.title', 'practice.create.warning.message',
-    'practice.create.loading', 'practice.create.seo_title',
-    'practice.create.toast.load_error', 'practice.create.toast.add_question', 'practice.create.toast.restricted', 'practice.create.toast.updated', 'practice.create.toast.created', 'practice.create.toast.save_error',
-    'practice.create.editor.edit_title', 'practice.create.editor.create_title', 'practice.create.editor.save_question', 'practice.create.editor.prompt', 'practice.create.editor.prompt_placeholder',
-    'practice.create.editor.options_title', 'practice.create.editor.options_desc', 'practice.create.editor.correct_blank', 'practice.create.editor.blank_placeholder', 'practice.create.editor.multi_correct', 'practice.create.editor.explanation', 'practice.create.editor.explanation_placeholder', 'practice.create.editor.setup', 'practice.create.editor.type', 'practice.create.editor.points', 'practice.create.editor.help',
-    'practice.create.main.settings', 'practice.create.main.publishing', 'practice.create.main.update_set', 'practice.create.main.publish_set', 'practice.create.main.summary', 'practice.create.main.create_question', 'practice.create.main.empty_title', 'practice.create.main.empty_desc',
-    'practice.create.library.title', 'practice.create.library.from_sets', 'practice.create.library.placeholder', 'practice.create.library.searching', 'practice.create.library.idle', 'practice.create.library.empty',
-    'practice.create.settings.badge', 'practice.create.settings.title', 'practice.create.settings.set_title', 'practice.create.settings.description', 'practice.create.settings.description_placeholder', 'practice.create.settings.topic', 'practice.create.settings.topic_placeholder', 'practice.create.settings.language', 'practice.create.settings.difficulty', 'practice.create.settings.visibility', 'practice.create.settings.status', 'practice.create.settings.required_lessons', 'practice.create.settings.required_placeholder', 'practice.create.settings.required_help',
-    'practice.create.option.easy', 'practice.create.option.medium', 'practice.create.option.hard', 'practice.create.option.public', 'practice.create.option.unlisted', 'practice.create.option.private', 'practice.create.option.official', 'practice.create.option.published', 'practice.create.option.draft',
-  ], [])
+  const contentKeys = useMemo(
+    () => [
+      'nav.learn',
+      'nav.playground',
+      'nav.practice',
+      'nav.docs',
+      'nav.settings',
+      'nav.logout',
+      'footer.aboutLoopy',
+      'footer.about',
+      'footer.team',
+      'footer.contact',
+      'footer.resources',
+      'footer.docs',
+      'footer.blog',
+      'footer.faq',
+      'footer.description',
+      'footer.allRightsReserved',
+      'footer.privacy',
+      'footer.terms',
+      'practice.create.warning.title',
+      'practice.create.warning.message',
+      'practice.create.loading',
+      'practice.create.seo_title',
+      'practice.create.toast.load_error',
+      'practice.create.toast.add_question',
+      'practice.create.toast.restricted',
+      'practice.create.toast.updated',
+      'practice.create.toast.created',
+      'practice.create.toast.save_error',
+      'practice.create.editor.edit_title',
+      'practice.create.editor.create_title',
+      'practice.create.editor.save_question',
+      'practice.create.editor.prompt',
+      'practice.create.editor.prompt_placeholder',
+      'practice.create.editor.options_title',
+      'practice.create.editor.options_desc',
+      'practice.create.editor.correct_blank',
+      'practice.create.editor.blank_placeholder',
+      'practice.create.editor.multi_correct',
+      'practice.create.editor.explanation',
+      'practice.create.editor.explanation_placeholder',
+      'practice.create.editor.setup',
+      'practice.create.editor.type',
+      'practice.create.editor.points',
+      'practice.create.editor.help',
+      'practice.create.main.settings',
+      'practice.create.main.publishing',
+      'practice.create.main.update_set',
+      'practice.create.main.publish_set',
+      'practice.create.main.summary',
+      'practice.create.main.create_question',
+      'practice.create.main.empty_title',
+      'practice.create.main.empty_desc',
+      'practice.create.library.title',
+      'practice.create.library.from_sets',
+      'practice.create.library.placeholder',
+      'practice.create.library.searching',
+      'practice.create.library.idle',
+      'practice.create.library.empty',
+      'practice.create.settings.badge',
+      'practice.create.settings.title',
+      'practice.create.settings.set_title',
+      'practice.create.settings.description',
+      'practice.create.settings.description_placeholder',
+      'practice.create.settings.topic',
+      'practice.create.settings.topic_placeholder',
+      'practice.create.settings.language',
+      'practice.create.settings.difficulty',
+      'practice.create.settings.visibility',
+      'practice.create.settings.status',
+      'practice.create.settings.required_lessons',
+      'practice.create.settings.required_placeholder',
+      'practice.create.settings.required_help',
+      'practice.create.option.easy',
+      'practice.create.option.medium',
+      'practice.create.option.hard',
+      'practice.create.option.public',
+      'practice.create.option.unlisted',
+      'practice.create.option.private',
+      'practice.create.option.official',
+      'practice.create.option.published',
+      'practice.create.option.draft',
+    ],
+    []
+  )
 
-  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
+  const { content, initialLoading: contentLoading } = useContentPreloader(
+    contentKeys,
+    i18n.language
+  )
 
   useEffect(() => {
     let mounted = true
@@ -206,7 +287,11 @@ const PracticeSetCreatePage: React.FC = () => {
         const response = await api.getLanguages()
         const rawLanguages = Array.isArray(response.data)
           ? response.data
-          : (response.data as { languages?: Array<{ id: string; name?: string; display_name?: string }> } | undefined)?.languages || []
+          : (
+              response.data as
+                | { languages?: Array<{ id: string; name?: string; display_name?: string }> }
+                | undefined
+            )?.languages || []
         const mappedLanguages = rawLanguages
           .map(language => ({
             id: language.id,
@@ -226,62 +311,27 @@ const PracticeSetCreatePage: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth', { state: { from: location } })
-    }
-  }, [authLoading, location, navigate, user])
-
-  useEffect(() => {
-    if (!setId || !user) return
-
-    let mounted = true
-    const loadExistingSet = async () => {
-      try {
-        const data = await practiceService.getSet(setId)
-        if (!mounted) return
-
-        const formState = {
-          title: data.title,
-          description: data.description || '',
-          topic: data.topic || '',
-          languageId: data.languageId || 'javascript',
-          difficulty: data.difficulty as any,
-          visibility: data.visibility as any,
-          status: data.status as any,
-          requirementCount: data.requirements?.count?.toString() || '',
-        }
-
-        setSetForm(formState)
-        setSettingsDraft(formState)
-
-        if (data.questions) {
-          setQuestions(data.questions.map(q => fromPracticeQuestion(q)))
-        }
-      } catch (error) {
-        toast.error(text('practice.create.toast.load_error', 'Unable to load set'))
-        navigate('/practice/my-sets')
-      } finally {
-        if (mounted) setInitialLoading(false)
-      }
-    }
-
-    loadExistingSet()
-
-    return () => { mounted = false }
-  }, [setId, user, navigate])
-
-  useEffect(() => {
     if (!libraryKeyword.trim()) {
       setLibraryResults([])
+      setLibraryLoading(false)
+      setLibraryError(null)
       return
     }
 
     let mounted = true
+    setLibraryLoading(true)
+    setLibraryError(null)
+    setLibraryResults([])
     const timeout = window.setTimeout(async () => {
       setLibraryLoading(true)
       try {
         const results = await practiceService.searchQuestions(libraryKeyword)
         if (mounted) setLibraryResults(results)
+      } catch (error) {
+        if (mounted)
+          setLibraryError(
+            error instanceof Error ? error.message : 'Không tải được câu hỏi. Vui lòng thử lại.'
+          )
       } finally {
         if (mounted) setLibraryLoading(false)
       }
@@ -319,37 +369,60 @@ const PracticeSetCreatePage: React.FC = () => {
 
   const text = (key: string, fallback: string) => content[key] || fallback
   const formatText = (key: string, fallback: string, values: Record<string, string | number>) =>
-    Object.entries(values).reduce((result, [name, value]) => result.replace(`{${name}}`, String(value)), text(key, fallback))
+    Object.entries(values).reduce(
+      (result, [name, value]) => result.replace(`{${name}}`, String(value)),
+      text(key, fallback)
+    )
   const warningTitle = text('practice.create.warning.title', 'Content warning')
-  const warningMessage = text('practice.create.warning.message', 'Found restricted keyword{s}: {keywords}. Please revise this content before publishing.')
+  const warningMessage = text(
+    'practice.create.warning.message',
+    'Found restricted keyword{s}: {keywords}. Please revise this content before publishing.'
+  )
 
   const totalPoints = questions.reduce((sum, question) => sum + question.points, 0)
-  const settingsModerationMatches = useMemo(() => findBannedKeywords([
-    settingsDraft.title,
-    settingsDraft.description,
-    settingsDraft.topic,
-  ], bannedKeywords), [settingsDraft.description, settingsDraft.title, settingsDraft.topic, bannedKeywords])
-  const setModerationMatches = useMemo(() => findBannedKeywords([
-    setForm.title,
-    setForm.description,
-    setForm.topic,
-    ...questions.flatMap(question => [
-      question.title,
-      question.prompt,
-      question.explanation,
-      question.correctAnswer,
-      ...question.correctAnswers,
-      ...question.options,
-    ]),
-  ], bannedKeywords), [questions, setForm.description, setForm.title, setForm.topic, bannedKeywords])
-  const editorModerationMatches = useMemo(() => findBannedKeywords([
-    editorQuestion.title,
-    editorQuestion.prompt,
-    editorQuestion.explanation,
-    editorQuestion.correctAnswer,
-    ...editorQuestion.correctAnswers,
-    ...editorQuestion.options,
-  ], bannedKeywords), [editorQuestion, bannedKeywords])
+  const settingsModerationMatches = useMemo(
+    () =>
+      findBannedKeywords(
+        [settingsDraft.title, settingsDraft.description, settingsDraft.topic],
+        bannedKeywords
+      ),
+    [settingsDraft.description, settingsDraft.title, settingsDraft.topic, bannedKeywords]
+  )
+  const setModerationMatches = useMemo(
+    () =>
+      findBannedKeywords(
+        [
+          setForm.title,
+          setForm.description,
+          setForm.topic,
+          ...questions.flatMap(question => [
+            question.title,
+            question.prompt,
+            question.explanation,
+            question.correctAnswer,
+            ...question.correctAnswers,
+            ...question.options,
+          ]),
+        ],
+        bannedKeywords
+      ),
+    [questions, setForm.description, setForm.title, setForm.topic, bannedKeywords]
+  )
+  const editorModerationMatches = useMemo(
+    () =>
+      findBannedKeywords(
+        [
+          editorQuestion.title,
+          editorQuestion.prompt,
+          editorQuestion.explanation,
+          editorQuestion.correctAnswer,
+          ...editorQuestion.correctAnswers,
+          ...editorQuestion.options,
+        ],
+        bannedKeywords
+      ),
+    [editorQuestion, bannedKeywords]
+  )
 
   const openSettings = () => {
     setSettingsDraft(setForm)
@@ -357,6 +430,14 @@ const PracticeSetCreatePage: React.FC = () => {
   }
 
   const saveSettings = () => {
+    try {
+      practiceRequirementCount(settingsDraft.requirementCount)
+      if (!settingsDraft.title.trim() || settingsDraft.title.trim().length > 160)
+        throw new Error('Tiêu đề cần từ 1 đến 160 ký tự.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Thông tin không hợp lệ.')
+      return
+    }
     if (settingsModerationMatches.length) {
       toast.error('Settings contain restricted keywords')
       return
@@ -389,7 +470,8 @@ const PracticeSetCreatePage: React.FC = () => {
       return {
         ...current,
         options,
-        correctAnswer: current.correctAnswer === previousTrimmed ? nextTrimmed : current.correctAnswer,
+        correctAnswer:
+          current.correctAnswer === previousTrimmed ? nextTrimmed : current.correctAnswer,
         correctAnswers: current.correctAnswers
           .map(answer => (answer === previousTrimmed ? nextTrimmed : answer))
           .filter(Boolean),
@@ -426,7 +508,9 @@ const PracticeSetCreatePage: React.FC = () => {
 
     if (question.type === 'multiple_choice' || question.type === 'multiple_select') {
       const options = question.options.map(option => option.trim()).filter(Boolean)
-      if (options.length < 2 || options.length > 4) throw new Error('Question needs 2-4 answer options')
+      if (options.length < 2 || options.length > 4)
+        throw new Error('Question needs 2-4 answer options')
+      if (new Set(options).size !== options.length) throw new Error('Các lựa chọn cần khác nhau.')
 
       if (question.type === 'multiple_choice' && !options.includes(question.correctAnswer.trim())) {
         throw new Error('Choose one correct answer matching an option')
@@ -434,7 +518,11 @@ const PracticeSetCreatePage: React.FC = () => {
 
       if (question.type === 'multiple_select') {
         const correctAnswers = question.correctAnswers.map(answer => answer.trim()).filter(Boolean)
-        if (correctAnswers.length < 2 || correctAnswers.some(answer => !options.includes(answer))) {
+        if (
+          correctAnswers.length < 2 ||
+          new Set(correctAnswers).size !== correctAnswers.length ||
+          correctAnswers.some(answer => !options.includes(answer))
+        ) {
           throw new Error('Choose at least 2 correct answers matching options')
         }
       }
@@ -459,7 +547,9 @@ const PracticeSetCreatePage: React.FC = () => {
 
       setQuestions(current => {
         if (editingQuestionId) {
-          return current.map(question => (question.id === editingQuestionId ? editorQuestion : question))
+          return current.map(question =>
+            question.id === editingQuestionId ? editorQuestion : question
+          )
         }
         return [...current, editorQuestion]
       })
@@ -477,515 +567,932 @@ const PracticeSetCreatePage: React.FC = () => {
     setMode('editor')
   }
 
-  const addLibraryQuestion = (question: PracticeQuestion) => {
+  const appendQuestion = (question: QuestionDraft) => {
     if (questions.length >= 30) {
       toast.error('Maximum 30 questions per set')
-      return
+      return false
     }
-    setQuestions(current => [...current, fromPracticeQuestion(question)])
-    toast.success('Question added')
+    setQuestions(current => [...current, question])
+    return true
   }
 
-  const buildPayloadQuestions = () => questions.map((question, index) => {
-    validateQuestion(question)
-    const base = {
-      type: question.type,
-      title: question.title.trim() || undefined,
-      prompt: question.prompt.trim(),
-      explanation: question.explanation.trim() || undefined,
-      points: question.points,
-    }
+  const addLibraryQuestion = (question: PracticeQuestion) => {
+    if (appendQuestion(fromPracticeQuestion(question))) toast.success('Question added')
+  }
 
-    if (question.type === 'true_false') {
-      return { ...base, options: ['true', 'false'], correctAnswer: question.correctAnswer }
-    }
-
-    if (question.type === 'multiple_choice') {
-      return {
-        ...base,
-        options: question.options.map(option => option.trim()).filter(Boolean),
-        correctAnswer: question.correctAnswer.trim(),
+  const buildPayloadQuestions = () =>
+    questions.map((question, index) => {
+      validateQuestion(question)
+      const base = {
+        type: question.type,
+        title: question.title.trim() || undefined,
+        prompt: question.prompt.trim(),
+        explanation: question.explanation.trim() || undefined,
+        points: question.points,
       }
-    }
 
-    if (question.type === 'multiple_select') {
-      return {
-        ...base,
-        options: question.options.map(option => option.trim()).filter(Boolean),
-        correctAnswer: JSON.stringify(question.correctAnswers.map(answer => answer.trim()).filter(Boolean)),
+      if (question.type === 'true_false') {
+        return { ...base, options: ['true', 'false'], correctAnswer: question.correctAnswer }
       }
-    }
 
-    if (!question.correctAnswer.trim()) throw new Error(`Question ${index + 1} needs a blank answer`)
-    return { ...base, correctAnswer: question.correctAnswer.trim() }
-  })
+      if (question.type === 'multiple_choice') {
+        return {
+          ...base,
+          options: question.options.map(option => option.trim()).filter(Boolean),
+          correctAnswer: question.correctAnswer.trim(),
+        }
+      }
 
-  const publishSet = async () => {
+      if (question.type === 'multiple_select') {
+        return {
+          ...base,
+          options: question.options.map(option => option.trim()).filter(Boolean),
+          correctAnswer: JSON.stringify(
+            question.correctAnswers.map(answer => answer.trim()).filter(Boolean)
+          ),
+        }
+      }
+
+      if (!question.correctAnswer.trim())
+        throw new Error(`Question ${index + 1} needs a blank answer`)
+      return { ...base, correctAnswer: question.correctAnswer.trim() }
+    })
+
+  const publishSet = () => {
     if (questions.length === 0) {
-      toast.error(text('practice.create.toast.add_question', 'Add at least one question before publishing'))
+      toast.error(
+        text('practice.create.toast.add_question', 'Add at least one question before publishing')
+      )
       return
     }
     if (setModerationMatches.length) {
       toast.error(text('practice.create.toast.restricted', 'This set contains restricted keywords'))
       return
     }
-    setSaving(true)
     try {
-      const payload = {
-        title: setForm.title.trim(),
+      const required = practiceRequirementCount(setForm.requirementCount)
+      const payload = normalizePracticeWrite({
+        title: setForm.title,
         description: setForm.description.trim() || undefined,
         topic: setForm.topic.trim() || undefined,
-        languageId: setForm.languageId,
+        languageId: setForm.languageId || undefined,
         difficulty: setForm.difficulty,
         visibility: setForm.visibility,
         status: setForm.status,
-        requirements: setForm.requirementCount ? {
-          type: 'completed_lessons_count' as const,
-          count: parseInt(setForm.requirementCount, 10),
-          languageId: setForm.languageId,
-        } : undefined,
+        requirements:
+          required === undefined
+            ? undefined
+            : { type: 'completed_lessons_count', count: required, languageId: setForm.languageId },
         questions: buildPayloadQuestions(),
-      }
-
-      if (setId) {
-        await practiceService.updateSet(setId, payload)
-        toast.success(text('practice.create.toast.updated', 'Practice set updated successfully'))
-        navigate('/practice/my-sets')
-      } else {
-        await practiceService.createSet(payload)
-        toast.success(text('practice.create.toast.created', 'Practice set created successfully'))
-        navigate('/practice/sets')
-      }
+      })
+      void write.save(
+        () =>
+          setId ? practiceService.updateSet(setId, payload) : practiceService.createSet(payload),
+        payload,
+        setId,
+        () => {
+          toast.success(
+            setId
+              ? text('practice.create.toast.updated', 'Practice set updated successfully')
+              : text('practice.create.toast.created', 'Practice set created successfully')
+          )
+          navigate('/practice/my-sets')
+        },
+        error =>
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : text('practice.create.toast.save_error', 'Unable to save practice set')
+          )
+      )
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : text('practice.create.toast.save_error', 'Unable to save practice set'))
-    } finally {
-      setSaving(false)
+      toast.error(error instanceof Error ? error.message : 'Không lưu được bộ bài.')
     }
   }
-
-  if (contentLoading || initialLoading) return <LoadingScreen message={text('practice.create.loading', 'Loading set builder...')} />
+  if (contentLoading)
+    return <LoadingScreen message={text('practice.create.loading', 'Loading set builder...')} />
 
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <SEO title={text('practice.create.seo_title', 'Create Practice Set | Loopy')} />
       <main className="flex-grow">
-        {mode === 'editor' ? (
-          <section className="min-h-[calc(100vh-73px)]">
-            <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
-              <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setMode('preview')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted">
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                  <div className="text-sm font-black loopy-heading">{editingQuestionId ? text('practice.create.editor.edit_title', 'Edit question') : text('practice.create.editor.create_title', 'Create question')}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={saveQuestion} className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950">
-                    <Save className="h-4 w-4" />
-                    {text('practice.create.editor.save_question', 'Save question')}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mx-auto grid max-w-6xl gap-6 px-6 py-8 lg:grid-cols-[1fr,320px]">
-              <div className="loopy-card rounded-lg border p-6 shadow-sm">
-                <div className="mb-5">
-                  <div className="text-xs font-black uppercase tracking-wide text-brand-teal">{typeMeta[editorQuestion.type].label}</div>
-                   <h1 className="loopy-heading mt-2 text-2xl font-black">{editingQuestionId ? text('practice.create.editor.edit_title', 'Edit question') : text('practice.create.editor.create_title', 'Create question')}</h1>
-                </div>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.prompt', 'Question prompt')}</span>
-                  <textarea
-                    value={editorQuestion.prompt}
-                    onChange={event => updateEditor({ prompt: event.target.value })}
-                    placeholder={text('practice.create.editor.prompt_placeholder', 'Type question here')}
-                    rows={7}
-                    className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-4 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                  />
-                </label>
-                <ModerationWarning matches={editorModerationMatches} title={warningTitle} message={warningMessage} />
-
-                {(editorQuestion.type === 'multiple_choice' || editorQuestion.type === 'multiple_select') && (
-                  <div className="mt-6">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-sm font-black loopy-heading">{text('practice.create.editor.options_title', 'Answer options')}</h2>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">{text('practice.create.editor.options_desc', 'Fill 2-4 answers. Empty answers will not be included.')}</p>
-                      </div>
-                      <span className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black loopy-muted">
-                        {editorQuestion.options.filter(option => option.trim()).length}/4 filled
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {editorQuestion.options.map((option, optionIndex) => {
-                        const normalizedOption = option.trim()
-                        const canMarkCorrect = Boolean(normalizedOption)
-                        const isCorrect = editorQuestion.type === 'multiple_select'
-                          ? editorQuestion.correctAnswers.includes(normalizedOption) && canMarkCorrect
-                          : editorQuestion.correctAnswer === normalizedOption && canMarkCorrect
-                        return (
-                          <div key={optionIndex} className={`flex items-center gap-3 rounded-lg border p-3 transition ${isCorrect ? 'border-brand-teal bg-brand-teal/10 ring-2 ring-brand-teal/15' : 'loopy-border loopy-surface'}`}>
-                            <button
-                              type="button"
-                              disabled={!canMarkCorrect}
-                              onClick={() => editorQuestion.type === 'multiple_select' ? toggleCorrectAnswer(option) : markSingleCorrectAnswer(option)}
-                              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-35 ${isCorrect
-                                  ? 'border-brand-teal bg-brand-teal text-slate-950'
-                                  : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal hover:text-brand-teal'
-                                }`}
-                              title="Mark correct"
-                            >
-                              <CheckCircle className={`h-5 w-5 ${isCorrect ? 'fill-current' : ''}`} />
-                            </button>
-                            <input
-                              value={option}
-                              onChange={event => updateOption(optionIndex, event.target.value)}
-                              placeholder={`Answer ${optionIndex + 1}`}
-                              className="loopy-surface min-w-0 flex-1 rounded-md border border-transparent px-3 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                            />
-                            <span className="hidden text-xs font-black uppercase tracking-wide text-slate-400 sm:inline">
-                              {isCorrect ? 'Correct' : canMarkCorrect ? 'Mark' : 'Empty'}
-                            </span>
-                          </div>
-                        )
-                      })}
+        {write.recovery && (
+          <PracticeSaveRecovery
+            message={write.recovery.message}
+            pending={write.pending}
+            onRetry={() =>
+              void write.recover(
+                id => practiceService.getSet(id),
+                () => {
+                  toast.success('Đã xác nhận bộ bài đã lưu.')
+                  navigate('/practice/my-sets')
+                }
+              )
+            }
+            onBack={() => navigate('/practice/my-sets')}
+          />
+        )}
+        <fieldset disabled={blocked} className="min-w-0">
+          {mode === 'editor' ? (
+            <section className="min-h-[calc(100vh-73px)]">
+              <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMode('preview')}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <div className="text-sm font-black loopy-heading">
+                      {editingQuestionId
+                        ? text('practice.create.editor.edit_title', 'Edit question')
+                        : text('practice.create.editor.create_title', 'Create question')}
                     </div>
                   </div>
-                )}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={saveQuestion}
+                      className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950"
+                    >
+                      <Save className="h-4 w-4" />
+                      {text('practice.create.editor.save_question', 'Save question')}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-                {editorQuestion.type === 'true_false' && (
-                  <div className="mt-6 grid gap-3 md:grid-cols-2">
-                    {['true', 'false'].map(value => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => updateEditor({ correctAnswer: value })}
-                        className={`flex min-h-[120px] items-center justify-between rounded-lg border-2 px-5 text-left text-xl font-black transition ${editorQuestion.correctAnswer === value
-                            ? 'border-brand-teal bg-brand-teal/10 text-[color:var(--loopy-text)]'
-                            : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal/60'
+              <div className="mx-auto grid grid-cols-1 max-w-6xl gap-6 px-6 py-8 lg:grid-cols-[1fr_320px]">
+                <div className="loopy-card rounded-lg border p-6 shadow-sm">
+                  <div className="mb-5">
+                    <div className="text-xs font-black uppercase tracking-wide text-brand-teal">
+                      {typeMeta[editorQuestion.type].label}
+                    </div>
+                    <h1 className="loopy-heading mt-2 text-2xl font-black">
+                      {editingQuestionId
+                        ? text('practice.create.editor.edit_title', 'Edit question')
+                        : text('practice.create.editor.create_title', 'Create question')}
+                    </h1>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.editor.prompt', 'Question prompt')}
+                    </span>
+                    <textarea
+                      value={editorQuestion.prompt}
+                      onChange={event => updateEditor({ prompt: event.target.value })}
+                      placeholder={text(
+                        'practice.create.editor.prompt_placeholder',
+                        'Type question here'
+                      )}
+                      rows={7}
+                      className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-4 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                    />
+                  </label>
+                  <ModerationWarning
+                    matches={editorModerationMatches}
+                    title={warningTitle}
+                    message={warningMessage}
+                  />
+
+                  {(editorQuestion.type === 'multiple_choice' ||
+                    editorQuestion.type === 'multiple_select') && (
+                    <div className="mt-6">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <h2 className="text-sm font-black loopy-heading">
+                            {text('practice.create.editor.options_title', 'Answer options')}
+                          </h2>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">
+                            {text(
+                              'practice.create.editor.options_desc',
+                              'Fill 2-4 answers. Empty answers will not be included.'
+                            )}
+                          </p>
+                        </div>
+                        <span className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black loopy-muted">
+                          {editorQuestion.options.filter(option => option.trim()).length}/4 filled
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {editorQuestion.options.map((option, optionIndex) => {
+                          const normalizedOption = option.trim()
+                          const canMarkCorrect = Boolean(normalizedOption)
+                          const isCorrect =
+                            editorQuestion.type === 'multiple_select'
+                              ? editorQuestion.correctAnswers.includes(normalizedOption) &&
+                                canMarkCorrect
+                              : editorQuestion.correctAnswer === normalizedOption && canMarkCorrect
+                          return (
+                            <div
+                              key={optionIndex}
+                              className={`flex items-center gap-3 rounded-lg border p-3 transition ${isCorrect ? 'border-brand-teal bg-brand-teal/10 ring-2 ring-brand-teal/15' : 'loopy-border loopy-surface'}`}
+                            >
+                              <button
+                                type="button"
+                                disabled={!canMarkCorrect}
+                                onClick={() =>
+                                  editorQuestion.type === 'multiple_select'
+                                    ? toggleCorrectAnswer(option)
+                                    : markSingleCorrectAnswer(option)
+                                }
+                                className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-35 ${
+                                  isCorrect
+                                    ? 'border-brand-teal bg-brand-teal text-slate-950'
+                                    : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal hover:text-brand-teal'
+                                }`}
+                                title="Mark correct"
+                              >
+                                <CheckCircle
+                                  className={`h-5 w-5 ${isCorrect ? 'fill-current' : ''}`}
+                                />
+                              </button>
+                              <input
+                                value={option}
+                                onChange={event => updateOption(optionIndex, event.target.value)}
+                                placeholder={`Answer ${optionIndex + 1}`}
+                                className="loopy-surface min-w-0 flex-1 rounded-md border border-transparent px-3 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                              />
+                              <span className="hidden text-xs font-black uppercase tracking-wide text-slate-400 sm:inline">
+                                {isCorrect ? 'Correct' : canMarkCorrect ? 'Mark' : 'Empty'}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {editorQuestion.type === 'true_false' && (
+                    <div className="mt-6 grid gap-3 md:grid-cols-2">
+                      {['true', 'false'].map(value => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => updateEditor({ correctAnswer: value })}
+                          className={`flex min-h-[120px] items-center justify-between rounded-lg border-2 px-5 text-left text-xl font-black transition ${
+                            editorQuestion.correctAnswer === value
+                              ? 'border-brand-teal bg-brand-teal/10 text-[color:var(--loopy-text)]'
+                              : 'loopy-border loopy-surface loopy-muted hover:border-brand-teal/60'
                           }`}
+                        >
+                          <span>{value === 'true' ? 'True' : 'False'}</span>
+                          {editorQuestion.correctAnswer === value && (
+                            <CheckCircle className="h-6 w-6 fill-brand-teal text-brand-teal" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {editorQuestion.type === 'fill_blank' && (
+                    <label className="loopy-card-soft mt-6 block rounded-lg border p-4">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.editor.correct_blank', 'Correct blank answer')}
+                      </span>
+                      <input
+                        value={editorQuestion.correctAnswer}
+                        onChange={event => updateEditor({ correctAnswer: event.target.value })}
+                        placeholder={text(
+                          'practice.create.editor.blank_placeholder',
+                          'Type the expected answer'
+                        )}
+                        className="loopy-surface w-full rounded-lg border loopy-border px-4 py-3 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                      />
+                    </label>
+                  )}
+
+                  {editorQuestion.type === 'multiple_select' && (
+                    <div className="mt-4 flex items-center gap-3 text-sm font-black loopy-muted">
+                      <span>
+                        {text('practice.create.editor.multi_correct', 'Multiple correct answers:')}
+                      </span>
+                      <span className="rounded-full bg-brand-teal/15 px-3 py-1 text-[color:var(--loopy-text)]">
+                        {editorQuestion.correctAnswers.length} selected
+                      </span>
+                    </div>
+                  )}
+
+                  <label className="mt-6 block">
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.editor.explanation', 'Answer explanation')}
+                    </span>
+                    <textarea
+                      value={editorQuestion.explanation}
+                      onChange={event => updateEditor({ explanation: event.target.value })}
+                      rows={3}
+                      placeholder={text(
+                        'practice.create.editor.explanation_placeholder',
+                        'Optional explanation shown after the learner answers.'
+                      )}
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                    />
+                  </label>
+                </div>
+
+                <aside className="loopy-card rounded-lg border p-5 shadow-sm lg:sticky lg:top-[145px] lg:self-start">
+                  <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">
+                    {text('practice.create.editor.setup', 'Question setup')}
+                  </h2>
+                  <label className="mt-4 block">
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.editor.type', 'Question type')}
+                    </span>
+                    <select
+                      value={editorQuestion.type}
+                      onChange={event => updateEditorType(event.target.value as QuestionType)}
+                      className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                    >
+                      {(
+                        Object.entries(typeMeta) as Array<
+                          [QuestionType, (typeof typeMeta)[QuestionType]]
+                        >
+                      ).map(([type, meta]) => (
+                        <option key={type} value={type}>
+                          {meta.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="mt-4 block">
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.editor.points', 'Points')}
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={editorQuestion.points}
+                      onChange={event => updateEditor({ points: Number(event.target.value) })}
+                      className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                    />
+                  </label>
+                  <div className="loopy-card-soft mt-5 rounded-lg p-4 text-sm font-semibold leading-6 loopy-muted">
+                    {text(
+                      'practice.create.editor.help',
+                      'Tick an answer to mark it correct. Empty options stay disabled and will be skipped when saving.'
+                    )}
+                  </div>
+                </aside>
+              </div>
+            </section>
+          ) : (
+            <section className="min-h-[calc(100vh-73px)]">
+              <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/practice/sets')}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <input
+                      aria-label={text('practice.create.settings.set_title', 'Set title')}
+                      value={setForm.title}
+                      onChange={event =>
+                        setSetForm(current => ({ ...current, title: event.target.value }))
+                      }
+                      className="loopy-surface min-w-0 rounded-lg border loopy-border px-3 py-2 text-sm font-black text-[color:var(--loopy-text)] outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={openSettings}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted md:hidden"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openSettings}
+                      className="hidden items-center gap-2 text-sm font-black loopy-muted md:inline-flex"
+                    >
+                      <Settings className="h-4 w-4" />
+                      {text('practice.create.main.settings', 'Settings')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={publishSet}
+                      disabled={blocked}
+                      className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950 disabled:opacity-60"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? (
+                        text('practice.create.main.publishing', 'Publishing...')
+                      ) : (
+                        <span className="font-semibold">
+                          {setId
+                            ? text('practice.create.main.update_set', 'Update Set')
+                            : text('practice.create.main.publish_set', 'Publish Set')}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 px-6 py-8 xl:grid-cols-[1fr_420px]">
+                <main>
+                  <ModerationWarning
+                    matches={setModerationMatches}
+                    title={warningTitle}
+                    message={warningMessage}
+                  />
+                  <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                    <div className="text-lg font-black loopy-heading">
+                      {formatText(
+                        'practice.create.main.summary',
+                        '{questions} Questions • {points} Points',
+                        { questions: questions.length, points: totalPoints }
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingQuestionId(null)
+                        setEditorQuestion(newQuestion())
+                        setMode('editor')
+                      }}
+                      className="loopy-subtle-button inline-flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-black"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {text('practice.create.main.create_question', 'Create question')}
+                    </button>
+                  </div>
+
+                  {questions.length === 0 ? (
+                    <div className="loopy-card rounded-lg border border-dashed px-6 py-16 text-center">
+                      <h2 className="loopy-heading text-2xl font-black">
+                        {text('practice.create.main.empty_title', 'No questions yet')}
+                      </h2>
+                      <p className="mt-2 text-sm font-semibold text-slate-500">
+                        {text(
+                          'practice.create.main.empty_desc',
+                          'Create a question or find one from existing practice sets.'
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {questions.map((question, index) => (
+                        <article
+                          key={question.id}
+                          className="loopy-card rounded-lg border p-5 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="text-xs font-black uppercase tracking-wide text-slate-500">
+                                {String(index + 1).padStart(2, '0')}{' '}
+                                {typeMeta[question.type].shortLabel} <span className="mx-2">•</span>{' '}
+                                {question.points}Pt
+                              </div>
+                              <h3 className="loopy-heading mt-5 text-base font-black">
+                                {question.prompt || question.title}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                aria-label="Duplicate question"
+                                disabled={questions.length >= 30}
+                                onClick={() =>
+                                  appendQuestion({ ...question, id: crypto.randomUUID() })
+                                }
+                                className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10 disabled:opacity-50"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label="Delete question"
+                                onClick={() =>
+                                  setQuestions(current =>
+                                    current.filter(item => item.id !== question.id)
+                                  )
+                                }
+                                className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => editQuestion(question)}
+                                className="rounded-lg px-3 py-2 text-sm font-black loopy-muted hover:bg-brand-teal/10"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+
+                          {(question.type === 'multiple_choice' ||
+                            question.type === 'multiple_select' ||
+                            question.type === 'true_false') && (
+                            <div className="mt-5 grid gap-3 md:grid-cols-2">
+                              {(question.type === 'true_false'
+                                ? ['true', 'false']
+                                : question.options.filter(Boolean)
+                              ).map(option => {
+                                const correct =
+                                  question.type === 'multiple_select'
+                                    ? question.correctAnswers.includes(option)
+                                    : question.correctAnswer === option
+                                return (
+                                  <div
+                                    key={option}
+                                    className="flex items-center gap-3 text-sm font-semibold loopy-body"
+                                  >
+                                    {correct ? (
+                                      <CheckCircle className="h-5 w-5 fill-emerald-600 text-emerald-600" />
+                                    ) : (
+                                      <span className="h-5 w-5 rounded-full border border-slate-300" />
+                                    )}
+                                    {option}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          {question.type === 'fill_blank' && (
+                            <div className="loopy-card-soft mt-5 rounded-lg px-4 py-3 text-sm font-semibold loopy-muted">
+                              Correct answer: {question.correctAnswer}
+                            </div>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </main>
+
+                <aside className="loopy-card rounded-lg border p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h2 className="loopy-heading text-xl font-black">
+                      {text('practice.create.library.title', 'Find questions')}
+                    </h2>
+                    <span className="text-xs font-black text-slate-400">
+                      {text('practice.create.library.from_sets', 'From sets')}
+                    </span>
+                  </div>
+                  <label className="loopy-surface mt-5 flex items-center gap-3 rounded-full border loopy-border px-4 py-3 shadow-sm">
+                    <Search className="h-5 w-5 text-slate-500" />
+                    <input
+                      value={libraryKeyword}
+                      onChange={event => setLibraryKeyword(event.target.value)}
+                      placeholder={text(
+                        'practice.create.library.placeholder',
+                        'Search for questions on any topic'
+                      )}
+                      className="min-w-0 flex-1 text-sm font-semibold outline-none placeholder:text-slate-400"
+                    />
+                  </label>
+
+                  <div className="mt-6 space-y-3">
+                    {libraryLoading && (
+                      <div className="text-sm font-semibold text-slate-500">
+                        {text('practice.create.library.searching', 'Searching...')}
+                      </div>
+                    )}
+                    {!libraryLoading && !libraryKeyword.trim() && (
+                      <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-12 text-center text-sm font-semibold leading-6 loopy-muted">
+                        {text(
+                          'practice.create.library.idle',
+                          'Search existing sets, then add matching questions into this set.'
+                        )}
+                      </div>
+                    )}
+                    {libraryError && (
+                      <p role="alert" className="text-sm font-semibold text-red-500">
+                        {libraryError}
+                      </p>
+                    )}
+                    {!libraryLoading &&
+                      !libraryError &&
+                      libraryKeyword.trim() &&
+                      libraryResults.length === 0 && (
+                        <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-8 text-center text-sm font-semibold loopy-muted">
+                          {text('practice.create.library.empty', 'No matching questions found.')}
+                        </div>
+                      )}
+                    {libraryResults.map(({ set, question }) => (
+                      <button
+                        key={`${set.id}-${question.id}`}
+                        type="button"
+                        onClick={() => addLibraryQuestion(question)}
+                        className="loopy-card w-full rounded-lg border p-4 text-left transition hover:border-brand-teal/50 hover:shadow-md"
                       >
-                        <span>{value === 'true' ? 'True' : 'False'}</span>
-                        {editorQuestion.correctAnswer === value && <CheckCircle className="h-6 w-6 fill-brand-teal text-brand-teal" />}
+                        <div className="text-[10px] font-black uppercase tracking-wide text-brand-teal">
+                          {set.title}
+                        </div>
+                        <div className="loopy-heading mt-2 text-sm font-black">
+                          {question.title || question.prompt}
+                        </div>
+                        <div className="mt-2 text-xs font-semibold text-slate-500">
+                          {typeMeta[question.type as QuestionType]?.label || question.type}
+                        </div>
                       </button>
                     ))}
                   </div>
-                )}
-
-                {editorQuestion.type === 'fill_blank' && (
-                  <label className="loopy-card-soft mt-6 block rounded-lg border p-4">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.correct_blank', 'Correct blank answer')}</span>
-                    <input
-                      value={editorQuestion.correctAnswer}
-                      onChange={event => updateEditor({ correctAnswer: event.target.value })}
-                      placeholder={text('practice.create.editor.blank_placeholder', 'Type the expected answer')}
-                      className="loopy-surface w-full rounded-lg border loopy-border px-4 py-3 text-base font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                    />
-                  </label>
-                )}
-
-                {editorQuestion.type === 'multiple_select' && (
-                  <div className="mt-4 flex items-center gap-3 text-sm font-black loopy-muted">
-                    <span>{text('practice.create.editor.multi_correct', 'Multiple correct answers:')}</span>
-                    <span className="rounded-full bg-brand-teal/15 px-3 py-1 text-[color:var(--loopy-text)]">{editorQuestion.correctAnswers.length} selected</span>
-                  </div>
-                )}
-
-                <label className="mt-6 block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.explanation', 'Answer explanation')}</span>
-                  <textarea
-                    value={editorQuestion.explanation}
-                    onChange={event => updateEditor({ explanation: event.target.value })}
-                    rows={3}
-                    placeholder={text('practice.create.editor.explanation_placeholder', 'Optional explanation shown after the learner answers.')}
-                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                  />
-                </label>
+                </aside>
               </div>
-
-              <aside className="loopy-card rounded-lg border p-5 shadow-sm lg:sticky lg:top-[145px] lg:self-start">
-                <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">{text('practice.create.editor.setup', 'Question setup')}</h2>
-                <label className="mt-4 block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.type', 'Question type')}</span>
-                  <select value={editorQuestion.type} onChange={event => updateEditorType(event.target.value as QuestionType)} className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal">
-                    {(Object.entries(typeMeta) as Array<[QuestionType, typeof typeMeta[QuestionType]]>).map(([type, meta]) => (
-                      <option key={type} value={type}>{meta.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="mt-4 block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.editor.points', 'Points')}</span>
-                  <input type="number" min="1" max="100" value={editorQuestion.points} onChange={event => updateEditor({ points: Number(event.target.value) })} className="loopy-surface w-full rounded-lg border loopy-border px-3 py-2.5 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal" />
-                </label>
-                <div className="loopy-card-soft mt-5 rounded-lg p-4 text-sm font-semibold leading-6 loopy-muted">
-                  {text('practice.create.editor.help', 'Tick an answer to mark it correct. Empty options stay disabled and will be skipped when saving.')}
-                </div>
-              </aside>
-            </div>
-          </section>
-        ) : (
-          <section className="min-h-[calc(100vh-73px)]">
-            <div className="sticky top-[73px] z-30 border-b loopy-border loopy-surface">
-              <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <button type="button" onClick={() => navigate('/practice/sets')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted">
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                  <input value={setForm.title} onChange={event => setSetForm(current => ({ ...current, title: event.target.value }))} className="loopy-surface min-w-0 rounded-lg border loopy-border px-3 py-2 text-sm font-black text-[color:var(--loopy-text)] outline-none" />
-                </div>
-                <div className="flex items-center gap-4">
-                  <button type="button" onClick={openSettings} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted md:hidden">
-                    <Settings className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={openSettings} className="hidden items-center gap-2 text-sm font-black loopy-muted md:inline-flex">
-                    <Settings className="h-4 w-4" />
-                    {text('practice.create.main.settings', 'Settings')}
-                  </button>
-                  <button type="button" onClick={publishSet} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950 disabled:opacity-60">
-                    <Save className="h-4 w-4" />
-                    {saving ? text('practice.create.main.publishing', 'Publishing...') : <span className="font-semibold">{setId ? text('practice.create.main.update_set', 'Update Set') : text('practice.create.main.publish_set', 'Publish Set')}</span>}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-6 px-6 py-8 xl:grid-cols-[1fr,420px]">
-              <main>
-                <ModerationWarning matches={setModerationMatches} title={warningTitle} message={warningMessage} />
-                <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                  <div className="text-lg font-black loopy-heading">
-                    {formatText('practice.create.main.summary', '{questions} Questions • {points} Points', { questions: questions.length, points: totalPoints })}
-                  </div>
-                  <button type="button" onClick={() => { setEditingQuestionId(null); setEditorQuestion(newQuestion()); setMode('editor') }} className="loopy-subtle-button inline-flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-black">
-                    <Plus className="h-4 w-4" />
-                    {text('practice.create.main.create_question', 'Create question')}
-                  </button>
-                </div>
-
-                {questions.length === 0 ? (
-                  <div className="loopy-card rounded-lg border border-dashed px-6 py-16 text-center">
-                    <h2 className="loopy-heading text-2xl font-black">{text('practice.create.main.empty_title', 'No questions yet')}</h2>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">{text('practice.create.main.empty_desc', 'Create a question or find one from existing practice sets.')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {questions.map((question, index) => (
-                      <article key={question.id} className="loopy-card rounded-lg border p-5 shadow-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-xs font-black uppercase tracking-wide text-slate-500">
-                              {String(index + 1).padStart(2, '0')} {typeMeta[question.type].shortLabel} <span className="mx-2">•</span> {question.points}Pt
-                            </div>
-                            <h3 className="loopy-heading mt-5 text-base font-black">{question.prompt || question.title}</h3>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setQuestions(current => [...current, { ...question, id: crypto.randomUUID() }])} className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10">
-                              <Copy className="h-4 w-4" />
-                            </button>
-                            <button type="button" onClick={() => setQuestions(current => current.filter(item => item.id !== question.id))} className="rounded-lg p-2 loopy-muted hover:bg-brand-teal/10">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                            <button type="button" onClick={() => editQuestion(question)} className="rounded-lg px-3 py-2 text-sm font-black loopy-muted hover:bg-brand-teal/10">
-                              Edit
-                            </button>
-                          </div>
-                        </div>
-
-                        {(question.type === 'multiple_choice' || question.type === 'multiple_select' || question.type === 'true_false') && (
-                          <div className="mt-5 grid gap-3 md:grid-cols-2">
-                            {(question.type === 'true_false' ? ['true', 'false'] : question.options.filter(Boolean)).map(option => {
-                              const correct = question.type === 'multiple_select' ? question.correctAnswers.includes(option) : question.correctAnswer === option
-                              return (
-                                <div key={option} className="flex items-center gap-3 text-sm font-semibold loopy-body">
-                                  {correct ? <CheckCircle className="h-5 w-5 fill-emerald-600 text-emerald-600" /> : <span className="h-5 w-5 rounded-full border border-slate-300" />}
-                                  {option}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-
-                        {question.type === 'fill_blank' && (
-                          <div className="loopy-card-soft mt-5 rounded-lg px-4 py-3 text-sm font-semibold loopy-muted">
-                            Correct answer: {question.correctAnswer}
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </main>
-
-              <aside className="loopy-card rounded-lg border p-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <h2 className="loopy-heading text-xl font-black">{text('practice.create.library.title', 'Find questions')}</h2>
-                  <span className="text-xs font-black text-slate-400">{text('practice.create.library.from_sets', 'From sets')}</span>
-                </div>
-                <label className="loopy-surface mt-5 flex items-center gap-3 rounded-full border loopy-border px-4 py-3 shadow-sm">
-                  <Search className="h-5 w-5 text-slate-500" />
-                  <input value={libraryKeyword} onChange={event => setLibraryKeyword(event.target.value)} placeholder={text('practice.create.library.placeholder', 'Search for questions on any topic')} className="min-w-0 flex-1 text-sm font-semibold outline-none placeholder:text-slate-400" />
-                </label>
-
-                <div className="mt-6 space-y-3">
-                  {libraryLoading && <div className="text-sm font-semibold text-slate-500">{text('practice.create.library.searching', 'Searching...')}</div>}
-                  {!libraryLoading && !libraryKeyword.trim() && (
-                    <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-12 text-center text-sm font-semibold leading-6 loopy-muted">
-                      {text('practice.create.library.idle', 'Search existing sets, then add matching questions into this set.')}
+            </section>
+          )}
+          {settingsOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+              <div className="loopy-card max-h-[calc(100vh-48px)] w-full max-w-2xl overflow-y-auto rounded-lg border shadow-2xl">
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b loopy-border loopy-surface px-5 py-4">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-wide text-brand-teal">
+                      {text('practice.create.settings.badge', 'Set settings')}
                     </div>
-                  )}
-                  {!libraryLoading && libraryKeyword.trim() && libraryResults.length === 0 && (
-                    <div className="rounded-lg border border-dashed loopy-border loopy-card-soft px-4 py-8 text-center text-sm font-semibold loopy-muted">
-                      {text('practice.create.library.empty', 'No matching questions found.')}
-                    </div>
-                  )}
-                  {libraryResults.map(({ set, question }) => (
-                    <button key={`${set.id}-${question.id}`} type="button" onClick={() => addLibraryQuestion(question)} className="loopy-card w-full rounded-lg border p-4 text-left transition hover:border-brand-teal/50 hover:shadow-md">
-                      <div className="text-[10px] font-black uppercase tracking-wide text-brand-teal">{set.title}</div>
-                      <div className="loopy-heading mt-2 text-sm font-black">{question.title || question.prompt}</div>
-                      <div className="mt-2 text-xs font-semibold text-slate-500">{typeMeta[question.type as QuestionType]?.label || question.type}</div>
-                    </button>
-                  ))}
+                    <h2 className="loopy-heading mt-1 text-xl font-black">
+                      {text('practice.create.settings.title', 'Practice set details')}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen(false)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted hover:bg-brand-teal/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-              </aside>
-            </div>
-          </section>
-        )}
-        {settingsOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
-            <div className="loopy-card max-h-[calc(100vh-48px)] w-full max-w-2xl overflow-y-auto rounded-lg border shadow-2xl">
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b loopy-border loopy-surface px-5 py-4">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-wide text-brand-teal">{text('practice.create.settings.badge', 'Set settings')}</div>
-                  <h2 className="loopy-heading mt-1 text-xl font-black">{text('practice.create.settings.title', 'Practice set details')}</h2>
-                </div>
-                <button type="button" onClick={() => setSettingsOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border loopy-border loopy-surface loopy-muted hover:bg-brand-teal/10">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
 
-              <div className="space-y-5 px-5 py-5">
-                <ModerationWarning matches={settingsModerationMatches} title={warningTitle} message={warningMessage} />
-                <label className="block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.set_title', 'Set title')}</span>
-                  <input
-                    value={settingsDraft.title}
-                    onChange={event => setSettingsDraft(current => ({ ...current, title: event.target.value }))}
-                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                <div className="space-y-5 px-5 py-5">
+                  <ModerationWarning
+                    matches={settingsModerationMatches}
+                    title={warningTitle}
+                    message={warningMessage}
                   />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.description', 'Description')}</span>
-                  <textarea
-                    value={settingsDraft.description}
-                    onChange={event => setSettingsDraft(current => ({ ...current, description: event.target.value }))}
-                    rows={3}
-                    placeholder={text('practice.create.settings.description_placeholder', 'Short note about this practice set.')}
-                    className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                  />
-                </label>
-
-                <div className="grid gap-4 md:grid-cols-2">
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.topic', 'Topic')}</span>
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.settings.set_title', 'Set title')}
+                    </span>
                     <input
-                      value={settingsDraft.topic}
-                      onChange={event => setSettingsDraft(current => ({ ...current, topic: event.target.value }))}
-                      placeholder={text('practice.create.settings.topic_placeholder', 'Arrays, loops, functions...')}
+                      value={settingsDraft.title}
+                      onChange={event =>
+                        setSettingsDraft(current => ({ ...current, title: event.target.value }))
+                      }
                       className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.language', 'Language')}</span>
-                    <select
-                      value={settingsDraft.languageId}
-                      onChange={event => setSettingsDraft(current => ({ ...current, languageId: event.target.value }))}
-                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
-                    >
-                      {languageOptions.map(language => (
-                        <option key={language.id} value={language.id}>{language.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.difficulty', 'Difficulty')}</span>
-                    <select
-                      value={settingsDraft.difficulty}
-                      onChange={event => setSettingsDraft(current => ({ ...current, difficulty: event.target.value as 'easy' | 'medium' | 'hard' }))}
-                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
-                    >
-                      <option value="easy">{text('practice.create.option.easy', 'Easy')}</option>
-                      <option value="medium">{text('practice.create.option.medium', 'Medium')}</option>
-                      <option value="hard">{text('practice.create.option.hard', 'Hard')}</option>
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.visibility', 'Visibility')}</span>
-                    <select
-                      value={settingsDraft.visibility}
-                      onChange={event => setSettingsDraft(current => ({ ...current, visibility: event.target.value as 'public' | 'private' | 'unlisted' | 'official' }))}
-                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
-                    >
-                      <option value="public">{text('practice.create.option.public', 'Public')}</option>
-                      <option value="unlisted">{text('practice.create.option.unlisted', 'Unlisted')}</option>
-                      <option value="private">{text('practice.create.option.private', 'Private')}</option>
-                      {isAdmin && (
-                        <option value="official">{text('practice.create.option.official', 'Official')}</option>
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text('practice.create.settings.description', 'Description')}
+                    </span>
+                    <textarea
+                      value={settingsDraft.description}
+                      onChange={event =>
+                        setSettingsDraft(current => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      rows={3}
+                      placeholder={text(
+                        'practice.create.settings.description_placeholder',
+                        'Short note about this practice set.'
                       )}
-                    </select>
+                      className="w-full resize-none rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                    />
                   </label>
 
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.status', 'Status')}</span>
-                    <select
-                      value={settingsDraft.status}
-                      onChange={event => setSettingsDraft(current => ({ ...current, status: event.target.value as 'draft' | 'published' }))}
-                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
-                    >
-                      <option value="published">{text('practice.create.option.published', 'Published')}</option>
-                      <option value="draft">{text('practice.create.option.draft', 'Draft')}</option>
-                    </select>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.settings.topic', 'Topic')}
+                      </span>
+                      <input
+                        value={settingsDraft.topic}
+                        onChange={event =>
+                          setSettingsDraft(current => ({ ...current, topic: event.target.value }))
+                        }
+                        placeholder={text(
+                          'practice.create.settings.topic_placeholder',
+                          'Arrays, loops, functions...'
+                        )}
+                        className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.settings.language', 'Language')}
+                      </span>
+                      <select
+                        value={settingsDraft.languageId}
+                        onChange={event =>
+                          setSettingsDraft(current => ({
+                            ...current,
+                            languageId: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                      >
+                        {languageOptions.map(language => (
+                          <option key={language.id} value={language.id}>
+                            {language.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.settings.difficulty', 'Difficulty')}
+                      </span>
+                      <select
+                        value={settingsDraft.difficulty}
+                        onChange={event =>
+                          setSettingsDraft(current => ({
+                            ...current,
+                            difficulty: event.target.value as 'easy' | 'medium' | 'hard',
+                          }))
+                        }
+                        className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                      >
+                        <option value="easy">{text('practice.create.option.easy', 'Easy')}</option>
+                        <option value="medium">
+                          {text('practice.create.option.medium', 'Medium')}
+                        </option>
+                        <option value="hard">{text('practice.create.option.hard', 'Hard')}</option>
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.settings.visibility', 'Visibility')}
+                      </span>
+                      <select
+                        value={settingsDraft.visibility}
+                        onChange={event =>
+                          setSettingsDraft(current => ({
+                            ...current,
+                            visibility: event.target.value as
+                              'public' | 'private' | 'unlisted' | 'official',
+                          }))
+                        }
+                        className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                      >
+                        <option value="public">
+                          {text('practice.create.option.public', 'Public')}
+                        </option>
+                        <option value="unlisted">
+                          {text('practice.create.option.unlisted', 'Unlisted')}
+                        </option>
+                        <option value="private">
+                          {text('practice.create.option.private', 'Private')}
+                        </option>
+                        {isAdmin && (
+                          <option value="official">
+                            {text('practice.create.option.official', 'Official')}
+                          </option>
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-black loopy-heading">
+                        {text('practice.create.settings.status', 'Status')}
+                      </span>
+                      <select
+                        value={settingsDraft.status}
+                        onChange={event =>
+                          setSettingsDraft(current => ({
+                            ...current,
+                            status: event.target.value as 'draft' | 'published',
+                          }))
+                        }
+                        className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-black text-[color:var(--loopy-text)] outline-none focus:border-brand-teal"
+                      >
+                        <option value="published">
+                          {text('practice.create.option.published', 'Published')}
+                        </option>
+                        <option value="draft">
+                          {text('practice.create.option.draft', 'Draft')}
+                        </option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <label className="loopy-card-soft block rounded-lg border p-4">
+                    <span className="mb-2 block text-sm font-black loopy-heading">
+                      {text(
+                        'practice.create.settings.required_lessons',
+                        'Required completed lessons'
+                      )}
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={settingsDraft.requirementCount}
+                      onChange={event =>
+                        setSettingsDraft(current => ({
+                          ...current,
+                          requirementCount: event.target.value,
+                        }))
+                      }
+                      placeholder={text(
+                        'practice.create.settings.required_placeholder',
+                        'Leave empty for no requirement'
+                      )}
+                      className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
+                    />
+                    <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
+                      {text(
+                        'practice.create.settings.required_help',
+                        'When filled, learners must complete this many lessons in the selected language before starting the set.'
+                      )}
+                    </p>
                   </label>
                 </div>
 
-                <label className="loopy-card-soft block rounded-lg border p-4">
-                  <span className="mb-2 block text-sm font-black loopy-heading">{text('practice.create.settings.required_lessons', 'Required completed lessons')}</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={settingsDraft.requirementCount}
-                    onChange={event => setSettingsDraft(current => ({ ...current, requirementCount: event.target.value }))}
-                    placeholder={text('practice.create.settings.required_placeholder', 'Leave empty for no requirement')}
-                    className="w-full rounded-lg border loopy-border loopy-surface px-4 py-3 text-sm font-semibold text-[color:var(--loopy-text)] outline-none transition placeholder:text-slate-400 focus:border-brand-teal"
-                  />
-                  <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
-                    {text('practice.create.settings.required_help', 'When filled, learners must complete this many lessons in the selected language before starting the set.')}
-                  </p>
-                </label>
-              </div>
-
-              <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t loopy-border loopy-surface px-5 py-4">
-                <button type="button" onClick={() => setSettingsOpen(false)} className="loopy-subtle-button rounded-lg border px-4 py-2.5 text-sm font-black">
-                  Cancel
-                </button>
-                <button type="button" onClick={saveSettings} className="rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950">
-                  Save settings
-                </button>
+                <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t loopy-border loopy-surface px-5 py-4">
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen(false)}
+                    className="loopy-subtle-button rounded-lg border px-4 py-2.5 text-sm font-black"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveSettings}
+                    className="rounded-lg bg-brand-teal px-4 py-2.5 text-sm font-black text-slate-950"
+                  >
+                    Save settings
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </fieldset>
       </main>
     </PublicShell>
   )
 }
 
-export default PracticeSetCreatePage
+export default function PracticeSetCreatePage() {
+  const { setId } = useParams<{ setId: string }>()
+  const location = useLocation()
+  const { user } = useAuth()
+  const { i18n } = useTranslation()
+  const load = useCallback((signal: AbortSignal) => practiceService.getSet(setId!, signal), [setId])
+  const resource = useAsyncResource(
+    setId && user ? `practice-builder:${user.id}:${setId}` : null,
+    load
+  )
+
+  if (setId && resource.error)
+    return (
+      <PublicShell>
+        <main className="mx-auto max-w-3xl px-6 py-12">
+          <div role="alert" className="loopy-card rounded-lg border p-6">
+            <p>{resource.error}</p>
+            <div className="mt-4 flex gap-4">
+              <button
+                type="button"
+                onClick={resource.retry}
+                className="rounded-lg bg-brand-teal px-4 py-2 font-bold text-slate-950"
+              >
+                {i18n.language.startsWith('vi') ? 'Thử lại' : 'Try again'}
+              </button>
+              <Link to="/practice/my-sets" className="rounded-lg border px-4 py-2 font-bold">
+                {i18n.language.startsWith('vi') ? 'Bộ bài tập của tôi' : 'My practice sets'}
+              </Link>
+            </div>
+          </div>
+        </main>
+      </PublicShell>
+    )
+  if (setId && (resource.loading || !resource.data)) return <LoadingScreen />
+  if (setId && resource.data?.createdBy !== user?.id)
+    return (
+      <PublicShell>
+        <main className="mx-auto max-w-3xl px-6 py-12">
+          <div role="alert" className="loopy-card rounded-xl border p-6">
+            <p>Bạn không có quyền chỉnh sửa bộ bài này.</p>
+            <Link to="/practice/my-sets" className="mt-4 inline-block font-bold">
+              Về bộ bài của tôi
+            </Link>
+          </div>
+        </main>
+      </PublicShell>
+    )
+  return (
+    <PracticeSetBuilder
+      key={`${user?.id}:${location.key}`}
+      setId={setId}
+      initialSet={resource.data || undefined}
+    />
+  )
+}

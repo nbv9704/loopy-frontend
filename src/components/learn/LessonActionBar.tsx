@@ -62,7 +62,7 @@ const LessonActionBar: React.FC<LessonActionBarProps> = ({
   const fallbackCopy = fallbackActionCopy[currentStep]
   const copy = {
     ...fallbackCopy,
-    label: getContent(content, `learn.action.${currentStep}.label`, fallbackCopy.label),
+    label: getContent(content, `learn.action.${currentStep}.button`, fallbackCopy.label),
     helper: getContent(content, `learn.action.${currentStep}.helper`, fallbackCopy.helper),
   }
   const Icon = iconByName[copy.icon]

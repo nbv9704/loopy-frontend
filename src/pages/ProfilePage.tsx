@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiActivity, FiAward, FiBell, FiCheckCircle, FiCompass, FiGlobe, FiPlay, FiRefreshCw, FiSave, FiSettings, FiTarget, FiUser, FiZap } from 'react-icons/fi'
-import toast from 'react-hot-toast'
+import { FiActivity, FiAward, FiBell, FiCheckCircle, FiCompass, FiGlobe, FiPlay, FiSettings, FiTarget, FiZap } from 'react-icons/fi'
 import { PressedButton, PublicShell } from '../components/PublicShell'
 import { useAuth } from '../contexts/AuthContext'
-import { api } from '../lib/api'
+import { emptyStats } from '../features/profile/profile.model'
+import { useProfileOverview } from '../features/profile/useProfileOverview'
+import { ProfileSettings } from '../features/profile/ProfileSettings'
+import { selectionLabel, selectionLabelContentKeys } from '../features/onboarding/selectionLabels'
 import { useContentPreloader } from '../hooks/useContentPreloader'
 import { LoadingScreen } from '../components/LoadingScreen'
 
@@ -17,23 +19,6 @@ const sideNav: Array<{ id: ProfileTab; labelKey: string; fallback: string; icon:
   { id: 'settings', labelKey: 'profile.tab.settings', fallback: 'Settings', icon: FiSettings },
 ]
 
-
-const AVATAR_PRESETS = [
-  '/images/avatar/croc.webp',
-  '/images/avatar/fox.webp',
-  '/images/avatar/penguin.webp',
-  '/images/avatar/tiger.webp',
-]
-
-const DEFAULT_AVATAR_PRESET = AVATAR_PRESETS[0]
-
-const normalizeAvatarUrl = (avatarUrl?: string) => {
-  if (!avatarUrl) return ''
-  if (avatarUrl.includes('dicebear.com') || avatarUrl.includes('bottts')) {
-    return DEFAULT_AVATAR_PRESET
-  }
-  return avatarUrl
-}
 
 const TabPanel = ({ icon: Icon, title, desc, children }: { icon: typeof FiActivity; title: string; desc: string; children: React.ReactNode }) => (
   <div className="grid gap-6">
@@ -83,31 +68,17 @@ const NoticeCard = ({ hasProgressData, text }: { hasProgressData: boolean; text:
   </div>
 )
 
-const ProfilePage: React.FC = () => {
-  const { user } = useAuth()
+const ProfileSession: React.FC = () => {
+  const { user, refreshUser } = useAuth()
   const { i18n } = useTranslation()
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
-  const [stats, setStats] = useState({
-    completedLessons: 0,
-    currentStreak: 0,
-    totalPoints: 0,
-    hasProgressData: false,
-    completedToday: 0,
-  })
-
-  // Profile edit state
-  const [profileData, setProfileData] = useState({
-    displayName: '',
-    bio: '',
-    preferredLanguage: 'javascript',
-    learningGoal: 'start_from_zero',
-    avatarUrl: '',
-  })
-  const [profileLoading, setProfileLoading] = useState(false)
-  const [profileSaving, setProfileSaving] = useState(false)
+  const overview = useProfileOverview(user?.id)
+  const stats = overview.data ?? emptyStats
 
   const contentKeys = [
+    ...selectionLabelContentKeys,
     'nav.learn', 'nav.playground', 'nav.practice', 'nav.docs', 'nav.settings', 'nav.logout',
+    'profile.retry', 'profile.toast.saved', 'profile.settings.save_basic_desc', 'profile.settings.path_help', 'profile.settings.basic_desc', 'profile.settings.processing_avatar',
     'profile.title', 'profile.subtitle', 'profile.badge',
     'profile.tab.overview', 'profile.tab.journey', 'profile.tab.goals', 'profile.tab.notifications', 'profile.tab.settings',
     'profile.journey.badge', 'profile.journey.title', 'profile.journey.lessons_done',
@@ -130,132 +101,7 @@ const ProfilePage: React.FC = () => {
     'footer.aboutLoopy', 'footer.about', 'footer.team', 'footer.contact', 'footer.resources', 'footer.docs', 'footer.blog', 'footer.faq', 'footer.description', 'footer.allRightsReserved', 'footer.privacy', 'footer.terms',
   ]
 
-  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        if (!user) return
-        const currentStreak = (user as any).current_streak || (user as any).currentStreak || 0
-        const totalPoints = (user as any).total_points || (user as any).totalPoints || 0
-        const progressResponse = await api.request('/api/progress/me')
-        let completedLessons = 0
-        let hasProgressData = false
-        let completedToday = 0
-        const todayKey = new Date().toISOString().slice(0, 10)
-
-        if (progressResponse.success && progressResponse.data) {
-          const progressItems = Array.isArray(progressResponse.data)
-            ? progressResponse.data
-            : Object.values(progressResponse.data as Record<string, any>)
-
-          hasProgressData = progressItems.length > 0
-          completedLessons = progressItems.filter((p: any) => p?.completed_at || p?.completedAt || p?.status === 'completed').length
-          completedToday = progressItems.filter((p: any) => {
-            const completedAt = p?.completed_at || p?.completedAt
-            return completedAt ? String(completedAt).slice(0, 10) === todayKey : false
-          }).length
-        }
-
-        setStats({ completedLessons, currentStreak, totalPoints, hasProgressData, completedToday })
-      } catch (err) {
-        console.error('Error fetching stats:', err)
-      }
-    }
-
-    fetchStats()
-  }, [user])
-
-  // Fetch real profile data for Settings tab
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return
-      setProfileLoading(true)
-      try {
-        const res = await api.request<{ profile: any }>('/api/profile/me')
-        if (res.success && res.data?.profile) {
-          const p = res.data.profile
-          setProfileData({
-            displayName: p.displayName || p.display_name || '',
-            bio: p.bio || '',
-            preferredLanguage: p.preferredLanguage || p.preferred_language || 'javascript',
-            learningGoal: p.learningGoal || p.learning_goal || 'start_from_zero',
-            avatarUrl: normalizeAvatarUrl(p.avatarUrl || p.avatar_url || ''),
-          })
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err)
-      } finally {
-        setProfileLoading(false)
-      }
-    }
-    fetchProfile()
-  }, [user])
-
-  const handleSaveProfile = async () => {
-    setProfileSaving(true)
-    try {
-      const res = await api.request('/api/profile/me', {
-        method: 'PUT',
-        body: JSON.stringify(profileData),
-      })
-      if (res.success) {
-        toast.success(text('profile.toast.save_success', 'Cập nhật thông tin thành công! Trang sẽ tự làm mới...'))
-        window.setTimeout(() => {
-          window.location.reload()
-        }, 1200)
-      } else {
-        toast.error((res.error as any)?.message || text('profile.toast.save_error', 'Cập nhật thất bại'))
-      }
-    } catch {
-      toast.error(text('profile.toast.connection_error', 'Lỗi kết nối. Vui lòng thử lại.'))
-    } finally {
-      setProfileSaving(false)
-    }
-  }
-
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      toast.error(text('profile.toast.image_only', 'Chỉ hỗ trợ file ảnh'))
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 150
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width
-            width = MAX_SIZE
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height
-            height = MAX_SIZE
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, width, height)
-
-        const dataUrl = canvas.toDataURL('image/webp', 0.8)
-        setProfileData(prev => ({ ...prev, avatarUrl: dataUrl }))
-      }
-      img.src = event.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
+  const { content, initialLoading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
 
   const text = (key: string, fallback: string) => content[key] || fallback
 
@@ -283,23 +129,13 @@ const ProfilePage: React.FC = () => {
     'footer.terms': content['footer.terms'],
   }
 
-  const userName = (user as any)?.name || (user as any)?.displayName || (user as any)?.email?.split('@')[0] || 'Loopy learner'
+  const userName = user?.displayName || user?.email?.split('@')[0] || 'Loopy learner'
   const userInitial = userName.charAt(0).toUpperCase()
-  const preferredLanguage = (user as any)?.preferredLanguage || (user as any)?.preferred_language || 'javascript'
-  const learningGoal = (user as any)?.learningGoal || (user as any)?.learning_goal || 'start_from_zero'
+  const preferredLanguage = user?.preferredLanguage || 'javascript'
   const journeyHref = `/library/${preferredLanguage}`
-  const goalLabel = (goal: string) => {
-    const fallbackMap: Record<string, string> = {
-      start_from_zero: 'Start from zero',
-      build_web: 'Build web apps',
-      school_work: 'School work',
-      explore: 'Explore coding',
-    }
-    return text(`profile.goal.${goal}`, fallbackMap[goal] || goal)
-  }
 
   const metricCards = useMemo(() => [
-    { label: text('profile.stats.saved', 'Progress saved'), value: stats.completedLessons.toString(), icon: FiCheckCircle, note: text('profile.metric.note.complete_lesson', 'completeLesson') },
+    { label: text('profile.stats.saved', 'Progress saved'), value: stats.completedLessons.toString(), icon: FiCheckCircle, note: text('profile.metric.note.complete_lesson', 'Completed and saved') },
     { label: text('profile.stats.streak', 'Streak'), value: stats.currentStreak.toString(), icon: FiZap, note: text('profile.metric.note.daily_habit', 'daily habit') },
     { label: text('profile.stats.points', 'Points'), value: stats.totalPoints.toString(), icon: FiAward, note: text('profile.metric.note.saved_lessons', 'saved lessons') },
   ], [content, stats])
@@ -321,8 +157,8 @@ const ProfilePage: React.FC = () => {
           text('profile.activity.no_progress_desc', 'Hoàn thành một lesson bằng nút Kiểm tra để backend ghi nhận tiến độ.'),
         ],
     [
-      (user as any)?.onboardingCompleted ? text('profile.activity.onboarding_done_title', 'Onboarding đã hoàn tất') : text('profile.activity.onboarding_missing_title', 'Onboarding chưa hoàn tất'),
-      (user as any)?.onboardingCompleted ? text('profile.activity.onboarding_done_desc', 'Mục tiêu học và ngôn ngữ ưu tiên đã được lưu trong profile.') : text('profile.activity.onboarding_missing_desc', 'Chạy onboarding để Loopy gợi ý lộ trình đầu tiên.'),
+      user?.onboardingCompleted ? text('profile.activity.onboarding_done_title', 'Onboarding đã hoàn tất') : text('profile.activity.onboarding_missing_title', 'Onboarding chưa hoàn tất'),
+      user?.onboardingCompleted ? text('profile.activity.onboarding_done_desc', 'Mục tiêu học và ngôn ngữ ưu tiên đã được lưu trong profile.') : text('profile.activity.onboarding_missing_desc', 'Chạy onboarding để Loopy gợi ý lộ trình đầu tiên.'),
     ],
     [
       text('profile.activity.current_journey_title', 'Lộ trình hiện tại'),
@@ -338,7 +174,7 @@ const ProfilePage: React.FC = () => {
     <div className="grid gap-6">
       <div className="loopy-card relative overflow-hidden rounded-[2rem] border p-6 shadow-xl md:p-8">
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
-        <div className="relative grid gap-8 lg:grid-cols-[1fr,360px] lg:items-end">
+        <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px] lg:items-end">
           <div>
             <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
               {text('profile.badge', 'Profile')}
@@ -381,7 +217,7 @@ const ProfilePage: React.FC = () => {
         })}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr,380px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
         <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
           <div className="mb-5 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiPlay /> {text('profile.next.title', 'Recommended next lesson')}</div>
           <div className="rounded-[1.5rem] border border-brand-teal/30 bg-brand-teal/10 p-5">
@@ -436,9 +272,9 @@ const ProfilePage: React.FC = () => {
   const renderGoals = () => (
     <TabPanel icon={FiTarget} title={text('profile.goals.tab.title', 'Learning goals')} desc={text('profile.goals.tab.desc', 'Keep the goal small enough to act on today. You can update your path without losing saved progress.')}>
       <InfoGrid items={[
-        [text('profile.goals.current_goal', 'Current goal'), goalLabel(learningGoal), FiTarget],
-        [text('profile.goals.preferred_language', 'Preferred language'), preferredLanguage, FiGlobe],
-        [text('profile.goals.experience_level', 'Mức kinh nghiệm'), (user as any)?.experienceLevel || (user as any)?.experience_level || text('profile.goals.experience_empty', 'Chưa chọn'), FiCheckCircle],
+        [text('profile.goals.current_goal', 'Current goal'), selectionLabel('goal', user?.learningGoal, text), FiTarget],
+        [text('profile.goals.preferred_language', 'Preferred language'), selectionLabel('language', user?.preferredLanguage, text), FiGlobe],
+        [text('profile.goals.experience_level', 'Experience level'), selectionLabel('experience', user?.experienceLevel, text), FiCheckCircle],
       ]} />
       <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
         <h3 className="loopy-heading text-2xl font-black">{text('profile.goals.newbie_path_title', 'Newbie-first path')}</h3>
@@ -451,171 +287,19 @@ const ProfilePage: React.FC = () => {
 
 
   const renderSettings = () => (
-    <TabPanel icon={FiSettings} title={text('profile.settings.tab.title', 'Cài đặt tài khoản')} desc={text('profile.settings.tab.desc', 'Chỉnh sửa thông tin cá nhân, ngôn ngữ ưu tiên và mục tiêu học của bạn. Email đăng nhập không thể thay đổi.')}>
-      {profileLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-teal border-t-transparent" />
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          {/* Avatar Settings */}
-          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiUser className="h-4 w-4" /> {text('profile.settings.avatar_title', 'Ảnh đại diện')}
-            </div>
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-              <div className="loopy-surface flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-2 loopy-border shadow-sm">
-                {profileData.avatarUrl ? (
-                  <img src={profileData.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="text-4xl font-black text-brand-teal">{userInitial}</div>
-                )}
-              </div>
-              <div className="flex-1 grid gap-4">
-                <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.choose_preset', 'Chọn ảnh có sẵn')}</label>
-                  <div className="flex flex-wrap gap-3">
-                    {AVATAR_PRESETS.map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => setProfileData(prev => ({ ...prev, avatarUrl: preset }))}
-                        className={`h-12 w-12 overflow-hidden rounded-xl border-2 transition-all hover:-translate-y-0.5 ${profileData.avatarUrl === preset ? 'border-brand-teal shadow-[0_4px_0_#54d9c4]' : 'border-transparent loopy-surface hover:border-[color:var(--loopy-border)]'}`}
-                      >
-                        <img src={preset} alt="Preset avatar" className="h-full w-full object-cover" />
-                      </button>
-                    ))}
-                    {profileData.avatarUrl && (
-                      <button
-                        onClick={() => setProfileData(prev => ({ ...prev, avatarUrl: '' }))}
-                        className="flex h-12 items-center gap-2 rounded-xl border-2 border-transparent bg-rose-50 px-3 text-xs font-bold text-rose-500 transition-all hover:bg-rose-100"
-                      >
-                        {text('profile.settings.remove_avatar', 'Xóa ảnh')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.upload_label', 'Hoặc tự tải ảnh lên')}</label>
-                  <label className="loopy-subtle-button inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors">
-                    {text('profile.settings.upload_button', 'Chọn ảnh... (Tự nén)')}
-                    <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleAvatarUpload} />
-                  </label>
-                  <p className="mt-2 text-xs text-slate-400">{text('profile.settings.upload_help', 'Ảnh sẽ được tự động nén thu nhỏ để tiết kiệm dữ liệu.')}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Email – read only */}
-          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiUser className="h-4 w-4" /> {text('profile.settings.account_title', 'Thông tin tài khoản')}
-            </div>
-            <div className="grid gap-4">
-              <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.email_label', 'Email (không thể thay đổi)')}</label>
-                <div className="loopy-card-soft flex items-center gap-3 rounded-2xl border px-4 py-3">
-                  <span className="flex-1 text-sm font-bold loopy-muted">{(user as any)?.email || '—'}</span>
-                  <span className="rounded-full loopy-surface px-2 py-0.5 text-xs font-black loopy-muted">{text('profile.settings.locked', 'Khóa')}</span>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.display_name', 'Tên hiển thị')}</label>
-                <input
-                  type="text"
-                  value={profileData.displayName}
-                  onChange={e => setProfileData(prev => ({ ...prev, displayName: e.target.value }))}
-                  placeholder={text('profile.settings.display_name_placeholder', 'Nhập tên hiển thị...')}
-                  maxLength={50}
-                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.bio', 'Bio')} <span className="normal-case font-normal text-slate-400">{text('profile.settings.bio_limit', '(tối đa 500 ký tự)')}</span></label>
-                <textarea
-                  value={profileData.bio}
-                  onChange={e => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder={text('profile.settings.bio_placeholder', 'Giới thiệu ngắn về bản thân...')}
-                  maxLength={500}
-                  rows={3}
-                  className="w-full resize-none rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20"
-                />
-                <div className="mt-1 text-right text-xs text-slate-400">{profileData.bio.length}/500</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Learning preferences */}
-          <div className="loopy-card rounded-[2rem] border p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-500">
-              <FiTarget className="h-4 w-4" /> {text('profile.settings.learning_path_title', 'Lộ trình học')}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.preferred_language', 'Ngôn ngữ ưu tiên')}</label>
-                <select
-                  value={profileData.preferredLanguage}
-                  onChange={e => setProfileData(prev => ({ ...prev, preferredLanguage: e.target.value }))}
-                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
-                >
-                  <option value="javascript">{text('profile.settings.language.javascript', 'JavaScript Web Starter')}</option>
-                  <option value="python">{text('profile.settings.language.python', 'Python Foundations')}</option>
-                  <option value="cpp">{text('profile.settings.language.cpp', 'C++ School Foundations')}</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-black uppercase tracking-widest text-slate-400">{text('profile.settings.learning_goal', 'Mục tiêu học')}</label>
-                <select
-                  value={profileData.learningGoal}
-                  onChange={e => setProfileData(prev => ({ ...prev, learningGoal: e.target.value }))}
-                  className="w-full rounded-2xl border loopy-border loopy-surface px-4 py-3 text-sm font-bold text-[color:var(--loopy-text)] outline-none transition focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 cursor-pointer"
-                >
-                  <option value="start_from_zero">{text('profile.settings.goal.start_from_zero', 'Bắt đầu từ số 0')}</option>
-                  <option value="build_web">{text('profile.settings.goal.build_web', 'Làm website')}</option>
-                  <option value="school_work">{text('profile.settings.goal.school_work', 'Phục vụ việc học ở trường')}</option>
-                  <option value="explore">{text('profile.settings.goal.explore', 'Khám phá xem code có hợp không')}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Save button */}
-          <div className="loopy-card flex items-center justify-between rounded-[2rem] border p-6 shadow-sm">
-            <div>
-              <div className="font-black loopy-heading">{text('profile.settings.save_title', 'Lưu thay đổi')}</div>
-              <div className="mt-1 text-sm loopy-muted">{text('profile.settings.save_desc', 'Cập nhật tên, bio và lộ trình học của bạn.')}</div>
-            </div>
-            <button
-              onClick={handleSaveProfile}
-              disabled={profileSaving}
-              className="flex items-center gap-2 rounded-2xl bg-brand-teal px-6 py-3 text-sm font-black text-slate-950 shadow-[0_4px_0_#0b889c] transition hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {profileSaving ? (
-                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" /> {text('profile.settings.saving', 'Đang lưu...')}</>
-              ) : (
-                <><FiSave className="h-4 w-4" /> {text('profile.settings.save_button', 'Lưu thay đổi')}</>
-              )}
-            </button>
-          </div>
-
-          {/* Onboarding reset */}
-          <div className="loopy-card-soft rounded-[2rem] border p-6">
-            <h3 className="font-black loopy-heading">{text('profile.settings.onboarding_title', 'Cập nhật onboarding')}</h3>
-            <p className="mt-2 text-sm loopy-muted">{text('profile.settings.onboarding_desc', 'Chạy lại onboarding để Loopy gợi ý lại lộ trình phù hợp nhất với bạn.')}</p>
-            <div className="mt-4"><PressedButton to="/onboarding" variant="secondary"><FiRefreshCw /> {text('profile.settings.onboarding_button', 'Chạy lại onboarding')}</PressedButton></div>
-          </div>
-        </div>
-      )}
+    <TabPanel icon={FiSettings} title={text('profile.settings.tab.title', 'Cài đặt tài khoản')} desc={text('profile.settings.basic_desc', 'Cập nhật thông tin cá nhân và quản lý lộ trình học.')}>
+      {user && <ProfileSettings userId={user.id} email={user.email} initial={userInitial} text={text} onSaved={refreshUser} />}
     </TabPanel>
   )
 
-
-
   const renderActiveTab = () => {
-    if (activeTab === 'journey') return renderJourney()
-    if (activeTab === 'goals') return renderGoals()
     if (activeTab === 'settings') return renderSettings()
-    return renderOverview()
+    if (activeTab === 'goals') return renderGoals()
+    if (overview.loading) return <p role="status" className="loopy-body py-12 text-center">{text('profile.loading', 'Đang tải hồ sơ…')}</p>
+    if (overview.error) return <div role="alert" className="loopy-card rounded-2xl border p-6">
+      <p>{overview.error}</p><button onClick={overview.retry} className="mt-4 rounded-lg bg-brand-teal px-5 py-3 font-bold text-slate-950">{text('profile.retry', 'Thử lại')}</button>
+    </div>
+    return activeTab === 'journey' ? renderJourney() : renderOverview()
   }
 
   const activeTabLabel = sideNav.find(item => item.id === activeTab)?.fallback || 'Overview'
@@ -623,13 +307,13 @@ const ProfilePage: React.FC = () => {
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main className="px-4 py-10 md:px-6">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[260px,1fr]">
+        <div className="mx-auto grid grid-cols-1 max-w-7xl gap-6 lg:grid-cols-[260px_1fr]">
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-[2rem] border border-white/10 bg-slate-950 p-4 text-white shadow-xl shadow-black/20">
               <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-5">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-teal text-xl font-black text-slate-950 ${(user as any)?.avatarUrl ? 'border-2 border-brand-teal/20' : 'shadow-[0_4px_0_#0b889c]'}`}>
-                  {(user as any)?.avatarUrl ? (
-                    <img src={(user as any).avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-teal text-xl font-black text-slate-950 ${user?.avatarUrl ? 'border-2 border-brand-teal/20' : 'shadow-[0_4px_0_#0b889c]'}`}>
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                   ) : (
                     userInitial
                   )}
@@ -672,6 +356,11 @@ const ProfilePage: React.FC = () => {
       </main>
     </PublicShell>
   )
+}
+
+const ProfilePage: React.FC = () => {
+  const { user } = useAuth()
+  return <ProfileSession key={user?.id || 'guest'} />
 }
 
 export default ProfilePage

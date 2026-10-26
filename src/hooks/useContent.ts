@@ -1,270 +1,86 @@
-/**
- * useContent Hook - Fetch content from CMS API
- *
- * Fetches content items from the backend API with:
- * - localStorage caching (5 minute TTL)
- * - Fallback to i18n keys when content not found
- * - Error handling and loading states
- *
- * Implements Requirement 3.1: Create useContent Hook
- */
-
-import { useState, useEffect, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useCallback } from 'react'
+import { useContentPreloader } from './useContentPreloader'
 import { api } from '../lib/api'
-
-export interface ContentItem {
-  id: string
-  categoryId: string
-  key: string
-  language: 'vi' | 'en'
-  value: string
-  description?: string
-  type: 'text' | 'markdown' | 'html'
-  createdAt: string
-  updatedAt: string
-  createdBy?: string
-  updatedBy?: string
-}
-
+import {
+  clearContentCache,
+  getCachedContent,
+  getCacheKey,
+  getContentCacheRevision,
+  setCachedContent,
+  type ContentItem,
+} from '../lib/contentCache'
+import { useContentCacheRevision } from './useContentCacheRevision'
+import { useAsyncResource } from './useAsyncResource'
+export {
+  clearContentCache,
+  getCachedContent,
+  getCacheKey,
+  setCachedContent,
+} from '../lib/contentCache'
+export type { ContentItem } from '../lib/contentCache'
 export interface UseContentState {
   content: ContentItem[]
   loading: boolean
   error: string | null
-  refetch: () => Promise<void>
+  refetch: () => void
 }
 
-const CACHE_KEY_PREFIX = 'loopy_content_cache_'
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
-
-/**
- * Get cache key for content query
- */
-export function getCacheKey(category?: string, language?: string): string {
-  const parts = [CACHE_KEY_PREFIX]
-  if (category) parts.push(`cat_${category}`)
-  if (language) parts.push(`lang_${language}`)
-  return parts.join('_')
-}
-
-/**
- * Get cached content if valid
- */
-export function getCachedContent(cacheKey: string): ContentItem[] | null {
-  try {
-    const cached = localStorage.getItem(cacheKey)
-    if (!cached) return null
-
-    const { data, timestamp } = JSON.parse(cached)
-    const now = Date.now()
-
-    // Check if cache is still valid
-    if (now - timestamp > CACHE_TTL) {
-      localStorage.removeItem(cacheKey)
-      return null
-    }
-
-    return data
-  } catch (error) {
-    console.error('Error reading from cache:', error)
-    return null
-  }
-}
-
-/**
- * Set content in cache
- */
-export function setCachedContent(cacheKey: string, data: ContentItem[]): void {
-  try {
-    localStorage.setItem(
-      cacheKey,
-      JSON.stringify({
-        data,
-        timestamp: Date.now(),
-      })
-    )
-  } catch (error) {
-    console.error('Error writing to cache:', error)
-  }
-}
-
-export function clearContentCache(): void {
-  try {
-    Object.keys(localStorage)
-      .filter(key => key.startsWith(CACHE_KEY_PREFIX))
-      .forEach(key => localStorage.removeItem(key))
-  } catch (error) {
-    console.error('Error clearing content cache:', error)
-  }
-}
-
-/**
- * useContent Hook
- *
- * Fetches content items from the API with caching and fallback support.
- *
- * @param category - Optional category filter (e.g., 'header', 'footer', 'landing')
- * @param language - Optional language filter ('vi' or 'en')
- * @returns Object with content items, loading state, error, and refetch function
- *
- * @example
- * const { content, loading, error, refetch } = useContent('header', 'vi')
- * if (loading) return <div>Loading...</div>
- * if (error) return <div>Error: {error}</div>
- * return <div>{content.map(item => <p key={item.id}>{item.value}</p>)}</div>
- */
 export function useContent(category?: string, language?: string): UseContentState {
-  const [content, setContent] = useState<ContentItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchContent = useCallback(async () => {
-    const cacheKey = getCacheKey(category, language)
-
-    // Try to get from cache first
-    const cachedContent = getCachedContent(cacheKey)
-    if (cachedContent) {
-      setContent(cachedContent)
-      setLoading(false)
-      setError(null)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Build query parameters
+  const revision = useContentCacheRevision()
+  const load = useCallback(
+    async (signal: AbortSignal) => {
+      const key = getCacheKey(category, language)
+      const cached = getCachedContent(key)
+      if (cached) return cached
       const params = new URLSearchParams()
-      if (category) params.append('category', category)
-      if (language) params.append('language', language)
-
-      const response = await api.request<{
-        items: ContentItem[]
-        total: number
-        limit: number
-        offset: number
-      }>(`/api/content?${params.toString()}`)
-
-      if (response.success && response.data) {
-        const items = response.data.items || []
-        setContent(items)
-        setCachedContent(cacheKey, items)
-        setError(null)
-      } else {
-        const errorMsg = response.error?.message || 'Failed to fetch content'
-        setError(errorMsg)
-        setContent([])
+      if (category) params.set('category', category)
+      if (language) params.set('language', language)
+      // Read all pages rather than storing an incomplete first page as the category cache.
+      const rows: ContentItem[] = []
+      let total: number | null = null
+      for (let offset = 0; ;) {
+        params.set('limit', '100')
+        params.set('offset', String(offset))
+        const result = await api.request<{ items: ContentItem[]; total: number }>(
+          `/api/content?${params}`,
+          { signal }
+        )
+        if (signal.aborted || getContentCacheRevision() !== revision)
+          throw new DOMException('Aborted', 'AbortError')
+        if (
+          !result.success ||
+          !result.data ||
+          !Array.isArray(result.data.items) ||
+          !Number.isSafeInteger(result.data.total) ||
+          result.data.total < 0 ||
+          (total !== null && total !== result.data.total)
+        )
+          throw new Error(result.error?.message || 'Không tải được nội dung CMS đầy đủ.')
+        total = result.data.total
+        rows.push(...result.data.items)
+        offset += result.data.items.length
+        if (offset === total) {
+          setCachedContent(key, rows, revision)
+          return rows
+        }
+        if (!result.data.items.length || offset > total)
+          throw new Error('Nội dung CMS thay đổi trong lúc tải. Vui lòng thử lại.')
       }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred'
-      setError(errorMsg)
-      setContent([])
-    } finally {
-      setLoading(false)
-    }
-  }, [category, language])
-
-  useEffect(() => {
-    fetchContent()
-  }, [fetchContent])
-
+    },
+    [category, language, revision]
+  )
+  const resource = useAsyncResource(JSON.stringify([category, language, revision]), load)
   return {
-    content,
-    loading,
-    error,
-    refetch: fetchContent,
+    content: resource.data ?? [],
+    loading: resource.loading,
+    error: resource.error,
+    refetch: clearContentCache,
   }
 }
 
-/**
- * useContentByKey Hook
- *
- * Fetches a single content item by key with fallback to i18n.
- *
- * @param key - Content key (e.g., 'nav.learn', 'landing.hero.title')
- * @param language - Optional language ('vi' or 'en'), defaults to current i18n language
- * @returns Object with content value, loading state, error, and refetch function
- *
- * @example
- * const { value, loading, error } = useContentByKey('nav.learn')
- * return <span>{value || 'Fallback text'}</span>
- */
-export function useContentByKey(key: string, language?: string): {
-  value: string | null
-  loading: boolean
-  error: string | null
-  refetch: () => Promise<void>
-} {
-  const { i18n } = useTranslation()
-  const [value, setValue] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const lang = language || i18n.language
-  const cacheKey = getCacheKey(undefined, lang)
-
-  const fetchContent = useCallback(async () => {
-    // Try cache first
-    const cachedContent = getCachedContent(cacheKey)
-    if (cachedContent) {
-      const item = cachedContent.find(c => c.key === key)
-      if (item) {
-        setValue(item.value)
-        setLoading(false)
-        setError(null)
-        return
-      }
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams()
-      params.append('language', lang as string)
-
-      const response = await api.request<ContentItem>(`/api/content/${key}?${params.toString()}`)
-
-      if (response.success && response.data) {
-        setValue(response.data.value)
-        setError(null)
-      } else {
-        // Fallback to i18n key
-        const i18nValue = i18n.t(key, { defaultValue: null })
-        if (i18nValue && i18nValue !== key) {
-          setValue(i18nValue)
-        } else {
-          setValue(null)
-          setError(`Content not found for key: ${key}`)
-        }
-      }
-    } catch (err) {
-      // On error, fallback to i18n
-      const i18nValue = i18n.t(key, { defaultValue: null })
-      if (i18nValue && i18nValue !== key) {
-        setValue(i18nValue)
-        setError(null)
-      } else {
-        setValue(null)
-        const errorMsg = err instanceof Error ? err.message : 'Failed to fetch content'
-        setError(errorMsg)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [key, lang, cacheKey, i18n])
-
-  useEffect(() => {
-    fetchContent()
-  }, [fetchContent])
-
-  return {
-    value,
-    loading,
-    error,
-    refetch: fetchContent,
-  }
+export function useContentByKey(key: string, language?: string) {
+  const { content, loading, error, refetch } = useContentPreloader([key], language)
+  return { value: content[key] ?? null, loading, error, refetch }
 }
 
 /**

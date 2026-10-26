@@ -29,7 +29,11 @@ const Terminal: React.FC<TerminalProps> = ({ logs, onClear, isActive = true }) =
       </div>
 
       {/* Terminal Content */}
-      <div className="flex-1 p-4 overflow-y-auto font-mono text-sm leading-relaxed bg-black">
+      <div
+        role="log"
+        aria-label="Terminal"
+        className="flex-1 p-4 overflow-y-auto font-mono text-sm leading-relaxed bg-black"
+      >
         {logs.length === 0 ? (
           <div className="text-slate-600 text-xs flex items-center gap-2">
             <span className="animate-pulse">▮</span>

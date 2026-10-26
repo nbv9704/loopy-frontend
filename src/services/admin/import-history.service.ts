@@ -1,75 +1,51 @@
-import axios from 'axios'
+import apiClient from './apiClient'
 
-const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
+import { z } from 'zod'
+import {
+  historyPageSchema,
+  historyRecordSchema,
+  importStatsSchema,
+} from '../../features/admin-import/historyContract'
 
-export interface ImportHistoryRecord {
-  id: string
-  admin_id: string
-  chapter_id: string
-  file_name: string
-  file_size?: number
-  lessons_count: number
-  test_cases_count: number
-  errors_count: number
-  status: 'success' | 'partial' | 'failed'
-  error_message?: string
-  metadata?: Record<string, any>
-  ip_address?: string
-  user_agent?: string
-  created_at: string
-  chapters?: {
-    id: string
-    title: string
-    language_id: string
-  }
-}
-
-export interface ImportHistoryResponse {
-  imports: ImportHistoryRecord[]
-  total: number
-  limit: number
-  offset: number
-}
-
-export interface ImportStats {
-  totalImports: number
-  successfulImports: number
-  failedImports: number
-  totalLessonsImported: number
-  totalTestCasesImported: number
-}
+export type ImportHistoryRecord = z.output<typeof historyRecordSchema>
+export type ImportHistoryResponse = z.output<typeof historyPageSchema>
+export type ImportStats = z.output<typeof importStatsSchema>
 
 export const importHistoryService = {
   /**
    * Get import history with optional filters
    */
-  async getHistory(options?: {
-    chapterId?: string
-    status?: string
-    limit?: number
-    offset?: number
-  }): Promise<ImportHistoryResponse> {
-    const params = new URLSearchParams()
-    if (options?.chapterId) params.append('chapterId', options.chapterId)
-    if (options?.status) params.append('status', options.status)
-    if (options?.limit) params.append('limit', String(options.limit))
-    if (options?.offset) params.append('offset', String(options.offset))
-
-    const response = await axios.get(`${API_URL}/api/admin/import-history?${params.toString()}`, {
-      withCredentials: true,
-    })
-    return response.data.data
+  async getHistory(
+    options?: {
+      chapterId?: string
+      status?: string
+      limit?: number
+      offset?: number
+    },
+    signal?: AbortSignal
+  ): Promise<ImportHistoryResponse> {
+    const response = await apiClient.get('/api/admin/import-history', { params: options, signal })
+    const result = historyPageSchema.safeParse(response.data?.data)
+    if (
+      response.data?.success !== true ||
+      !result.success ||
+      result.data.limit !== (options?.limit ?? 50) ||
+      result.data.offset !== (options?.offset ?? 0) ||
+      (options?.status && result.data.imports.some(item => item.status !== options.status))
+    ) {
+      throw new Error('Không xác nhận được dữ liệu lịch sử import. Vui lòng tải lại.')
+    }
+    return result.data
   },
 
   /**
    * Get import statistics
    */
-  async getStats(): Promise<ImportStats> {
-    const response = await axios.get(`${API_URL}/api/admin/import-history/stats`, {
-      withCredentials: true,
-    })
-    return response.data.data
+  async getStats(signal?: AbortSignal): Promise<ImportStats> {
+    const response = await apiClient.get('/api/admin/import-history/stats', { signal })
+    const result = importStatsSchema.safeParse(response.data?.data)
+    if (response.data?.success !== true || !result.success)
+      throw new Error('Không xác nhận được thống kê import. Vui lòng tải lại.')
+    return result.data
   },
 }

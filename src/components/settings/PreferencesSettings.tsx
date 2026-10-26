@@ -1,22 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEditorFontSize, setEditorFontSize } from '../../features/preferences/editorFontSize'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 
 const PreferencesSettings = () => {
   const { t } = useTranslation()
-  const [fontSize, setFontSize] = useState(14)
-
-  useEffect(() => {
-    const savedFontSize = localStorage.getItem('editor_font_size')
-
-    if (savedFontSize) setFontSize(parseInt(savedFontSize))
-  }, [])
-
-  const handleFontSizeChange = (size: number) => {
-    setFontSize(size)
-    localStorage.setItem('editor_font_size', size.toString())
-    window.dispatchEvent(new Event('fontSizeChanged'))
-  }
+  const fontSize = useEditorFontSize()
+  const handleFontSizeChange = setEditorFontSize
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

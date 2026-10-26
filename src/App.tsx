@@ -8,6 +8,11 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 import AdminAuthManager from './components/admin/auth/AdminAuthManager'
 import AppRouter from './routes/AppRouter'
 import { ThemeProvider } from './contexts/ThemeContext'
+import InterfacePreparation from './features/interface-preparation/InterfacePreparation'
+import { useEffect } from 'react'
+import i18n from './i18n/config'
+import { interfaceLanguage } from './i18n/language'
+import { prepareInterface } from './features/interface-preparation/prepare'
 
 /**
  * Root application component
@@ -15,6 +20,10 @@ import { ThemeProvider } from './contexts/ThemeContext'
  * REVIEW: Moved routing definitions to dedicated AppRouter component
  */
 function App() {
+  useEffect(() => {
+    // Run alongside session bootstrap; the boundary owns errors and the explicit retry UI.
+    void prepareInterface(interfaceLanguage(i18n.language)).catch(() => undefined)
+  }, [])
   return (
     <ErrorBoundary>
       <HelmetProvider>
@@ -22,7 +31,9 @@ function App() {
           <ThemeProvider>
             <AuthProvider>
               <AdminAuthManager />
-              <AppRouter />
+              <InterfacePreparation>
+                <AppRouter />
+              </InterfacePreparation>
             </AuthProvider>
           </ThemeProvider>
         </QueryClientProvider>

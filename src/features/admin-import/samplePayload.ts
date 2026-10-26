@@ -1,0 +1,48 @@
+export const samplePayload = {
+  chapterId: '00000000-0000-0000-0000-000000000000',
+  lessons: [
+    {
+      lessonId: 'xin-chao-console-log',
+      lessonType: 'code_fix',
+      validationType: 'stdout',
+      title: 'In dòng chào đầu tiên',
+      description: 'Quan sát cách console.log hiển thị nội dung ra màn hình.',
+      starterCode: 'console.log("Xin chào")',
+      taskDescription: 'Đổi nội dung để chương trình in ra: Xin chào Loopy',
+      hintLevel1: 'Nhìn vào phần chữ nằm trong dấu ngoặc kép.',
+      hintLevel2: 'Bạn chỉ cần thay chuỗi đang được truyền vào console.log.',
+      hintLevel3: 'Dòng code nên gần giống: console.log("Xin chào Loopy")',
+      hint: 'Fallback cho lesson cũ nếu chưa tách 3 mức hint.',
+      commonMistakes: 'Quên dấu ngoặc kép hoặc viết sai chữ hoa/thường.',
+      solutionCode: 'console.log("Xin chào Loopy")',
+      difficulty: 'beginner',
+      gradingMode: 'stdout',
+      status: 'draft',
+      orderIndex: 1,
+      testCases: [
+        {
+          orderIndex: 1,
+          description: 'In đúng nội dung yêu cầu',
+          input: [],
+          expectedOutput: 'Xin chào Loopy',
+          weight: 10,
+          timeout: 1000,
+          isHidden: false,
+        },
+      ],
+      steps: [
+        {
+          type: 'multiple_choice',
+          title: 'console.log dùng để làm gì?',
+          prompt: 'Chọn mô tả đúng nhất trước khi sửa code.',
+          options: ['In dữ liệu ra terminal', 'Tạo biến mới', 'Dừng chương trình'],
+          correctAnswer: 'In dữ liệu ra terminal',
+          explanation: 'Đúng. console.log giúp quan sát output khi học code.',
+          hint: 'Nhìn vào terminal sau khi bấm Chạy thử.',
+          isRequired: false,
+          orderIndex: 1,
+        },
+      ],
+    },
+  ],
+}

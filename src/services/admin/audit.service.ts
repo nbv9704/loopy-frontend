@@ -1,49 +1,46 @@
-import axios from 'axios'
+import { z } from 'zod'
+import apiClient from './apiClient'
+import { adminData, adminRead } from './response'
 
-const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
-
-export interface AuditLog {
-  id: string
-  admin_id: string
-  action: 'create' | 'update' | 'delete' | 'import' | 'publish' | 'archive'
-  resource_type: 'lesson' | 'chapter' | 'test_case' | 'import'
-  resource_id?: string
-  resource_name?: string
-  changes?: Record<string, any>
-  metadata?: Record<string, any>
-  ip_address?: string
-  user_agent?: string
-  created_at: string
-}
-
-export interface AuditLogsResponse {
-  logs: AuditLog[]
-  total: number
-  limit: number
-  offset: number
-}
-
+const logSchema = z.object({
+  id: z.string(),
+  admin_id: z.string(),
+  action: z.string(),
+  resource_type: z.string(),
+  resource_id: z.string().nullish(),
+  resource_name: z.string().nullish(),
+  changes: z.record(z.string(), z.unknown()).nullish(),
+  metadata: z.record(z.string(), z.unknown()).nullish(),
+  ip_address: z.string().nullish(),
+  user_agent: z.string().nullish(),
+  created_at: z.string(),
+})
+const pageSchema = z.object({
+  logs: z.array(logSchema),
+  total: z.number().int().nonnegative(),
+  limit: z.number().int().positive(),
+  offset: z.number().int().nonnegative(),
+})
+export type AuditLog = z.output<typeof logSchema>
+export type AuditLogsResponse = z.output<typeof pageSchema>
 export const auditService = {
-  /**
-   * Get audit logs with optional filters
-   */
-  async getLogs(options?: {
-    action?: string
-    resourceType?: string
-    limit?: number
-    offset?: number
-  }): Promise<AuditLogsResponse> {
-    const params = new URLSearchParams()
-    if (options?.action) params.append('action', options.action)
-    if (options?.resourceType) params.append('resourceType', options.resourceType)
-    if (options?.limit) params.append('limit', String(options.limit))
-    if (options?.offset) params.append('offset', String(options.offset))
-
-    const response = await axios.get(`${API_URL}/api/admin/audit-logs?${params.toString()}`, {
-      withCredentials: true,
-    })
-    return response.data.data
+  async getLogs(
+    options: { action?: string; resourceType?: string; limit?: number; offset?: number } = {},
+    signal?: AbortSignal
+  ): Promise<AuditLogsResponse> {
+    const page = adminData(
+      pageSchema,
+      await adminRead(apiClient.get('/api/admin/audit-logs', { params: options, signal }))
+    )
+    const limit = options.limit ?? 50,
+      offset = options.offset ?? 0
+    if (
+      page.limit !== limit ||
+      page.offset !== offset ||
+      page.logs.length !== Math.min(limit, Math.max(0, page.total - offset)) ||
+      new Set(page.logs.map(row => row.id)).size !== page.logs.length
+    )
+      throw new Error('Nhật ký chưa đầy đủ. Vui lòng tải lại.')
+    return page
   },
 }

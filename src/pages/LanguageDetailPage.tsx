@@ -338,7 +338,7 @@ const LanguageDetailPage: React.FC = () => {
       <main>
         <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute left-0 top-16 h-72 w-72 rounded-full bg-brand-teal/20 blur-3xl" />
-          <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr,1.1fr] lg:items-center">
+          <div className="relative mx-auto grid grid-cols-1 max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <Link to="/languages" className="mb-6 inline-flex items-center gap-2 text-sm font-black loopy-muted hover:text-brand-teal">
                 <FiArrowLeft /> {backBtn}
@@ -374,7 +374,7 @@ const LanguageDetailPage: React.FC = () => {
         </section>
 
         <section id="syllabus" className="loopy-surface px-4 py-16 md:px-6">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr,1.3fr]">
+          <div className="mx-auto grid grid-cols-1 max-w-7xl gap-8 lg:grid-cols-[0.7fr_1.3fr]">
             <div>
               <div className="text-sm font-black uppercase tracking-[0.2em] text-brand-ocean">{syllabusBadge}</div>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{syllabusTitle}</h2>

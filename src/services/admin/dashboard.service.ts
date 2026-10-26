@@ -1,53 +1,53 @@
-import axios from 'axios'
+import { z } from 'zod'
+import apiClient from './apiClient'
+import { adminData, adminRead } from './response'
 
-const API_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
-
-export interface DashboardStats {
-  totalUsers: number
-  totalLessons: number
-  totalLessonsAll?: number
-  draftLessons?: number
-  archivedLessons?: number
-  totalSubmissions: number
-  submissionsToday: number
-  submissionsThisWeek: number
-  completionRate: number
-  totalPvPMatches: number
-  averageExecutionTime: number
-  averageAIScore: number
-  contentQuality: {
-    lessonsMissingRequiredFields: number
-    lessonsWithoutHint: number
-    lessonsWithoutTestCases: number
-  }
-  recentLessons: Array<{
-    id: string
-    title: string
-    lesson_id: string
-    chapter_id: string
-    updated_at: string
-  }>
-  recentFailedSubmissions: Array<{
-    id: string
-    user_id: string
-    lesson_id: string
-    submitted_at: string
-    lessons?: {
-      title: string
-    }
-  }>
-}
-
-export const dashboardService = {
-  /**
-   * Get dashboard overview statistics
-   */
-  async getStats(): Promise<DashboardStats> {
-    const response = await axios.get(`${API_URL}/api/admin/stats/overview`, {
-      withCredentials: true,
+const count = z.number().int().nonnegative()
+const statsSchema = z.object({
+  totalUsers: count,
+  totalLessons: count,
+  totalLessonsAll: count,
+  draftLessons: count,
+  archivedLessons: count,
+  totalSubmissions: count,
+  submissionsToday: count,
+  submissionsThisWeek: count,
+  completionRate: z.number().min(0).max(100).nullable(),
+  totalPvPMatches: count,
+  averageExecutionTime: z.number().nonnegative().nullable(),
+  executionSamples: count,
+  generatedAt: z.string().datetime(),
+  timeZone: z.literal('Asia/Ho_Chi_Minh'),
+  contentQuality: z.object({
+    lessonsMissingRequiredFields: count,
+    lessonsWithoutHint: count,
+    lessonsWithoutTestCases: count,
+  }),
+  recentLessons: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      lesson_id: z.string(),
+      chapter_id: z.string(),
+      updated_at: z.string().nullable(),
     })
-    return response.data.data
+  ),
+  recentFailedSubmissions: z.array(
+    z.object({
+      id: z.string(),
+      user_id: z.string(),
+      lesson_id: z.string(),
+      submitted_at: z.string(),
+      lessons: z.object({ title: z.string().nullable() }),
+    })
+  ),
+})
+export type DashboardStats = z.output<typeof statsSchema>
+export const dashboardService = {
+  async getStats(signal?: AbortSignal): Promise<DashboardStats> {
+    return adminData(
+      statsSchema,
+      await adminRead(apiClient.get('/api/admin/stats/overview', { signal }))
+    )
   },
 }

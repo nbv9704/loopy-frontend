@@ -58,6 +58,7 @@ export interface PracticeSubmissionResult {
     questionId: string
     isCorrect: boolean
     pointsEarned: number
+    explanation?: string
     testResults?: unknown
     submittedAt: string
   }

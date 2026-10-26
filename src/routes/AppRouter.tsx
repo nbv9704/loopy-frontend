@@ -1,48 +1,47 @@
-import { lazy, Suspense } from 'react'
+import { AuthSessionBoundary } from '../features/auth/AuthSessionBoundary'
+import ActionRouteBoundary from '../components/common/ActionRouteBoundary'
+import { Suspense } from 'react'
+import { routePages } from './pages'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '../components/admin/ProtectedRoute'
 import UserProtectedRoute from '../components/UserProtectedRoute'
 import AdminLayout from '../components/admin/layout/AdminLayout'
 import { LoadingScreen } from '../components/LoadingScreen'
 
-// Lazy load heavier product pages for code splitting
-// V2 production pages
-const LandingPage = lazy(() => import('../pages/LandingPage'))
-const LanguagesPage = lazy(() => import('../pages/LanguagesPage'))
-const LanguageDetailPage = lazy(() => import('../pages/LanguageDetailPage'))
-const LibraryPage = lazy(() => import('../pages/LibraryPage'))
-const PlaygroundPage = lazy(() => import('../pages/PlaygroundPage'))
-const DocsPage = lazy(() => import('../pages/DocsPage'))
-const ProfilePage = lazy(() => import('../pages/ProfilePage'))
-const OnboardingPage = lazy(() => import('../pages/OnboardingPage'))
-const AuthPage = lazy(() => import('../pages/AuthPage'))
-const PracticePage = lazy(() => import('../pages/PracticePage'))
-const PracticeSetsPage = lazy(() => import('../pages/PracticeSetsPage'))
-const MyPracticeSetsPage = lazy(() => import('../pages/MyPracticeSetsPage'))
-const OfficialPracticeSetsPage = lazy(() => import('../pages/OfficialPracticeSetsPage'))
-const PracticeSetCreatePage = lazy(() => import('../pages/PracticeSetCreatePage'))
-const PracticeSetDetailPage = lazy(() => import('../pages/PracticeSetDetailPage'))
-const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
-const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
-const LearnPage = lazy(() => import('../pages/LearnPage'))
-
-// Other pages (legacy - kept for backward compatibility)
-// const PvPLobbyPage = lazy(() => import('../pages/PvPLobbyPage'))
-// const PvPMatchPage = lazy(() => import('../pages/PvPMatchPage'))
-
-// Lazy load admin pages for code splitting
-const AdminLoginPage = lazy(() => import('../pages/admin/LoginPage'))
-const AdminDashboardPage = lazy(() => import('../pages/admin/DashboardPage'))
-const AdminBulkImportPage = lazy(() => import('../pages/admin/BulkImportPage'))
-const AdminLessonsPage = lazy(() => import('../pages/admin/LessonsPage'))
-const AdminLessonEditorPage = lazy(() => import('../pages/admin/LessonEditorPage'))
-const AdminSubmissionsPage = lazy(() => import('../pages/admin/SubmissionsPage'))
-const AdminAuditLogsPage = lazy(() => import('../pages/admin/AuditLogsPage'))
-const AdminImportHistoryPage = lazy(() => import('../pages/admin/ImportHistoryPage'))
-const AdminContentManagerPage = lazy(() => import('../pages/admin/ContentManagerPage'))
-const AdminModerationPage = lazy(() => import('../pages/admin/ModerationPage'))
-const AdminPracticePage = lazy(() => import('../pages/admin/AdminPracticePage'))
-const AdminPracticeEditorPage = lazy(() => import('../pages/admin/AdminPracticeEditorPage'))
+// Modules are prepared once before the initial interface is revealed.
+const {
+  LandingPage: { Page: LandingPage },
+  LanguagesPage: { Page: LanguagesPage },
+  LanguageDetailPage: { Page: LanguageDetailPage },
+  LibraryPage: { Page: LibraryPage },
+  PlaygroundPage: { Page: PlaygroundPage },
+  DocsPage: { Page: DocsPage },
+  ProfilePage: { Page: ProfilePage },
+  OnboardingPage: { Page: OnboardingPage },
+  AuthPage: { Page: AuthPage },
+  PracticePage: { Page: PracticePage },
+  PracticeSetsPage: { Page: PracticeSetsPage },
+  MyPracticeSetsPage: { Page: MyPracticeSetsPage },
+  OfficialPracticeSetsPage: { Page: OfficialPracticeSetsPage },
+  PracticeSetCreatePage: { Page: PracticeSetCreatePage },
+  PracticeSetDetailPage: { Page: PracticeSetDetailPage },
+  PvPLobbyPage: { Page: PvPLobbyPage },
+  PvPMatchPage: { Page: PvPMatchPage },
+  LearnPage: { Page: LearnPage },
+  NotFoundPage: { Page: NotFoundPage },
+  AdminLoginPage: { Page: AdminLoginPage },
+  AdminDashboardPage: { Page: AdminDashboardPage },
+  AdminBulkImportPage: { Page: AdminBulkImportPage },
+  AdminLessonsPage: { Page: AdminLessonsPage },
+  AdminLessonEditorPage: { Page: AdminLessonEditorPage },
+  AdminSubmissionsPage: { Page: AdminSubmissionsPage },
+  AdminAuditLogsPage: { Page: AdminAuditLogsPage },
+  AdminImportHistoryPage: { Page: AdminImportHistoryPage },
+  AdminContentManagerPage: { Page: AdminContentManagerPage },
+  AdminModerationPage: { Page: AdminModerationPage },
+  AdminPracticePage: { Page: AdminPracticePage },
+  AdminPracticeEditorPage: { Page: AdminPracticeEditorPage },
+} = routePages
 
 // Loading fallback component for lazy-loaded admin pages
 function AdminLoadingFallback() {
@@ -64,82 +63,243 @@ function AdminLoadingFallback() {
 const AppRouter: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        {/* Public routes - V2 production */}
-        <Route path="/" element={<Suspense fallback={<LoadingScreen />}><LandingPage /></Suspense>} />
-        <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><AuthPage /></Suspense>} />
-        <Route path="/docs" element={<Suspense fallback={<LoadingScreen />}><DocsPage /></Suspense>} />
-        <Route path="/languages" element={<Suspense fallback={<LoadingScreen />}><LanguagesPage /></Suspense>} />
-        <Route path="/languages/:language" element={<Suspense fallback={<LoadingScreen />}><LanguageDetailPage /></Suspense>} />
-        <Route path="/onboarding" element={<Suspense fallback={<LoadingScreen />}><OnboardingPage /></Suspense>} />
-        <Route path="/library/:language" element={<Suspense fallback={<LoadingScreen />}><LibraryPage /></Suspense>} />
-        <Route path="/learn/:language/*" element={<Suspense fallback={<LoadingScreen />}><LearnPage /></Suspense>} />
-        <Route path="/playground" element={<Suspense fallback={<LoadingScreen />}><PlaygroundPage /></Suspense>} />
-        <Route
-          path="/settings"
-          element={
-            <UserProtectedRoute>
+      <ActionRouteBoundary>
+        <Routes>
+          {/* Public routes - V2 production */}
+          <Route
+            path="/"
+            element={
               <Suspense fallback={<LoadingScreen />}>
-                <ProfilePage />
+                <LandingPage />
               </Suspense>
-            </UserProtectedRoute>
-          }
-        />
-        
-        {/* Practice routes */}
-        <Route path="/practice" element={<Suspense fallback={<LoadingScreen />}><PracticePage /></Suspense>} />
-        <Route path="/practice/sets" element={<Suspense fallback={<LoadingScreen />}><PracticeSetsPage /></Suspense>} />
-        <Route path="/practice/sets/new" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><PracticeSetCreatePage /></Suspense></UserProtectedRoute>} />
-        <Route path="/practice/sets/:setId/edit" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><PracticeSetCreatePage /></Suspense></UserProtectedRoute>} />
-        <Route path="/practice/my-sets" element={<UserProtectedRoute><Suspense fallback={<LoadingScreen />}><MyPracticeSetsPage /></Suspense></UserProtectedRoute>} />
-        <Route path="/practice/official-sets" element={<Suspense fallback={<LoadingScreen />}><OfficialPracticeSetsPage /></Suspense>} />
-        <Route path="/practice/sets/:setId" element={<Suspense fallback={<LoadingScreen />}><PracticeSetDetailPage /></Suspense>} />
-        <Route path="/practice/compete" element={<Suspense fallback={<LoadingScreen />}><PvPLobbyPage /></Suspense>} />
-        <Route path="/practice/compete/match/:roomCode" element={<Suspense fallback={<LoadingScreen />}><PvPMatchPage /></Suspense>} />
-
-        {/* Legacy PvP routes */}
-        <Route path="/pvp" element={<Navigate to="/practice/compete" replace />} />
-        <Route path="/pvp/match/:roomCode" element={<Suspense fallback={<LoadingScreen />}><PvPMatchPage /></Suspense>} />
-
-        {/* Admin login route (not protected) */}
-        <Route
-          path="/admin/login"
-          element={
-            <Suspense fallback={<AdminLoadingFallback />}>
-              <AdminLoginPage />
-            </Suspense>
-          }
-        />
-
-        {/* Protected admin routes */}
-        <Route
-          path="/admin/*"
-          element={
-            <ProtectedRoute>
-              <AdminLayout>
-                <Suspense fallback={<AdminLoadingFallback />}>
-                  <Routes>
-                    <Route path="/" element={<AdminDashboardPage />} />
-                    <Route path="dashboard" element={<AdminDashboardPage />} />
-                    <Route path="import" element={<AdminBulkImportPage />} />
-                    <Route path="import-history" element={<AdminImportHistoryPage />} />
-                    <Route path="lessons" element={<AdminLessonsPage />} />
-                    <Route path="lessons/new" element={<AdminLessonEditorPage />} />
-                    <Route path="lessons/:id" element={<AdminLessonEditorPage />} />
-                    <Route path="submissions" element={<AdminSubmissionsPage />} />
-                    <Route path="audit-logs" element={<AdminAuditLogsPage />} />
-                    <Route path="content" element={<AdminContentManagerPage />} />
-                    <Route path="moderation" element={<AdminModerationPage />} />
-                    <Route path="practice" element={<AdminPracticePage />} />
-                    <Route path="practice/new" element={<AdminPracticeEditorPage />} />
-                    <Route path="practice/:id" element={<AdminPracticeEditorPage />} />
-                  </Routes>
+            }
+          />
+          <Route
+            path="/auth"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/docs"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <DocsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/languages"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <LanguagesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/languages/:language"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <LanguageDetailPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <OnboardingPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/library/:language"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <LibraryPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/learn/:language/*"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthSessionBoundary>
+                  <LearnPage />
+                </AuthSessionBoundary>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/playground"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <PlaygroundPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <UserProtectedRoute>
+                <Suspense fallback={<LoadingScreen />}>
+                  <ProfilePage />
                 </Suspense>
-              </AdminLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+              </UserProtectedRoute>
+            }
+          />
+
+          {/* Practice routes */}
+          <Route
+            path="/practice"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <PracticePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/practice/sets"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <PracticeSetsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/practice/sets/new"
+            element={
+              <UserProtectedRoute>
+                <Suspense fallback={<LoadingScreen />}>
+                  <PracticeSetCreatePage />
+                </Suspense>
+              </UserProtectedRoute>
+            }
+          />
+          <Route
+            path="/practice/sets/:setId/edit"
+            element={
+              <UserProtectedRoute>
+                <Suspense fallback={<LoadingScreen />}>
+                  <PracticeSetCreatePage />
+                </Suspense>
+              </UserProtectedRoute>
+            }
+          />
+          <Route
+            path="/practice/my-sets"
+            element={
+              <UserProtectedRoute>
+                <Suspense fallback={<LoadingScreen />}>
+                  <MyPracticeSetsPage />
+                </Suspense>
+              </UserProtectedRoute>
+            }
+          />
+          <Route
+            path="/practice/official-sets"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <OfficialPracticeSetsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/practice/sets/:setId"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthSessionBoundary>
+                  <PracticeSetDetailPage />
+                </AuthSessionBoundary>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/practice/compete"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthSessionBoundary>
+                  <PvPLobbyPage />
+                </AuthSessionBoundary>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/practice/compete/match/:roomCode"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthSessionBoundary>
+                  <PvPMatchPage />
+                </AuthSessionBoundary>
+              </Suspense>
+            }
+          />
+
+          {/* Legacy PvP routes */}
+          <Route path="/pvp" element={<Navigate to="/practice/compete" replace />} />
+          <Route
+            path="/pvp/match/:roomCode"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthSessionBoundary>
+                  <PvPMatchPage />
+                </AuthSessionBoundary>
+              </Suspense>
+            }
+          />
+
+          {/* Admin login route (not protected) */}
+          <Route
+            path="/admin/login"
+            element={
+              <Suspense fallback={<AdminLoadingFallback />}>
+                <AdminLoginPage />
+              </Suspense>
+            }
+          />
+
+          {/* Protected admin routes */}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <Routes>
+                      <Route path="/" element={<AdminDashboardPage />} />
+                      <Route path="dashboard" element={<AdminDashboardPage />} />
+                      <Route path="import" element={<AdminBulkImportPage />} />
+                      <Route path="import-history" element={<AdminImportHistoryPage />} />
+                      <Route path="lessons" element={<AdminLessonsPage />} />
+                      <Route path="lessons/new" element={<AdminLessonEditorPage />} />
+                      <Route path="lessons/:id" element={<AdminLessonEditorPage />} />
+                      <Route path="submissions" element={<AdminSubmissionsPage />} />
+                      <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+                      <Route path="content" element={<AdminContentManagerPage />} />
+                      <Route path="moderation" element={<AdminModerationPage />} />
+                      <Route path="practice" element={<AdminPracticePage />} />
+                      <Route path="practice/new" element={<AdminPracticeEditorPage />} />
+                      <Route path="practice/:id" element={<AdminPracticeEditorPage />} />
+                      <Route path="*" element={<Navigate to="/404" replace />} />
+                    </Routes>
+                  </Suspense>
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/404"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <NotFoundPage />
+              </Suspense>
+            }
+          />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+      </ActionRouteBoundary>
     </Router>
   )
 }

@@ -1,20 +1,39 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/src/assets/images/logos/logo-128x128.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Match React preferences before the first paint, even when module downloads are slow.
+      ;(() => {
+        const root = document.documentElement
+        let language = 'en'
+        let theme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        try {
+          language = localStorage.getItem('language') === 'vi' ? 'vi' : 'en'
+          const savedTheme = localStorage.getItem('loopy_theme')
+          if (savedTheme === 'light' || savedTheme === 'dark') theme = savedTheme
+        } catch {
+          // Storage is optional; English and the system theme remain usable.
+        }
+        root.lang = language
+        root.dataset.theme = theme
+        root.style.colorScheme = theme
+      })()
+    </script>
+    <link rel="stylesheet" href="/src/index.css" />
 
     <!-- Primary Meta Tags -->
     <title>Loopy - Interactive Multi-Language Coding Playground</title>
     <meta name="title" content="Loopy - Interactive Multi-Language Coding Playground" />
     <meta
       name="description"
-      content="Nền tảng học lập trình tương tác với thực thi code trực tiếp trên trình duyệt. Hỗ trợ JavaScript, Python, C++ và nhiều ngôn ngữ khác."
+      content="Learn programming step by step, practice with real code, and follow a guided learning path."
     />
     <meta
       name="keywords"
-      content="học lập trình, coding playground, JavaScript, Python, C++, code editor, online IDE, học code online, lập trình Việt Nam"
+      content="learn programming, coding playground, JavaScript, Python, C++, code editor, guided learning"
     />
     <meta name="author" content="Loopy Team" />
     <meta name="robots" content="index, follow" />
@@ -25,12 +44,12 @@
     <meta property="og:title" content="Loopy - Interactive Multi-Language Coding Playground" />
     <meta
       property="og:description"
-      content="Nền tảng học lập trình tương tác với thực thi code trực tiếp trên trình duyệt. Hỗ trợ JavaScript, Python, C++ và nhiều ngôn ngữ khác."
+      content="Learn programming step by step, practice with real code, and follow a guided learning path."
     />
     <meta property="og:image" content="https://loopy.dev/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Loopy" />
 
     <!-- Twitter -->
@@ -39,7 +58,7 @@
     <meta property="twitter:title" content="Loopy - Interactive Multi-Language Coding Playground" />
     <meta
       property="twitter:description"
-      content="Nền tảng học lập trình tương tác với thực thi code trực tiếp trên trình duyệt. Hỗ trợ JavaScript, Python, C++ và nhiều ngôn ngữ khác."
+      content="Learn programming step by step, practice with real code, and follow a guided learning path."
     />
     <meta property="twitter:image" content="https://loopy.dev/twitter-image.png" />
 
@@ -57,7 +76,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!-- app-loading --></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

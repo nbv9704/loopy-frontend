@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast'
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Flame, LogOut, Menu, Moon, Settings, Star, Sun, X, User } from 'lucide-react'
@@ -51,10 +52,15 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
   }, [])
 
   const handleSignOut = async () => {
-    await signOut()
-    setShowDropdown(false)
-    setShowMobileMenu(false)
-    navigate('/')
+    try {
+      const result = await signOut()
+      if (result?.warning) toast.error(result.warning)
+      setShowDropdown(false)
+      setShowMobileMenu(false)
+      navigate('/')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Chưa đăng xuất được. Vui lòng thử lại.')
+    }
   }
 
   const isActive = (path: string) => {
@@ -89,23 +95,23 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
       <div className="w-full px-4 py-3.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Left: Logo + Navigation */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 xl:gap-8">
             {/* Logo */}
             <Link to="/" className="flex items-center group">
               <img
                 src={headerLogo}
                 alt="Loopy"
-                className="h-10 object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-8 object-contain transition-transform duration-300 group-hover:scale-105 sm:h-10"
               />
             </Link>
 
             {/* Navigation Links */}
-            <nav className="hidden md:flex items-center gap-2">
+            <nav className="hidden lg:flex items-center gap-2">
               {visibleNavItems.map(item => (
                 <Link
                   key={item.id}
                   to={getItemPath(item)}
-                  className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
+                  className={`relative px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer xl:px-5 ${
                     isActive(item.path)
                       ? 'text-brand-teal bg-brand-teal/10'
                       : 'loopy-muted hover:text-brand-teal hover:bg-brand-teal/10'
@@ -121,13 +127,13 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
           </div>
 
           {/* Right: Language Switcher + User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 xl:gap-4">
             <LanguageSwitcher variant="light" />
 
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border loopy-border loopy-surface-soft text-brand-ocean transition-all hover:-translate-y-0.5 hover:border-brand-teal/40 hover:text-brand-teal"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border loopy-border loopy-surface-soft text-brand-ocean transition-all hover:border-brand-teal/40 hover:text-brand-teal"
               aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
               title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
@@ -175,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
                       user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'
                     )}
                   </div>
-                  <span className="hidden sm:inline text-sm font-semibold loopy-muted">{user.displayName || user.email?.split('@')[0]}</span>
+                  <span className="hidden max-w-28 truncate sm:inline-block text-sm font-semibold loopy-muted">{user.displayName || user.email?.split('@')[0]}</span>
                 </button>
 
                 {/* Dropdown Menu */}
@@ -209,18 +215,23 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
             ) : (
               <Link
                 to="/auth"
-                className="group relative px-6 py-2.5 bg-gradient-to-r from-brand-teal to-brand-cyan text-slate-950 text-sm font-bold rounded-full cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 flex items-center gap-2 overflow-hidden"
+                aria-label={t('auth.login')}
+                className="group relative px-3 py-2.5 bg-gradient-to-r from-brand-teal to-brand-cyan text-slate-950 text-sm font-bold rounded-full cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 flex items-center gap-2 overflow-hidden sm:px-6"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-teal opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <User className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">{t('auth.login')}</span>
+                <span className="relative z-10 hidden sm:inline">{t('auth.login')}</span>
               </Link>
             )}
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 hover:bg-brand-teal/10 rounded-lg transition-colors"
+              type="button"
+              aria-label={showMobileMenu ? 'Đóng menu' : 'Mở menu'}
+              aria-expanded={showMobileMenu}
+              aria-controls="mobile-navigation"
+              className="lg:hidden p-2 hover:bg-brand-teal/10 rounded-lg transition-colors"
             >
               {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -229,7 +240,7 @@ const Header: React.FC<HeaderProps> = ({ headerContent = {} }) => {
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <nav className="md:hidden mt-4 pb-4 border-t loopy-border pt-4 space-y-2">
+          <nav id="mobile-navigation" className="lg:hidden mt-4 pb-4 border-t loopy-border pt-4 space-y-2">
             {visibleNavItems.map(item => (
               <Link
                 key={item.id}

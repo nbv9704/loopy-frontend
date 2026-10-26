@@ -12,14 +12,21 @@ export default function AdminAuthManager() {
   const { isAuthenticated, checkAuth } = useAuthStore()
 
   useEffect(() => {
+    void checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
     if (!isAuthenticated) return
 
     // Run a background session health check every 2 minutes
-    const interval = setInterval(() => {
-      checkAuth().catch(err => {
-        console.warn('Admin session health check failed:', err)
-      })
-    }, 2 * 60 * 1000)
+    const interval = setInterval(
+      () => {
+        checkAuth().catch(err => {
+          console.warn('Admin session health check failed:', err)
+        })
+      },
+      2 * 60 * 1000
+    )
 
     return () => clearInterval(interval)
   }, [isAuthenticated, checkAuth])

@@ -24,15 +24,17 @@ const colorClasses = {
 
 const StatCard: React.FC<StatCardProps> = ({ icon: Icon, label, value, trend, color = 'teal' }) => {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-300">
-      <div className={`mb-5 inline-flex rounded-lg p-3 ring-1 ${colorClasses[color]}`}>
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300">
+      <div className={`mb-3 inline-flex rounded-lg p-2 ring-1 ${colorClasses[color]}`}>
         <Icon className="h-5 w-5" />
       </div>
 
       <p className="mb-2 text-sm font-bold text-slate-500">{label}</p>
 
-      <div className="flex items-end justify-between gap-3">
-        <h3 className="text-3xl font-black tracking-tight text-slate-950">{value}</h3>
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-2">
+        <h3 className="min-w-0 break-words text-2xl font-bold tracking-tight text-slate-950">
+          {value}
+        </h3>
 
         {trend && (
           <span

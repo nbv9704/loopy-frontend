@@ -5,6 +5,39 @@
 
 import { api } from '../lib/api'
 import type { PvPMatch, PvPQuestion, PvPUserStats } from '../types/pvp.types'
+import {
+  matchReferenceSchema,
+  pvpEligibilitySchema,
+  pvpMatchSchema,
+  PvPRequestError,
+} from '../features/pvp/pvpContracts'
+
+function checkedMatch(
+  response: { success: boolean; data?: unknown; error?: { message?: string; code?: string } },
+  expected?: string
+): PvPMatch {
+  if (!response.success)
+    throw new PvPRequestError(
+      response.error?.message || 'Không thể tải phòng PvP. Vui lòng thử lại.',
+      response.error?.code
+    )
+  const parsed = pvpMatchSchema.safeParse((response.data as { match?: unknown } | undefined)?.match)
+  if (!parsed.success)
+    throw new PvPRequestError('Chưa nhận được thông tin phòng hợp lệ. Vui lòng thử lại.')
+  if (
+    expected &&
+    parsed.data.id.toLowerCase() !== expected.toLowerCase() &&
+    parsed.data.room_code !== expected.trim().toUpperCase()
+  )
+    throw new PvPRequestError('Phản hồi không khớp phòng đang mở. Vui lòng thử lại.')
+  return parsed.data
+}
+
+function reference(value: string) {
+  const parsed = matchReferenceSchema.safeParse(value)
+  if (!parsed.success) throw new PvPRequestError('Mã phòng hoặc địa chỉ phòng không hợp lệ.')
+  return encodeURIComponent(parsed.data)
+}
 
 export interface CreateMatchRequest {
   mode?: '1v1' | 'battle_royale'
@@ -22,48 +55,58 @@ export interface FindMatchRequest {
 }
 
 export const pvpService = {
+  async getEligibility(signal?: AbortSignal) {
+    const response = await api.request<unknown>('/api/pvp/eligibility', { signal })
+    if (!response.success)
+      throw new PvPRequestError(
+        response.error?.message || 'Không tải được điều kiện tham gia PvP.',
+        response.error?.code
+      )
+    const parsed = pvpEligibilitySchema.safeParse(response.data)
+    if (!parsed.success)
+      throw new PvPRequestError('Chưa xác nhận được điều kiện tham gia PvP. Vui lòng thử lại.')
+    return parsed.data
+  },
   /**
    * Create a new match
    */
   async createMatch(request: CreateMatchRequest): Promise<PvPMatch> {
-    const response = await api.request<any>('/api/pvp/matches', {
+    const response = await api.request<unknown>('/api/pvp/matches', {
       method: 'POST',
       body: JSON.stringify(request),
     })
-    if (!response.success) throw new Error(response.error?.message || 'Failed to create match')
-    return response.data.match
+    return checkedMatch(response)
   },
 
   /**
    * Get match details
    */
-  async getMatch(matchId: string): Promise<PvPMatch> {
-    const response = await api.request<any>(`/api/pvp/matches/${matchId}`)
-    if (!response.success) throw new Error(response.error?.message || 'Failed to get match')
-    return response.data.match
+  async getMatch(matchId: string, signal?: AbortSignal): Promise<PvPMatch> {
+    const response = await api.request<unknown>(`/api/pvp/matches/${reference(matchId)}`, {
+      signal,
+    })
+    return checkedMatch(response, matchId)
   },
 
   /**
    * Join a specific match
    */
   async joinMatch(matchId: string): Promise<PvPMatch> {
-    const response = await api.request<any>(`/api/pvp/matches/${matchId}/join`, {
+    const response = await api.request<unknown>(`/api/pvp/matches/${reference(matchId)}/join`, {
       method: 'POST',
     })
-    if (!response.success) throw new Error(response.error?.message || 'Failed to join match')
-    return response.data.match
+    return checkedMatch(response, matchId)
   },
 
   /**
    * Find or create a match (matchmaking)
    */
   async findMatch(request: FindMatchRequest): Promise<PvPMatch> {
-    const response = await api.request<any>('/api/pvp/matchmaking', {
+    const response = await api.request<unknown>('/api/pvp/matchmaking', {
       method: 'POST',
       body: JSON.stringify(request),
     })
-    if (!response.success) throw new Error(response.error?.message || 'Failed to find match')
-    return response.data.match
+    return checkedMatch(response)
   },
 
   /**

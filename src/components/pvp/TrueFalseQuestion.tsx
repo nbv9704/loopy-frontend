@@ -14,6 +14,7 @@ interface TrueFalseQuestionProps {
   selectedAnswer: string
   onSelectAnswer: (answer: string) => void
   hasSubmitted: boolean
+  disabled?: boolean
   submissionResult?: { isCorrect: boolean; points: number } | null
 }
 
@@ -22,20 +23,23 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
   selectedAnswer,
   onSelectAnswer,
   hasSubmitted,
+  disabled = false,
   submissionResult,
 }) => {
   const { t } = useTranslation()
   // Fixed order: TRUE first, FALSE second (no shuffle).
   // PvP can receive true/false options as either ['true', 'false'] from raw data
   // or [{ id, text }] from the mapped API payload, so normalize defensively.
-  const options = (question.options?.length ? question.options : ['true', 'false']).map((option: any) => {
-    const rawId = typeof option === 'string' ? option : option.id
-    const id = String(rawId).trim().toLowerCase() === 'true' ? 'true' : 'false'
-    return {
-      id,
-      text: id === 'true' ? 'TRUE' : 'FALSE',
+  const options = (question.options?.length ? question.options : ['true', 'false']).map(
+    (option: any) => {
+      const rawId = typeof option === 'string' ? option : option.id
+      const id = String(rawId).trim().toLowerCase() === 'true' ? 'true' : 'false'
+      return {
+        id,
+        text: id === 'true' ? 'TRUE' : 'FALSE',
+      }
     }
-  })
+  )
 
   const getButtonStyle = (optionId: string) => {
     const isSelected = selectedAnswer === optionId
@@ -84,10 +88,10 @@ const TrueFalseQuestion: React.FC<TrueFalseQuestionProps> = ({
           return (
             <motion.button
               key={option.id}
-              whileHover={{ scale: hasSubmitted ? 1 : 1.02 }}
-              whileTap={{ scale: hasSubmitted ? 1 : 0.98 }}
-              onClick={() => !hasSubmitted && onSelectAnswer(option.id)}
-              disabled={hasSubmitted}
+              whileHover={{ scale: hasSubmitted || disabled ? 1 : 1.02 }}
+              whileTap={{ scale: hasSubmitted || disabled ? 1 : 0.98 }}
+              onClick={() => !hasSubmitted && !disabled && onSelectAnswer(option.id)}
+              disabled={hasSubmitted || disabled}
               className={`
                 relative p-12 rounded-2xl border-2 transition-all duration-300
                 ${getButtonStyle(option.id)}

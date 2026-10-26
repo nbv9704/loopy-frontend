@@ -3,7 +3,7 @@
  * Waiting room before match starts
  */
 
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Check, Clock, Copy, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -15,28 +15,50 @@ interface MatchLobbyProps {
   match: PvPMatch
   onReady: () => void
   currentUserId: string
+  isConnected: boolean
+  readyPending: boolean
+  readyError: string | null
   content?: ContentMap
 }
 
-const getContent = (content: ContentMap | undefined, key: string, fallback: string) => content?.[key] || fallback
+const getContent = (content: ContentMap | undefined, key: string, fallback: string) =>
+  content?.[key] || fallback
 
 const formatTemplate = (template: string, values: Record<string, string | number>) =>
-  Object.entries(values).reduce((result, [key, value]) => result.split(`{${key}}`).join(String(value)), template)
+  Object.entries(values).reduce(
+    (result, [key, value]) => result.split(`{${key}}`).join(String(value)),
+    template
+  )
 
-const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, content }) => {
+const MatchLobby: React.FC<MatchLobbyProps> = ({
+  match,
+  onReady,
+  currentUserId,
+  isConnected,
+  readyPending,
+  readyError,
+  content,
+}) => {
   const navigate = useNavigate()
+  const [copyStatus, setCopyStatus] = useState('')
 
-  const currentParticipant = match.participants?.find((p: any) => p.user_id === currentUserId)
+  const currentParticipant = match.participants?.find(p => p.user_id === currentUserId)
   const isReady = currentParticipant?.is_ready || false
-  const allReady = match.participants?.every((p: any) => p.is_ready) || false
   const participantCount = match.participants?.length || 0
+  const allReady =
+    participantCount >= 2 && Boolean(match.participants?.every(p => p.is_ready && p.is_connected))
   const copyRoomCode = async () => {
     if (!match.room_code) return
-    await navigator.clipboard.writeText(match.room_code)
+    try {
+      await navigator.clipboard.writeText(match.room_code)
+      setCopyStatus('Đã sao chép mã phòng.')
+    } catch {
+      setCopyStatus('Chưa sao chép được. Bạn có thể chọn mã phòng để copy.')
+    }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative z-10">
+    <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 pb-8 pt-24">
       {/* Back button */}
       <button
         onClick={() => navigate('/practice/compete')}
@@ -55,14 +77,16 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
         >
           <div className="inline-flex items-center gap-3 mb-4">
             <Users className="w-10 h-10 text-brand-teal" />
-            <h1 className="text-4xl font-black text-white">{getContent(content, 'pvp.lobby.room_title', 'Phòng chờ thử thách')}</h1>
+            <h1 className="text-4xl font-black text-white">
+              {getContent(content, 'pvp.lobby.room_title', 'Phòng chờ thử thách')}
+            </h1>
           </div>
           <div className="mb-6">
             <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider font-semibold">
               {getContent(content, 'pvp.lobby.room_code_label', 'Mã phòng')}
             </p>
-            <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-4 rounded-2xl">
-              <span className="text-4xl font-mono font-bold tracking-[0.2em] text-brand-teal">
+            <div className="inline-flex max-w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 sm:px-8">
+              <span className="select-all text-2xl sm:text-4xl font-mono font-bold tracking-[0.2em] text-brand-teal">
                 {match.room_code || '------'}
               </span>
               <button
@@ -73,11 +97,23 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
                 <Copy className="h-5 w-5" />
               </button>
             </div>
+            <p role="status" className="mt-2 text-sm text-slate-400">
+              {copyStatus}
+            </p>
           </div>
+          {!isConnected && (
+            <p role="status" className="mb-4 text-sm text-amber-400">
+              Đang kết nối lại phòng. Chờ kết nối trước khi sẵn sàng.
+            </p>
+          )}
           <p className="text-slate-400 text-lg">
             {formatTemplate(
-              getContent(content, 'pvp.lobby.share_code_desc', 'Chia sẻ mã phòng cho bạn bè. Đủ người thì bấm sẵn sàng. ({current}/{max})'),
-              { current: participantCount, max: match.max_players },
+              getContent(
+                content,
+                'pvp.lobby.share_code_desc',
+                'Chia sẻ mã phòng cho bạn bè. Đủ người thì bấm sẵn sàng. ({current}/{max})'
+              ),
+              { current: participantCount, max: match.max_players }
             )}
           </p>
         </motion.div>
@@ -121,21 +157,28 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
                     {/* Info */}
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-white mb-1">
-                        {participant.display_name || getContent(content, 'pvp.lobby.anonymous', 'Anonymous')}
+                        {participant.display_name ||
+                          getContent(content, 'pvp.lobby.anonymous', 'Anonymous')}
                         {participant.user_id === currentUserId && (
-                          <span className="ml-2 text-sm text-brand-teal">{getContent(content, 'pvp.lobby.you_marker', '(Bạn)')}</span>
+                          <span className="ml-2 text-sm text-brand-teal">
+                            {getContent(content, 'pvp.lobby.you_marker', '(Bạn)')}
+                          </span>
                         )}
                       </h3>
                       <div className="flex items-center gap-2">
                         {participant.is_ready ? (
                           <>
                             <Check className="w-4 h-4 text-brand-teal" />
-                            <span className="text-brand-teal text-sm font-semibold">{getContent(content, 'pvp.lobby.ready', 'Sẵn sàng')}</span>
+                            <span className="text-brand-teal text-sm font-semibold">
+                              {getContent(content, 'pvp.lobby.ready', 'Sẵn sàng')}
+                            </span>
                           </>
                         ) : (
                           <>
                             <Clock className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-400 text-sm">{getContent(content, 'pvp.lobby.waiting', 'Đang chờ...')}</span>
+                            <span className="text-slate-400 text-sm">
+                              {getContent(content, 'pvp.lobby.waiting', 'Đang chờ...')}
+                            </span>
                           </>
                         )}
                       </div>
@@ -143,7 +186,9 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-16">
-                    <span className="text-slate-500 text-sm">{getContent(content, 'pvp.lobby.waiting_players', 'Đang chờ người chơi...')}</span>
+                    <span className="text-slate-500 text-sm">
+                      {getContent(content, 'pvp.lobby.waiting_players', 'Đang chờ người chơi...')}
+                    </span>
                   </div>
                 )}
               </div>
@@ -161,12 +206,20 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
           {!isReady ? (
             <button
               onClick={onReady}
-              disabled={participantCount < match.max_players}
+              disabled={
+                readyPending ||
+                participantCount < 2 ||
+                !isConnected ||
+                !currentParticipant?.is_connected
+              }
+              aria-busy={readyPending}
               className="group relative px-12 py-6 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] text-xl font-bold rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-brand-teal/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-3">
                 <Check className="w-6 h-6" />
-                {getContent(content, 'pvp.lobby.ready_button', 'Tôi sẵn sàng')}
+                {readyPending
+                  ? 'Đang gửi sẵn sàng...'
+                  : getContent(content, 'pvp.lobby.ready_button', 'Tôi sẵn sàng')}
               </span>
               <div className="absolute inset-0 bg-brand-cyan transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
             </button>
@@ -181,11 +234,16 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
             </div>
           )}
 
+          {readyError && (
+            <p role="alert" className="mt-4 text-sm text-amber-400">
+              {readyError}
+            </p>
+          )}
           {participantCount < match.max_players && (
             <p className="text-slate-400 text-sm mt-4">
               {formatTemplate(
                 getContent(content, 'pvp.lobby.need_more_players', 'Cần thêm {count} người chơi'),
-                { count: match.max_players - participantCount },
+                { count: match.max_players - participantCount }
               )}
             </p>
           )}
@@ -198,26 +256,40 @@ const MatchLobby: React.FC<MatchLobbyProps> = ({ match, onReady, currentUserId, 
           transition={{ delay: 0.3 }}
           className="mt-12 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl"
         >
-          <h3 className="text-lg font-bold text-white mb-4">{getContent(content, 'pvp.lobby.settings_title', 'Thiết lập trận')}</h3>
+          <h3 className="text-lg font-bold text-white mb-4">
+            {getContent(content, 'pvp.lobby.settings_title', 'Thiết lập trận')}
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div>
-              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.mode_label', 'Chế độ')}</p>
+              <p className="text-slate-400 text-sm mb-1">
+                {getContent(content, 'pvp.lobby.mode_label', 'Chế độ')}
+              </p>
               <p className="text-white font-semibold">{match.mode.toUpperCase()}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.difficulty_label', 'Độ khó')}</p>
-              <p className="text-white font-semibold">{(match.difficulty || 'medium').toUpperCase()}</p>
+              <p className="text-slate-400 text-sm mb-1">
+                {getContent(content, 'pvp.lobby.difficulty_label', 'Độ khó')}
+              </p>
+              <p className="text-white font-semibold">
+                {(match.difficulty || 'medium').toUpperCase()}
+              </p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.questions_label', 'Câu hỏi')}</p>
+              <p className="text-slate-400 text-sm mb-1">
+                {getContent(content, 'pvp.lobby.questions_label', 'Câu hỏi')}
+              </p>
               <p className="text-white font-semibold">{match.question_ids.length}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.time_per_question_label', 'Thời gian/câu')}</p>
+              <p className="text-slate-400 text-sm mb-1">
+                {getContent(content, 'pvp.lobby.time_per_question_label', 'Thời gian/câu')}
+              </p>
               <p className="text-white font-semibold">{match.time_per_question}s</p>
             </div>
             <div>
-              <p className="text-slate-400 text-sm mb-1">{getContent(content, 'pvp.lobby.language_label', 'Ngôn ngữ')}</p>
+              <p className="text-slate-400 text-sm mb-1">
+                {getContent(content, 'pvp.lobby.language_label', 'Ngôn ngữ')}
+              </p>
               <p className="text-white font-semibold">{match.language_id || 'Mixed'}</p>
             </div>
           </div>

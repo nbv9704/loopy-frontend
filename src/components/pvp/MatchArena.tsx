@@ -12,12 +12,18 @@ import { python } from '@codemirror/lang-python'
 import { cpp } from '@codemirror/lang-cpp'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { useTranslation } from 'react-i18next'
-import type { PvPMatch, PvPQuestion, MatchPausedPayload } from '../../types/pvp.types'
+import type {
+  PvPMatch,
+  PvPQuestion,
+  PvPSubmission,
+  MatchPausedPayload,
+} from '../../types/pvp.types'
 import type { UsePvPSocketReturn } from '../../hooks/usePvPSocket'
 import ParticipantCard from './ParticipantCard'
 import ReactionPicker from './ReactionPicker'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import toast from 'react-hot-toast'
+import { usePvPSubmission } from '../../features/pvp/usePvPSubmission'
 
 type ContentMap = Record<string, string | null | undefined>
 
@@ -27,6 +33,7 @@ interface MatchArenaProps {
   timeRemaining: number
   socket: UsePvPSocketReturn
   currentUserId: string
+  initialSubmission?: PvPSubmission | null
   isCooldown?: boolean
   isMatchOverCooldown?: boolean
   isPaused?: boolean
@@ -41,6 +48,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   timeRemaining,
   socket,
   currentUserId,
+  initialSubmission,
   isCooldown = false,
   isMatchOverCooldown = false,
   isPaused = false,
@@ -52,14 +60,34 @@ const MatchArena: React.FC<MatchArenaProps> = ({
   const getContent = (key: string, fallback: string) => content?.[key] || fallback
   const [selectedAnswer, setSelectedAnswer] = useState<string>('')
   const [code, setCode] = useState<string>(question.starterCode || '')
-  const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [showReactionPicker, setShowReactionPicker] = useState(false)
-  const [reactions, setReactions] = useState<Array<{ emoji: string; userId: string }>>([])
-  const [submissionResult, setSubmissionResult] = useState<{
-    isCorrect: boolean
-    points: number
-  } | null>(null)
 
+  const [showReactionPicker, setShowReactionPicker] = useState(false)
+  const [reactions, setReactions] = useState<Array<{ id: string; emoji: string; userId: string }>>(
+    []
+  )
+  const submission = usePvPSubmission({
+    matchId: match.id,
+    questionId: question.id,
+    userId: currentUserId,
+    socket,
+    initial: initialSubmission,
+    onConfirmed: saved => {
+      if (saved.points_earned > 0) toast.success(`+${saved.points_earned} points!`, { icon: '🎯' })
+      else toast.error('+0 points', { icon: '❌' })
+    },
+  })
+  const hasSubmitted = Boolean(submission.saved)
+  const submissionResult = submission.saved
+    ? { isCorrect: submission.saved.is_correct, points: submission.saved.points_earned }
+    : null
+  const blocked =
+    hasSubmitted ||
+    submission.pending ||
+    !socket.isConnected ||
+    isPaused ||
+    isCooldown ||
+    timeRemaining <= 0 ||
+    match.status !== 'in_progress'
   // Shuffle options client-side for fairness (different for each player)
   // Re-shuffle when question changes
   const shuffledOptions = React.useMemo(() => {
@@ -76,87 +104,49 @@ const MatchArena: React.FC<MatchArenaProps> = ({
     return question.options || []
   }, [question.id, question.type, question.options])
 
-  // Track shown toasts to prevent duplicates
-  const shownRanks = React.useRef(new Set<string>())
-  const shownSubmissions = React.useRef(new Set<string>()) // Track shown submission toasts
-
-  // Reset submission state when question changes
   useEffect(() => {
-    setHasSubmitted(false)
     setSelectedAnswer('')
     setCode(question.starterCode || '')
-    setSubmissionResult(null)
-    // Clear shown ranks and submissions for new question
-    shownRanks.current.clear()
-    shownSubmissions.current.clear()
-  }, [question.id])
+  }, [match.id, question.id, currentUserId])
 
-  // Listen for submissions
   useEffect(() => {
-    if (!socket.socket) return
-
-    const handleSubmissionReceived = (submission: any) => {
-      if (submission.user_id === currentUserId) {
-        // Create unique key for this submission
-        const key = `${submission.user_id}-${submission.question_id}`
-
-        // Only process if not already processed
-        if (!shownSubmissions.current.has(key)) {
-          shownSubmissions.current.add(key)
-
-          setHasSubmitted(true)
-          // Set result for visual feedback
-          setSubmissionResult({
-            isCorrect: submission.is_correct,
-            points: submission.points_earned,
-          })
-
-          // Show single toast with points
-          if (submission.points_earned > 0) {
-            toast.success(`+${submission.points_earned} points!`, { icon: '🎯' })
-          } else {
-            toast.error('+0 points', { icon: '❌' })
-          }
-        }
-      }
-    }
-
-    const handleSubmissionRanked = (_payload: any) => {
-      // No longer show rank toast, only points toast from submission received
-    }
-
-    const handleReactionReceived = (reaction: any) => {
-      setReactions((prev: any) => [...prev, { emoji: reaction.emoji, userId: reaction.user_id }])
-      setTimeout(() => {
-        setReactions((prev: any) => prev.filter((r: any) => r.userId !== reaction.user_id))
+    const timers = new Set<ReturnType<typeof setTimeout>>()
+    const seen = new Set<string>()
+    setReactions([])
+    const unsubscribe = socket.onReactionReceived(reaction => {
+      if (reaction.match_id !== match.id || seen.has(reaction.id) || seen.size >= 20) return
+      seen.add(reaction.id)
+      setReactions(previous => [
+        ...previous.slice(-19),
+        { id: reaction.id, emoji: reaction.emoji, userId: reaction.user_id },
+      ])
+      const timer = setTimeout(() => {
+        timers.delete(timer)
+        seen.delete(reaction.id)
+        setReactions(previous => previous.filter(item => item.id !== reaction.id))
       }, 3000)
-    }
-
-    const cleanup1 = socket.onSubmissionReceived(handleSubmissionReceived)
-    const cleanup2 = socket.onSubmissionRanked(handleSubmissionRanked)
-    const cleanup3 = socket.onReactionReceived(handleReactionReceived)
-
-    // Cleanup
+      timers.add(timer)
+    })
     return () => {
-      cleanup1()
-      cleanup2()
-      cleanup3()
+      unsubscribe()
+      timers.forEach(clearTimeout)
     }
-  }, [socket.socket, currentUserId]) // Only re-run if socket or currentUserId changes
-
+  }, [socket.socket, socket.onReactionReceived, match.id, question.id])
   const handleSubmitAnswer = () => {
-    if (!selectedAnswer || hasSubmitted) return
+    if (!selectedAnswer || blocked) return
 
     const timeTaken = Math.max(0, match.time_per_question - timeRemaining)
-    socket.submitAnswer(match.id, question.id, selectedAnswer, timeTaken)
+    void submission.request(() =>
+      socket.submitAnswer(match.id, question.id, selectedAnswer, timeTaken)
+    )
     // Toast will be shown when submission:received event is received
   }
 
   const handleSubmitCode = () => {
-    if (!code.trim() || hasSubmitted) return
+    if (!code.trim() || blocked) return
 
     const timeTaken = Math.max(0, match.time_per_question - timeRemaining)
-    socket.submitCode(match.id, question.id, code, timeTaken)
+    void submission.request(() => socket.submitCode(match.id, question.id, code, timeTaken))
     // Toast will be shown when submission:received event is received
   }
 
@@ -209,7 +199,9 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 
           {/* Question Progress */}
           <div className="text-center">
-            <p className="text-slate-400 text-sm mb-1">{getContent('pvp.arena.question_label', 'Câu hỏi')}</p>
+            <p className="text-slate-400 text-sm mb-1">
+              {getContent('pvp.arena.question_label', 'Câu hỏi')}
+            </p>
             <p className="text-white font-bold text-lg">
               {match.current_question_index + 1} / {match.question_ids.length}
             </p>
@@ -235,13 +227,17 @@ const MatchArena: React.FC<MatchArenaProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Participants Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-lg font-bold text-white mb-4">{getContent('pvp.arena.players_title', 'Người chơi')}</h3>
+            <h3 className="text-lg font-bold text-white mb-4">
+              {getContent('pvp.arena.players_title', 'Người chơi')}
+            </h3>
             {match.participants?.map(participant => (
               <ParticipantCard
                 key={participant.user_id}
                 participant={participant}
                 isCurrentUser={participant.user_id === currentUserId}
-                reactions={reactions.filter((r: any) => r.userId === participant.user_id).map((r: any) => r.emoji)}
+                reactions={reactions
+                  .filter((r: any) => r.userId === participant.user_id)
+                  .map((r: any) => r.emoji)}
                 content={content}
               />
             ))}
@@ -262,17 +258,22 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     selectedAnswer={selectedAnswer}
                     onSelectAnswer={setSelectedAnswer}
                     hasSubmitted={hasSubmitted}
+                    disabled={blocked}
                     submissionResult={submissionResult}
                   />
 
                   {/* Submit Button */}
                   <button
                     onClick={handleSubmitAnswer}
-                    disabled={!selectedAnswer || hasSubmitted || timeRemaining <= 0}
+                    disabled={!selectedAnswer || blocked}
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
+                    {submission.pending
+                      ? 'Đang xác nhận…'
+                      : hasSubmitted
+                        ? getContent('pvp.arena.submitted', 'Đã gửi')
+                        : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
                   </button>
                 </>
               )}
@@ -297,10 +298,8 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                       return (
                         <button
                           key={option.id}
-                          onClick={() =>
-                            !hasSubmitted && timeRemaining > 0 && setSelectedAnswer(option.id)
-                          }
-                          disabled={hasSubmitted || timeRemaining <= 0}
+                          onClick={() => !blocked && setSelectedAnswer(option.id)}
+                          disabled={blocked}
                           className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
                             isSelected
                               ? `bg-brand-teal/20 border-2 ${borderColor}`
@@ -316,11 +315,15 @@ const MatchArena: React.FC<MatchArenaProps> = ({
 
                   <button
                     onClick={handleSubmitAnswer}
-                    disabled={!selectedAnswer || hasSubmitted || timeRemaining <= 0}
+                    disabled={!selectedAnswer || blocked}
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
+                    {submission.pending
+                      ? 'Đang xác nhận…'
+                      : hasSubmitted
+                        ? getContent('pvp.arena.submitted', 'Đã gửi')
+                        : getContent('pvp.arena.submit_answer', 'Gửi đáp án')}
                   </button>
                 </>
               )}
@@ -334,26 +337,32 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Code className="w-5 h-5 text-brand-teal" />
-                      <h3 className="text-lg font-bold text-white">{getContent('pvp.arena.your_solution', 'Lời giải của bạn')}</h3>
+                      <h3 className="text-lg font-bold text-white">
+                        {getContent('pvp.arena.your_solution', 'Lời giải của bạn')}
+                      </h3>
                     </div>
                     <CodeMirror
                       value={code}
                       height="400px"
                       theme={oneDark}
                       extensions={[getLanguageExtension()]}
-                      onChange={value => !hasSubmitted && setCode(value)}
-                      editable={!hasSubmitted}
+                      onChange={value => !blocked && setCode(value)}
+                      editable={!blocked}
                       className="rounded-xl overflow-hidden border border-white/10"
                     />
                   </div>
 
                   <button
                     onClick={handleSubmitCode}
-                    disabled={!code.trim() || hasSubmitted || timeRemaining <= 0}
+                    disabled={!code.trim() || blocked}
                     className="w-full py-4 bg-gradient-to-r from-brand-teal to-brand-cyan text-[#0a0e1a] font-bold rounded-xl hover:shadow-lg hover:shadow-brand-teal/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Send className="w-5 h-5" />
-                    {hasSubmitted ? getContent('pvp.arena.submitted', 'Đã gửi') : getContent('pvp.arena.submit_code', 'Gửi code')}
+                    {submission.pending
+                      ? 'Đang xác nhận…'
+                      : hasSubmitted
+                        ? getContent('pvp.arena.submitted', 'Đã gửi')
+                        : getContent('pvp.arena.submit_code', 'Gửi code')}
                   </button>
                 </>
               )}
@@ -361,6 +370,11 @@ const MatchArena: React.FC<MatchArenaProps> = ({
           </div>
         </div>
 
+        {submission.error && (
+          <p role="alert" className="mt-4 rounded-xl border border-amber-400/40 p-4 text-amber-200">
+            {submission.error}
+          </p>
+        )}
         {/* Cooldown Overlay */}
         <AnimatePresence>
           {isCooldown && (
@@ -385,12 +399,12 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                     </div>
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-4">{getContent('pvp.arena.round_over_title', 'Hết vòng!')}</h2>
-                  <p className="text-brand-teal text-lg font-medium animate-pulse">
-                    {isMatchOverCooldown
-                      ? t('pvp.match.summarizing')
-                      : t('pvp.match.preparingNext')}
-                  </p>
+                <h2 className="text-3xl font-bold text-white mb-4">
+                  {getContent('pvp.arena.round_over_title', 'Hết vòng!')}
+                </h2>
+                <p className="text-brand-teal text-lg font-medium animate-pulse">
+                  {isMatchOverCooldown ? t('pvp.match.summarizing') : t('pvp.match.preparingNext')}
+                </p>
               </motion.div>
             </motion.div>
           )}
@@ -414,9 +428,12 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                 <div className="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <AlertCircle className="w-10 h-10 text-amber-500 animate-pulse" />
                 </div>
-                <h2 className="text-2xl font-bold text-amber-400 mb-2">{t('pvp.match.pausedTitle')}</h2>
+                <h2 className="text-2xl font-bold text-amber-400 mb-2">
+                  {t('pvp.match.pausedTitle')}
+                </h2>
                 <p className="text-slate-300 mb-8 leading-relaxed">
-                  <span className="font-semibold text-white">{pauseInfo.displayName}</span> {t('pvp.match.playerLeft')}
+                  <span className="font-semibold text-white">{pauseInfo.displayName}</span>{' '}
+                  {t('pvp.match.playerLeft')}
                 </p>
 
                 <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-8">
@@ -429,9 +446,7 @@ const MatchArena: React.FC<MatchArenaProps> = ({
                   </div>
                 </div>
 
-                <p className="text-slate-500 text-sm">
-                  {t('pvp.match.reconHint')}
-                </p>
+                <p className="text-slate-500 text-sm">{t('pvp.match.reconHint')}</p>
               </motion.div>
             </motion.div>
           )}

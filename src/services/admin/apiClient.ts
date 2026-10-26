@@ -2,11 +2,7 @@ import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../../store/admin/authStore'
 import { errorLogger } from '../ErrorLogger'
 import type { ApiError, RequestContext } from '../../types/logger.types'
-
-// Use VITE_API_URL environment variable with fallback to localhost:3000 in development
-const API_BASE_URL = import.meta.env.PROD && !import.meta.env.VITE_API_URL 
-  ? (() => { throw new Error('VITE_API_URL is missing in production environment') })() 
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3000')
+import { API_ORIGIN as API_BASE_URL } from '../../config/api'
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -16,6 +12,11 @@ const apiClient = axios.create({
   withCredentials: true, // Important for session cookies
 })
 
+type TrackedRequest = AxiosRequestConfig & {
+  requestStartTime?: number
+  adminSessionRevision?: number
+}
+
 /**
  * Request Interceptor
  * Simply logs duration starting point
@@ -24,7 +25,9 @@ apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const requestStartTime = Date.now()
     // Store start time for duration tracking
-    ;(config as { requestStartTime?: number }).requestStartTime = requestStartTime
+    const tracked = config as TrackedRequest
+    tracked.requestStartTime = requestStartTime
+    tracked.adminSessionRevision = useAuthStore.getState().sessionRevision
     return config
   },
   error => {
@@ -45,12 +48,12 @@ apiClient.interceptors.request.use(
 
 /**
  * Response Interceptor
- * Handles 401 errors by redirecting to login
+ * Invalidates only the session that owned an unauthorized request.
  */
 apiClient.interceptors.response.use(
   response => response,
   async error => {
-    const originalRequest = error.config as AxiosRequestConfig
+    const originalRequest = (error.config || {}) as TrackedRequest
     const requestStartTime =
       (originalRequest as { requestStartTime?: number }).requestStartTime || Date.now()
     const duration = Date.now() - requestStartTime
@@ -67,14 +70,16 @@ apiClient.interceptors.response.use(
       duration,
     }
 
-    // Handle 401 Unauthorized - clear auth state and redirect to login page
+    // ProtectedRoute handles navigation after invalidating the current session.
     if (error.response?.status === 401) {
       errorLogger.logApiError(apiError, requestContext)
-      
+
       // Prevent infinite redirect loops if we are already trying to authenticate
-      if (!originalRequest.url?.includes('/login') && !originalRequest.url?.includes('/me')) {
+      if (
+        originalRequest.adminSessionRevision === useAuthStore.getState().sessionRevision &&
+        !originalRequest.url?.startsWith('/api/admin-auth/')
+      ) {
         useAuthStore.getState().clearAuth()
-        window.location.href = '/admin/login'
       }
       return Promise.reject(error)
     }

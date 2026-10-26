@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BookOpenCheck, Edit, Lock, Plus, Trash2 } from 'lucide-react'
+import { BookOpenCheck, Edit, Lock, Plus, Archive } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import SEO from '../components/common/SEO'
@@ -9,6 +9,8 @@ import { LoadingScreen } from '../components/LoadingScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { useContentPreloader } from '../hooks/useContentPreloader'
 import { practiceService } from '../services/practice.service'
+import { usePracticeSets } from '../hooks/usePracticeSets'
+import { useAsyncAction } from '../hooks/useAsyncAction'
 import type { PracticeSet } from '../types/practice.types'
 
 const MyPracticeSetsPage: React.FC = () => {
@@ -16,8 +18,16 @@ const MyPracticeSetsPage: React.FC = () => {
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
   const { i18n } = useTranslation()
-  const [sets, setSets] = useState<PracticeSet[]>([])
-  const [setsLoading, setSetsLoading] = useState(true)
+  const { sets, setsLoading, setsError, retrySets } = usePracticeSets(
+    { limit: 50, mine: true },
+    user?.id,
+    Boolean(user)
+  )
+  const archive = useAsyncAction(user?.id)
+  const [archiveError, setArchiveError] = useState<string | null>(null)
+  useEffect(() => {
+    setArchiveError(null)
+  }, [user?.id])
 
   const contentKeys = [
     'nav.learn',
@@ -40,7 +50,10 @@ const MyPracticeSetsPage: React.FC = () => {
     'footer.terms',
   ]
 
-  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
+  const { content, initialLoading: contentLoading } = useContentPreloader(
+    contentKeys,
+    i18n.language
+  )
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,39 +61,36 @@ const MyPracticeSetsPage: React.FC = () => {
     }
   }, [authLoading, location, navigate, user])
 
-  const loadSets = async () => {
-    setSetsLoading(true)
-    try {
-      const result = await practiceService.listSets({
-        limit: 50, // Backend max limit is 50
-        mine: true,
-      })
-      setSets(result.items)
-    } finally {
-      setSetsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (user) {
-      loadSets()
-    }
-  }, [user])
-
-  const handleDelete = async (setId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xoá bộ bài tập này không? Hành động này không thể hoàn tác, và tất cả lịch sử làm bài của người học sẽ bị xoá.')) {
-      try {
-        await practiceService.deleteSet(setId)
-        toast.success('Xoá thành công')
-        loadSets() // Refresh list
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Không thể xoá')
+  const handleArchive = (item: PracticeSet) => {
+    if (archive.pending) return
+    void archive.run(
+      async () => {
+        if (
+          !window.confirm(
+            'Lưu trữ bộ bài tập này? Bộ sẽ được ẩn khỏi danh sách, tiến độ và lịch sử làm bài vẫn được giữ lại.'
+          )
+        )
+          return false
+        setArchiveError(null)
+        await practiceService.deleteSet(item.id, item.status)
+        return true
+      },
+      {
+        onSuccess: confirmed => {
+          if (confirmed) {
+            toast.success('Đã lưu trữ bộ bài tập')
+            retrySets()
+          }
+        },
+        onError: error => {
+          setArchiveError(error instanceof Error ? error.message : 'Không thể lưu trữ')
+        },
       }
-    }
+    )
   }
 
   if (contentLoading) {
-    return <LoadingScreen message="Loading practice sets..." />
+    return <LoadingScreen />
   }
 
   const headerContent = {
@@ -122,7 +132,7 @@ const MyPracticeSetsPage: React.FC = () => {
                 Bộ bài tập của tôi
               </h1>
               <p className="loopy-body mt-4 max-w-2xl text-base font-medium leading-7">
-                Xem, chỉnh sửa hoặc xoá các bộ bài tập bạn đã tạo.
+                Xem, chỉnh sửa hoặc lưu trữ các bộ bài tập bạn đã tạo.
               </p>
             </div>
             <div className="flex gap-3">
@@ -136,18 +146,44 @@ const MyPracticeSetsPage: React.FC = () => {
             </div>
           </div>
 
+          {archiveError && (
+            <div role="alert" className="loopy-card mt-6 rounded-xl border p-4">
+              <p>{archiveError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setArchiveError(null)
+                  retrySets()
+                }}
+                className="mt-3 rounded-lg border px-4 py-2 font-bold"
+              >
+                Tải lại danh sách
+              </button>
+            </div>
+          )}
           {setsLoading ? (
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="loopy-skeleton h-48 animate-pulse rounded-lg border loopy-border" />
+                <div
+                  key={index}
+                  className="loopy-skeleton h-48 animate-pulse rounded-lg border loopy-border"
+                />
               ))}
+            </div>
+          ) : setsError ? (
+            <div role="alert" className="loopy-card mt-8 rounded-lg border px-6 py-12 text-center">
+              <p>{setsError}</p>
+              <button
+                onClick={retrySets}
+                className="mt-4 rounded-lg bg-brand-teal px-5 py-3 font-bold text-slate-950"
+              >
+                {i18n.language.startsWith('vi') ? 'Thử lại' : 'Retry'}
+              </button>
             </div>
           ) : sets.length === 0 ? (
             <div className="loopy-card mt-8 rounded-lg border border-dashed px-6 py-12 text-center">
               <Lock className="mx-auto h-10 w-10 text-slate-400" />
-              <h2 className="loopy-heading mt-4 text-xl font-black">
-                Bạn chưa tạo bộ bài tập nào
-              </h2>
+              <h2 className="loopy-heading mt-4 text-xl font-black">Bạn chưa tạo bộ bài tập nào</h2>
               <p className="loopy-body mx-auto mt-2 max-w-xl text-sm font-medium leading-6">
                 Nhấn nút "Tạo mới" để bắt đầu soạn thảo bộ bài tập của riêng mình.
               </p>
@@ -163,17 +199,27 @@ const MyPracticeSetsPage: React.FC = () => {
                     <span className="loopy-surface-soft rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide loopy-muted">
                       {set.difficulty}
                     </span>
-                    <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${set.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${set.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}
+                    >
                       {set.status}
                     </span>
                   </div>
-                  <h2 className="loopy-heading line-clamp-1 text-lg font-black" title={set.title}>{set.title}</h2>
-                  <p className="loopy-body mt-2 line-clamp-2 flex-grow text-sm font-medium leading-6">{set.description}</p>
-                  <div className="mt-4 text-xs font-bold text-slate-500">{set.questionCount || 0} câu hỏi</div>
-                  
+                  <h2 className="loopy-heading line-clamp-1 text-lg font-black" title={set.title}>
+                    {set.title}
+                  </h2>
+                  <p className="loopy-body mt-2 line-clamp-2 flex-grow text-sm font-medium leading-6">
+                    {set.description}
+                  </p>
+                  <div className="mt-4 text-xs font-bold text-slate-500">
+                    {set.questionCount || 0} câu hỏi
+                  </div>
+
                   <div className="mt-5 flex items-center gap-2 border-t loopy-border pt-4">
                     <button
-                      onClick={() => navigate(`/practice/sets/${set.id}`, { state: { from: 'my-sets' } })}
+                      onClick={() =>
+                        navigate(`/practice/sets/${set.id}`, { state: { from: 'my-sets' } })
+                      }
                       className="loopy-subtle-button flex-grow rounded border py-2 text-sm font-bold transition"
                     >
                       Xem
@@ -186,11 +232,12 @@ const MyPracticeSetsPage: React.FC = () => {
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(set.id)}
+                      onClick={() => handleArchive(set)}
+                      disabled={archive.pending}
                       className="flex items-center justify-center rounded bg-red-50 p-2 text-red-600 hover:bg-red-100 transition"
-                      title="Xoá"
+                      title="Lưu trữ"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Archive className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

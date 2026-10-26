@@ -1,3 +1,9 @@
+import {
+  profileToUser as mapProfileToUser,
+  mergeProfileSnapshot,
+  type AuthUser as User,
+} from '../features/auth/userProfile'
+import { readAuthIdentity } from '../features/auth/authResponse'
 /**
  * Authentication Context
  *
@@ -12,30 +18,19 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api'
-import { LoadingScreen } from '../components/LoadingScreen'
-
-interface User {
-  id: string
-  email: string
-  displayName?: string
-  avatarUrl?: string
-  learningGoal?: string
-  onboardingCompleted?: boolean
-  experienceLevel?: string
-  currentPathId?: string
-  points?: number
-  currentStreak?: number
-  preferredLanguage?: string
-  isAdmin?: boolean
-}
+import InterfaceLoadingScreen from '../features/interface-preparation/InterfaceLoadingScreen'
+import { interfaceLanguage } from '../i18n/language'
+import { isUserProfileSnapshot, type UserProfileSnapshot } from '../features/auth/profileSnapshot'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
+  authError: string | null
+  retryAuth: () => void
   signUp: (email: string, password: string, displayName?: string) => Promise<any>
   signIn: (email: string, password: string) => Promise<any>
-  signOut: () => Promise<void>
-  refreshUser: () => Promise<void>
+  signOut: () => Promise<{ warning?: string }>
+  refreshUser: (confirmedProfile?: UserProfileSnapshot) => Promise<void>
 }
 
 // REMOVED: parseJwt function (no longer needed - tokens in httpOnly cookies)
@@ -57,10 +52,18 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0)
+  const logoutRequest = useRef<Promise<{ warning?: string }> | null>(null)
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const authEpoch = useRef(0)
+  const bootstrapRequest = useRef<{
+    epoch: number
+    promise: ReturnType<typeof api.getCurrentUser>
+  } | null>(null)
 
   /**
    * Clear auto-refresh interval on unmount or logout
@@ -82,58 +85,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const REFRESH_INTERVAL = 14 * 60 * 1000 // 14 minutes
 
     refreshIntervalRef.current = setInterval(async () => {
+      const epoch = authEpoch.current
       try {
         const response = await api.refreshToken()
-        if (!response.success) {
+        if (epoch !== authEpoch.current) return
+        if (!response.success && response.error?.status === 401) {
           // Refresh failed, logout user
           console.warn('Token refresh failed, logging out')
+          ++authEpoch.current
           setUser(null)
           stopAutoRefresh()
         }
       } catch (error) {
-        // Network error or server error, logout user
+        // A transport failure does not prove that the server session expired.
         console.error('Token refresh error:', error)
-        setUser(null)
-        stopAutoRefresh()
       }
     }, REFRESH_INTERVAL)
   }
 
   useEffect(() => {
+    let active = true
+    const epoch = authEpoch.current
     // Check if user is logged in by calling /api/auth/me
     // Tokens are now in httpOnly cookies, so we can't read them directly
     const checkAuth = async () => {
       try {
-        const response = await api.getCurrentUser()
+        // StrictMode replays the mount effect; share the read within this provider only.
+        if (bootstrapRequest.current?.epoch !== epoch)
+          bootstrapRequest.current = { epoch, promise: api.getCurrentUser() }
+        const response = await bootstrapRequest.current.promise
+        if (!active || epoch !== authEpoch.current) return
         if (response.success && response.data) {
-          const userData = (
-            response.data as {
-              user: User & { profile?: { avatarUrl?: string; displayName?: string; learningGoal?: string; onboardingCompleted?: boolean; experienceLevel?: string; currentPathId?: string; points?: number; currentStreak?: number; preferredLanguage?: string; } }
-            }
-          ).user
-          const newUser: User = {
-            id: userData.id,
-            email: userData.email,
-            displayName: userData.profile?.displayName || userData.email?.split('@')[0],
-            avatarUrl: userData.profile?.avatarUrl,
-            learningGoal: userData.profile?.learningGoal,
-            onboardingCompleted: userData.profile?.onboardingCompleted,
-            experienceLevel: userData.profile?.experienceLevel,
-            currentPathId: userData.profile?.currentPathId,
-            points: userData.profile?.points,
-            currentStreak: userData.profile?.currentStreak,
-            preferredLanguage: userData.profile?.preferredLanguage,
-            isAdmin: (userData.profile as any)?.isAdmin === true,
-          }
+          const userData = readAuthIdentity(response.data)
+          const newUser = mapProfileToUser({ ...userData.profile, id: userData.id }, userData.email)
+          setAuthError(null)
           setUser(newUser)
           // Start auto-refresh when user is authenticated
           startAutoRefresh()
+        } else if (response.error?.status !== 401) {
+          setAuthError(
+            response.error?.message || 'Chưa kiểm tra được phiên đăng nhập. Vui lòng thử lại.'
+          )
         }
       } catch (error) {
-        // Not authenticated or token expired
-        setUser(null)
+        if (active && epoch === authEpoch.current) {
+          setUser(null)
+          setAuthError(
+            error instanceof Error ? error.message : 'Chưa kiểm tra được phiên đăng nhập.'
+          )
+        }
       } finally {
-        setLoading(false)
+        if (active && epoch === authEpoch.current) setLoading(false)
       }
     }
 
@@ -141,21 +143,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Cleanup interval on unmount
     return () => {
+      active = false
       stopAutoRefresh()
     }
-  }, [])
+  }, [bootstrapAttempt])
+
+  const retryAuth = () => {
+    if (user || loading) return
+    ++authEpoch.current
+    bootstrapRequest.current = null
+    setAuthError(null)
+    setLoading(true)
+    setBootstrapAttempt(attempt => attempt + 1)
+  }
 
   const signUp = async (email: string, password: string, displayName?: string) => {
+    const epoch = ++authEpoch.current
     const response = await api.signup(email, password, displayName)
+    if (epoch !== authEpoch.current) throw new Error('Yêu cầu đăng ký đã hết hiệu lực.')
 
     if (!response.success) {
       throw new Error(response.error?.message || 'Đăng ký thất bại')
     }
 
-    const { user: userData, message, requiresEmailConfirmation } = response.data as { user: User; message: string; requiresEmailConfirmation?: boolean }
+    const userData = readAuthIdentity(response.data)
+    const { message, requiresEmailConfirmation } = response.data as {
+      message?: string
+      requiresEmailConfirmation?: boolean
+    }
 
     // Check if email confirmation is required
-    if (requiresEmailConfirmation || !userData) {
+    if (requiresEmailConfirmation === true) {
       return {
         success: true,
         requiresEmailConfirmation: true,
@@ -170,23 +188,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       displayName: displayName || userData.email?.split('@')[0],
     }
 
+    setAuthError(null)
     setUser(newUser)
+    startAutoRefresh()
 
     return {
       success: true,
       requiresEmailConfirmation: false,
       message: message || 'Đăng ký thành công',
+      user: newUser,
     }
   }
 
   const signIn = async (email: string, password: string) => {
+    const epoch = ++authEpoch.current
     const response = await api.login(email, password)
+    if (epoch !== authEpoch.current) throw new Error('Yêu cầu đăng nhập đã hết hiệu lực.')
 
     if (!response.success) {
       throw new Error(response.error?.message || 'Đăng nhập thất bại')
     }
 
-    const { user: userData } = response.data as { user: User }
+    const userData = readAuthIdentity(response.data)
 
     // Set basic user first (tokens are now in httpOnly cookies set by backend)
     const newUser: User = {
@@ -195,6 +218,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       displayName: userData.email?.split('@')[0],
     }
 
+    setAuthError(null)
     setUser(newUser)
     // Start auto-refresh after successful login
     startAutoRefresh()
@@ -202,21 +226,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Immediately fetch full profile to get onboarding fields
     try {
       const profileRes = await api.getMyProfile()
+      if (epoch !== authEpoch.current) throw new Error('Yêu cầu đăng nhập đã hết hiệu lực.')
       if (profileRes.success && profileRes.data) {
         const profileData = (profileRes.data as { profile: Record<string, any> }).profile
-        const updatedUser = {
-          id: profileData.id,
-          email: userData.email,
-          displayName: profileData.displayName || userData.email?.split('@')[0],
-          avatarUrl: profileData.avatarUrl,
-          learningGoal: profileData.learningGoal,
-          onboardingCompleted: profileData.onboardingCompleted,
-          experienceLevel: profileData.experienceLevel,
-          currentPathId: profileData.currentPathId,
-          points: profileData.points,
-          currentStreak: profileData.currentStreak,
-          preferredLanguage: profileData.preferredLanguage,
-        }
+        if (!isUserProfileSnapshot(profileData) || profileData.id !== userData.id)
+          return { ...response, user: newUser }
+        const updatedUser = mapProfileToUser(profileData, userData.email)
         setUser(updatedUser)
         return { ...response, user: updatedUser }
       }
@@ -224,42 +239,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Profile fetch failed — user still logged in with basic info
     }
 
+    if (epoch !== authEpoch.current) throw new Error('Yêu cầu đăng nhập đã hết hiệu lực.')
     return { ...response, user: newUser }
   }
 
-  const signOut = async () => {
-    await api.logout()
-    setUser(null)
-    stopAutoRefresh()
-    // Cookies are cleared by backend
+  const signOut = (): Promise<{ warning?: string }> => {
+    if (logoutRequest.current) return logoutRequest.current
+    const epoch = ++authEpoch.current
+    logoutRequest.current = (async () => {
+      const response = await api.logout()
+      // This acknowledgement guarantees the response cleared the browser cookies,
+      // although provider-side revocation may still need a retry.
+      const warning =
+        response.error?.code === 'AUTH_LOGOUT_FAILED' ? response.error.message : undefined
+      if (!response.success && !warning)
+        throw new Error(response.error?.message || 'Chưa đăng xuất được. Vui lòng thử lại.')
+      if (epoch === authEpoch.current) {
+        setUser(null)
+        setAuthError(null)
+        stopAutoRefresh()
+      }
+      return { warning }
+    })().finally(() => {
+      logoutRequest.current = null
+    })
+    return logoutRequest.current
   }
 
-  const refreshUser = async () => {
-    const response = await api.getMyProfile()
-    if (response.success && response.data) {
-      const profileData = (
-        response.data as { profile: Record<string, any> }
-      ).profile
-      const newUser: User = {
-        id: profileData.id,
-        email: user?.email || '',
-        displayName: profileData.displayName,
-        avatarUrl: profileData.avatarUrl,
-        learningGoal: profileData.learningGoal,
-        onboardingCompleted: profileData.onboardingCompleted,
-        experienceLevel: profileData.experienceLevel,
-        currentPathId: profileData.currentPathId,
-        points: profileData.points,
-        currentStreak: profileData.currentStreak,
-        preferredLanguage: profileData.preferredLanguage,
-      }
-      setUser(newUser)
+  // Merge confirmed fields after a successful write without a second fallible read.
+  const refreshUser = async (confirmedProfile?: UserProfileSnapshot) => {
+    const epoch = authEpoch.current
+    let profile: unknown = confirmedProfile
+    if (!profile) {
+      const response = await api.getMyProfile()
+      if (!response.success || !response.data) return
+      profile = (response.data as { profile?: unknown }).profile
     }
+    if (epoch !== authEpoch.current || !isUserProfileSnapshot(profile)) return
+    const snapshot = profile
+    setUser(current =>
+      epoch === authEpoch.current && current?.id === snapshot.id
+        ? mergeProfileSnapshot(current, snapshot)
+        : current
+    )
   }
 
   const value = {
     user,
     loading,
+    authError,
+    retryAuth,
     signUp,
     signIn,
     signOut,
@@ -267,7 +296,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   if (loading) {
-    return <LoadingScreen message={t('common.initializing')} />
+    return <InterfaceLoadingScreen language={interfaceLanguage(i18n?.language)} />
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

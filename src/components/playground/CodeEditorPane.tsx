@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEditorFontSize } from '../../features/preferences/editorFontSize'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { Play } from 'lucide-react'
@@ -25,32 +25,7 @@ const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
   getLanguageExtension,
 }) => {
   const { t } = useTranslation()
-  const [fontSize, setFontSize] = useState(14)
-
-  useEffect(() => {
-    const savedFontSize = localStorage.getItem('editor_font_size')
-
-    if (savedFontSize) setFontSize(parseInt(savedFontSize))
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'editor_font_size' && e.newValue) {
-        setFontSize(parseInt(e.newValue))
-      }
-    }
-
-    const handleFontSizeChange = () => {
-      const savedFontSize = localStorage.getItem('editor_font_size')
-      if (savedFontSize) setFontSize(parseInt(savedFontSize))
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('fontSizeChanged', handleFontSizeChange)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('fontSizeChanged', handleFontSizeChange)
-    }
-  }, [])
+  const fontSize = useEditorFontSize()
   return (
     <div className="flex-1 flex flex-col bg-white/3 border border-brand-teal/10 rounded-card overflow-hidden min-h-0">
       <div className="bg-slate-950/50 px-4 py-2 flex items-center justify-between border-b border-brand-teal/20 flex-shrink-0">

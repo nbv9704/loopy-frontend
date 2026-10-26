@@ -105,6 +105,11 @@ const LearnPage: React.FC = () => {
     'learn.sidebar.aha',
     'learn.sidebar.next',
     'learn.action.current_step',
+    'learn.action.see.button',
+    'learn.action.change.button',
+    'learn.action.run.button',
+    'learn.action.fix.button',
+    'learn.action.build.button',
     'learn.action.see.label',
     'learn.action.see.helper',
     'learn.action.change.label',
@@ -133,11 +138,11 @@ const LearnPage: React.FC = () => {
     'footer.terms',
   ]
 
-  const { content, loading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
+  const { content, initialLoading: contentLoading } = useContentPreloader(contentKeys, i18n.language)
   const metadata = getLanguageMetadata(language)
 
   if (authLoading || contentLoading) {
-    return <LoadingScreen message="Loading learn..." />
+    return <LoadingScreen />
   }
 
   if (!user || !user.onboardingCompleted) return null
@@ -208,7 +213,7 @@ const LearnPage: React.FC = () => {
                 <FiArrowLeft /> {learnBackBtn}
               </button>
 
-              <div className="mb-6 grid gap-5 xl:grid-cols-[1fr,420px] xl:items-end">
+              <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[1fr_420px] xl:items-end">
                 <div>
                   <div className="mb-4 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                     {learnBadge}

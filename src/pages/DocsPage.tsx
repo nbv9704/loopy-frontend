@@ -93,7 +93,7 @@ const DocsPage: React.FC = () => {
 
   // Show loading screen while content is being fetched
   if (loading) {
-    return <LoadingScreen message="Loading docs page..." />
+    return <LoadingScreen />
   }
 
   // Extract header content
@@ -179,10 +179,10 @@ const DocsPage: React.FC = () => {
   return (
     <PublicShell headerContent={headerContent} footerContent={footerContent}>
       <main>
-        <section className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
+        <section id="docs-intro" className="relative overflow-hidden px-4 py-14 md:px-6 md:py-20">
           <div className="absolute left-1/2 top-10 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-teal/20 blur-3xl" />
           <div className="relative mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-[0.9fr,1.1fr] lg:items-end">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
               <div>
                 <div className="mb-5 inline-flex rounded-full border border-brand-teal/30 bg-brand-teal/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-brand-ocean">
                   {sandboxBadge}
@@ -205,7 +205,7 @@ const DocsPage: React.FC = () => {
         </section>
 
         <section className="px-4 pb-16 md:px-6">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px,1fr,280px]">
+          <div className="mx-auto grid grid-cols-1 max-w-7xl gap-8 lg:grid-cols-[280px_1fr_280px]">
             <aside className="lg:sticky lg:top-24 lg:self-start">
               <div className="loopy-card rounded-[2rem] border p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiBookOpen /> {topicTitle}</div>
@@ -215,9 +215,9 @@ const DocsPage: React.FC = () => {
                       <div className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">{group.title}</div>
                       <div className="grid gap-1">
                         {group.items.map((item, index) => (
-                          <button key={item} className={`rounded-xl px-3 py-2 text-left text-sm font-bold transition ${index === 0 ? 'bg-brand-teal/15 text-brand-ocean' : 'loopy-muted hover:bg-brand-teal/10 hover:text-brand-teal'}`}>
+                          <span key={item} className={`rounded-xl px-3 py-2 text-left text-sm font-bold ${index === 0 ? 'bg-brand-teal/15 text-brand-ocean' : 'loopy-muted'}`}>
                             {item}
-                          </button>
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -233,11 +233,11 @@ const DocsPage: React.FC = () => {
                 {refDesc}
               </p>
 
-              <div className="my-8">
+              <div id="docs-example" className="my-8 scroll-mt-24">
                 <CodeBlock codeOutput={codeOutput} />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div id="docs-run-check" className="grid scroll-mt-24 gap-4 md:grid-cols-2">
                 <div className="loopy-card-soft rounded-2xl border p-5">
                   <div className="mb-2 flex items-center gap-2 font-black loopy-heading"><FiPlay /> {playBadge}</div>
                   <p className="text-sm leading-6 loopy-body">{playDesc}</p>
@@ -263,8 +263,8 @@ const DocsPage: React.FC = () => {
               <div className="loopy-card rounded-[2rem] border p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2 text-sm font-black text-brand-ocean"><FiHash /> {tocTitle}</div>
                 <div className="grid gap-2">
-                  {toc.map(item => (
-                    <a key={item} href="#" className="rounded-xl px-3 py-2 text-sm font-bold loopy-muted hover:bg-brand-teal/10 hover:text-brand-teal">{item}</a>
+                  {toc.slice(0, 4).map((item, index) => (
+                    <a key={item} href={`#${['docs-intro', 'docs-example', 'docs-run-check', 'docs-next'][index]}`} className="rounded-xl px-3 py-2 text-sm font-bold loopy-muted hover:bg-brand-teal/10 hover:text-brand-teal">{item}</a>
                   ))}
                 </div>
               </div>
@@ -282,7 +282,7 @@ const DocsPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-slate-950 px-4 py-16 text-white md:px-6">
+        <section id="docs-next" className="scroll-mt-24 bg-slate-950 px-4 py-16 text-white md:px-6">
           <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
             <FiBookOpen className="mb-4 h-10 w-10 text-brand-teal" />
             <h2 className="text-4xl font-black tracking-tight">{bottomTitle}</h2>

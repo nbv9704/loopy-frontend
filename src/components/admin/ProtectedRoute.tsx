@@ -1,4 +1,7 @@
+import AdminButton from './AdminButton'
+import { adminButtonClassName } from './adminStyles'
 import { Navigate, useLocation } from 'react-router-dom'
+import { Fragment } from 'react'
 import { useAdminAuth } from '../../hooks/useAdminAuth'
 
 interface ProtectedRouteProps {
@@ -19,7 +22,7 @@ interface ProtectedRouteProps {
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation()
-  const { isAuthenticated, isAdmin, isLoading } = useAdminAuth()
+  const { user, isAuthenticated, isAdmin, isLoading, error, checkAuth } = useAdminAuth()
 
   // Show loading spinner only on initial load (when not yet authenticated and loading)
   // Don't show loading spinner if already authenticated (to avoid unmounting UI during background polling)
@@ -35,6 +38,22 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Redirect to login if not authenticated
+  if (!isAuthenticated && error) {
+    return (
+      <div role="alert" className="mx-auto max-w-lg p-8">
+        <p>{error}</p>
+        <AdminButton
+          variant="primary"
+          className="mt-4"
+          onClick={() => {
+            void checkAuth()
+          }}
+        >
+          Thử lại
+        </AdminButton>
+      </div>
+    )
+  }
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />
   }
@@ -61,10 +80,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           </div>
           <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
           <p className="text-gray-600 mb-6">You don't have admin privileges to access this page.</p>
-          <a
-            href="/"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
+          <a href="/" className={adminButtonClassName({ variant: 'primary' })}>
             Return to Home
           </a>
         </div>
@@ -73,5 +89,5 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // User is authenticated and is admin, render children
-  return <>{children}</>
+  return <Fragment key={user?.id}>{children}</Fragment>
 }

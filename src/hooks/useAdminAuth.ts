@@ -2,12 +2,12 @@
  * Admin Authentication Hook
  *
  * Provides authentication state management for admin users
- * Uses Zustand for state persistence
+ * Uses Zustand for in-memory state; the backend cookie session owns authentication.
  *
  * - Manages authentication state (user, isAuthenticated)
  * - Provides login function
  * - Provides logout function
- * - Uses Zustand for state persistence
+ * - Keeps authentication results scoped to the current admin session
  * - Integrates with existing auth API
  */
 

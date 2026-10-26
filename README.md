@@ -29,13 +29,17 @@ Frontend chịu trách nhiệm cung cấp giao diện người dùng cho các lu
 
 ## Hướng dẫn cài đặt
 
-- Tiếng Việt: [INSTALL.vi.md](./INSTALL.vi.md)
-- English: [INSTALL.en.md](./INSTALL.en.md)
+- [Cài đặt và chạy local](./INSTALL.vi.md)
+
+Tài liệu nghiệp vụ và vận hành dùng chung tại [mục lục dự án](../docs/README.md); không duy trì bản sao audit/roadmap riêng trong repo app.
 
 ## Liên kết liên quan
 
 - Backend API: `../loopy-backend`
-- Tài liệu nội bộ frontend: [docs/README.md](./docs/README.md)
+- Kiểm tra local: `yarn lint:strict && yarn build && yarn test`.
+- Test types: `yarn test:types`; browser: `yarn playwright install chromium` rồi `yarn test:e2e` (mock mọi API, không dùng DB thật).
+- Dev Login mặc định ẩn. Chỉ dùng `VITE_ENABLE_DEV_LOGIN=true` với backend đã cho phép trên DB development riêng; xem backend INSTALL trước khi bật.
+- English là mặc định; preference VI được giữ. Khởi động/đổi ngôn ngữ chuẩn bị toàn bộ interface copy và route modules qua màn loading chung, giữ bản nháp khi chuyển locale. Chi tiết [kiến trúc](../docs/ARCHITECTURE.md) và [CMS cache](../docs/CMS_WORKFLOW.md).
 - License: [LICENSE](./LICENSE)
 
 ## License

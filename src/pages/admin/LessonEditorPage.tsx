@@ -1,16 +1,39 @@
+import AdminEditorSkeleton from '../../components/admin/AdminEditorSkeleton'
+import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import AdminButton from '../../components/admin/AdminButton'
+import AdminSectionNav from '../../components/admin/AdminSectionNav'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   Code,
-  FileText,
+  Pencil,
   PlusCircle,
   Save,
   Trash2,
 } from 'lucide-react'
-import { contentService, LessonStep, LessonTestCase } from '../../services/admin/content.service'
+import {
+  contentService,
+  LessonStep,
+  LessonTestCase,
+  LessonType,
+  ValidationType,
+} from '../../services/admin/content.service'
+import { getAdminErrorMessage } from '../../services/admin/errors'
+import { useAsyncAction } from '../../hooks/useAsyncAction'
+import EditorLoadError from '../../components/admin/EditorLoadError'
+import { selectPrimaryAnswerStep } from '../../features/learn/answerQuestion'
+import { mergeSavedDetail, nextDetailOrder } from '../../features/admin-lessons/lessonDetails.model'
+import {
+  hasUsableAnswerKey,
+  parseAnswerKey,
+  parseJsonArray,
+  parseJsonField,
+  parseJsonObject,
+  stringifyJson,
+} from '../../features/admin-lessons/lessonEditorJson'
 
 interface ChapterOption {
   id: string
@@ -23,6 +46,7 @@ const emptyLesson = {
   chapterId: '',
   lessonId: '',
   title: '',
+  lessonType: 'code_fix' as LessonType,
   description: '',
   starterCode: '',
   taskDescription: '',
@@ -36,13 +60,42 @@ const emptyLesson = {
   orderIndex: 1,
   difficulty: 'beginner',
   gradingMode: 'stdout',
+  validationType: 'rule' as ValidationType,
+  validationRules: {} as Record<string, unknown>,
+  successOutput: '',
+  failureHint: '',
   status: 'draft',
   qaChecklist: [] as Array<{ id: string; label: string; checked: boolean; order: number }>,
   debugStarterCode: '',
   debugTaskDescription: '',
-  debugValidationRules: [] as Array<{ type: 'rule' | 'exact' | 'regex' | 'stdout'; value: string; description?: string }>,
+  debugValidationRules: [] as Array<{
+    type: 'rule' | 'exact' | 'regex' | 'stdout'
+    value: string
+    description?: string
+  }>,
   debugHint: '',
 }
+
+const lessonTypeOptions: LessonType[] = [
+  'concept',
+  'true_false',
+  'multiple_choice',
+  'fill_blank',
+  'short_answer',
+  'code_fix',
+  'code_output',
+  'code_build',
+]
+
+const validationTypeOptions: ValidationType[] = ['rule', 'exact', 'regex', 'stdout', 'function']
+const codeLessonTypes = new Set<LessonType>(['code_fix', 'code_build'])
+const answerLessonTypes = new Set<LessonType>([
+  'true_false',
+  'multiple_choice',
+  'fill_blank',
+  'short_answer',
+  'code_output',
+])
 
 const emptyTestCase: LessonTestCase = {
   description: '',
@@ -66,80 +119,7 @@ const emptyLessonStep: LessonStep = {
   order_index: 1,
 }
 
-const stringifyJson = (value: unknown) => {
-  if (typeof value === 'string') return value
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return ''
-  }
-}
-
-const parseJsonField = (value: string, fallback: unknown) => {
-  if (!value.trim()) return fallback
-  try {
-    return JSON.parse(value)
-  } catch {
-    return value
-  }
-}
-
-const LessonEditorSkeleton = () => (
-  <div className="space-y-6">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div className="flex items-start gap-4">
-        <div className="mt-1 h-10 w-10 animate-pulse rounded-lg bg-slate-100" />
-        <div>
-          <div className="mb-3 h-7 w-36 animate-pulse rounded-full bg-slate-100" />
-          <div className="h-10 w-52 animate-pulse rounded bg-slate-100" />
-          <div className="mt-3 h-5 w-full max-w-xl animate-pulse rounded bg-slate-100" />
-        </div>
-      </div>
-      <div className="h-12 w-32 animate-pulse rounded-lg bg-slate-100" />
-    </div>
-
-    <div className="grid gap-6 xl:grid-cols-[1fr,340px]">
-      <div className="space-y-5">
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-5 h-6 w-44 animate-pulse rounded bg-slate-100" />
-          <div className="grid gap-4 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className={index === 2 ? 'md:col-span-2' : ''}>
-                <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-100" />
-                <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {Array.from({ length: 3 }).map((_, index) => (
-          <section key={index} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 h-6 w-40 animate-pulse rounded bg-slate-100" />
-            <div className="h-36 animate-pulse rounded-lg bg-slate-100" />
-          </section>
-        ))}
-      </div>
-
-      <aside className="space-y-5">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 h-5 w-32 animate-pulse rounded bg-slate-100" />
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-10 animate-pulse rounded-lg bg-slate-100" />
-            ))}
-          </div>
-        </section>
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 h-5 w-28 animate-pulse rounded bg-slate-100" />
-          <div className="h-24 animate-pulse rounded-lg bg-slate-100" />
-        </section>
-      </aside>
-    </div>
-  </div>
-)
-
-const LessonEditorPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>()
+const LessonEditorForm = ({ id }: { id?: string }) => {
   const navigate = useNavigate()
   const isNew = !id || id === 'new'
 
@@ -153,35 +133,40 @@ const LessonEditorPage: React.FC = () => {
   const [stepCorrectAnswerText, setStepCorrectAnswerText] = useState('null')
   const [testInputText, setTestInputText] = useState('[]')
   const [expectedOutputText, setExpectedOutputText] = useState('""')
+  const [validationRulesText, setValidationRulesText] = useState('{}')
   const [newChecklistItem, setNewChecklistItem] = useState('')
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [savingTestCase, setSavingTestCase] = useState(false)
-  const [savingLessonStep, setSavingLessonStep] = useState(false)
+  const { pending: saving, run: runMutation } = useAsyncAction()
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadRevision, setLoadRevision] = useState(0)
 
   useEffect(() => {
+    const controller = new AbortController()
     const loadData = async () => {
       setLoading(true)
-      setError(null)
+      setLoadError(null)
 
       try {
-        const chaptersData = await contentService.getChapters()
+        const chaptersData = await contentService.getChapters(controller.signal)
+        if (controller.signal.aborted) return
         setChapters(chaptersData)
 
         if (!isNew && id) {
           const [lessonData, testCaseData, stepData] = await Promise.all([
-            contentService.getLessonById(id),
-            contentService.getLessonTestCases(id),
-            contentService.getLessonSteps(id),
+            contentService.getLessonById(id, controller.signal),
+            contentService.getLessonTestCases(id, controller.signal),
+            contentService.getLessonSteps(id, controller.signal),
           ])
+          if (controller.signal.aborted) return
 
           setLesson({
             id: lessonData.id,
             chapterId: lessonData.chapter_id || '',
             lessonId: lessonData.lesson_id || '',
             title: lessonData.title || '',
+            lessonType: lessonData.lesson_type || 'code_fix',
             description: lessonData.description || '',
             starterCode: lessonData.starter_code || '',
             taskDescription: lessonData.task_description || '',
@@ -195,6 +180,10 @@ const LessonEditorPage: React.FC = () => {
             orderIndex: lessonData.order_index || 1,
             difficulty: lessonData.difficulty || 'beginner',
             gradingMode: lessonData.grading_mode || 'stdout',
+            validationType: lessonData.validation_type || 'rule',
+            validationRules: lessonData.validation_rules || {},
+            successOutput: lessonData.success_output || '',
+            failureHint: lessonData.failure_hint || '',
             status: lessonData.status || 'draft',
             qaChecklist: lessonData.qa_checklist || [],
             debugStarterCode: lessonData.debug_starter_code || '',
@@ -202,88 +191,102 @@ const LessonEditorPage: React.FC = () => {
             debugValidationRules: lessonData.debug_validation_rules || [],
             debugHint: lessonData.debug_hint || '',
           })
+          setValidationRulesText(stringifyJson(lessonData.validation_rules || {}))
           setTestCases(testCaseData)
           setLessonSteps(stepData)
           setEditingTestCase({ ...emptyTestCase, order_index: testCaseData.length + 1 })
           setEditingLessonStep({ ...emptyLessonStep, order_index: stepData.length + 1 })
         } else {
           setLesson({ ...emptyLesson, chapterId: chaptersData[0]?.id || '' })
+          setValidationRulesText('{}')
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu lesson')
+        if (!controller.signal.aborted)
+          setLoadError(getAdminErrorMessage(err, 'Không thể tải dữ liệu lesson'))
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
-    loadData()
-  }, [id, isNew])
+    void loadData()
+    return () => controller.abort()
+  }, [id, isNew, loadRevision])
 
   const qualityIssues = useMemo(() => {
     const issues = []
+    const lessonType = (lesson.lessonType || 'code_fix') as LessonType
+    const isCodeLesson = codeLessonTypes.has(lessonType)
+    const primary = selectPrimaryAnswerStep(
+      lessonSteps.map(step => ({ ...step, orderIndex: step.order_index })),
+      lessonType
+    )
+    const hasAnswerKey = primary && hasUsableAnswerKey(primary.correct_answer)
+
     if (!lesson.title.trim()) issues.push('Thiếu title')
     if (!lesson.chapterId) issues.push('Thiếu chapter')
     if (!lesson.lessonId.trim()) issues.push('Thiếu slug')
-    if (!lesson.starterCode.trim()) issues.push('Thiếu starter code')
-    if (!lesson.taskDescription.trim()) issues.push('Thiếu task description')
-    if (!lesson.solutionCode.trim()) issues.push('Thiếu solution code')
-    if (!isNew && testCases.length === 0) issues.push('Chưa có test case')
+    if (isCodeLesson && !lesson.starterCode.trim()) issues.push('Thiếu starter code')
+    if (isCodeLesson && !lesson.taskDescription.trim()) issues.push('Thiếu task description')
+    if (isCodeLesson && !lesson.solutionCode.trim()) issues.push('Thiếu solution code')
+    if (!isNew && isCodeLesson && testCases.length === 0) issues.push('Chưa có test case')
+    if (!isNew && answerLessonTypes.has(lessonType) && !hasAnswerKey)
+      issues.push('Answer lesson thiếu correct_answer trong lesson step')
     return issues
-  }, [isNew, lesson, testCases.length])
+  }, [isNew, lesson, lessonSteps, testCases.length])
 
   const updateLesson = (patch: Partial<typeof emptyLesson>) => {
     setLesson((current: any) => ({ ...current, ...patch }))
   }
 
-  const resetTestCaseForm = (nextOrder = testCases.length + 1) => {
+  const resetTestCaseForm = (nextOrder = nextDetailOrder(testCases)) => {
     setEditingTestCase({ ...emptyTestCase, order_index: nextOrder })
     setTestInputText('[]')
     setExpectedOutputText('""')
   }
 
-  const handleSaveLesson = async () => {
-    setSaving(true)
+  const buildLessonPayload = () => ({
+    id: lesson.id || undefined,
+    chapter_id: lesson.chapterId,
+    lesson_id: lesson.lessonId,
+    title: lesson.title,
+    lesson_type: lesson.lessonType || 'code_fix',
+    description: lesson.description,
+    starter_code: lesson.starterCode,
+    task_description: lesson.taskDescription,
+    hint: lesson.hint,
+    hint_level_1: lesson.hintLevel1,
+    hint_level_2: lesson.hintLevel2,
+    hint_level_3: lesson.hintLevel3,
+    common_mistakes: lesson.commonMistakes,
+    solution_code: lesson.solutionCode,
+    is_aha_lesson: lesson.isAhaLesson,
+    order_index: Number(lesson.orderIndex) || 0,
+    difficulty: lesson.difficulty || 'beginner',
+    grading_mode: lesson.gradingMode || 'stdout',
+    validation_type: lesson.validationType || 'rule',
+    validation_rules: parseJsonObject(validationRulesText, 'Validation rules'),
+    success_output: lesson.successOutput || '',
+    failure_hint: lesson.failureHint || '',
+    status: lesson.status || 'draft',
+    qa_checklist: lesson.qaChecklist || [],
+    debug_starter_code: lesson.debugStarterCode || '',
+    debug_task_description: lesson.debugTaskDescription || '',
+    debug_validation_rules: lesson.debugValidationRules || [],
+    debug_hint: lesson.debugHint || '',
+  })
+
+  const handleSaveLesson = () => {
     setError(null)
     setMessage(null)
 
-    try {
-      const saved = await contentService.upsertLesson({
-        id: lesson.id || undefined,
-        chapter_id: lesson.chapterId,
-        lesson_id: lesson.lessonId,
-        title: lesson.title,
-        description: lesson.description,
-        starter_code: lesson.starterCode,
-        task_description: lesson.taskDescription,
-        hint: lesson.hint,
-        hint_level_1: lesson.hintLevel1,
-        hint_level_2: lesson.hintLevel2,
-        hint_level_3: lesson.hintLevel3,
-        common_mistakes: lesson.commonMistakes,
-        solution_code: lesson.solutionCode,
-        is_aha_lesson: lesson.isAhaLesson,
-        order_index: Number(lesson.orderIndex) || 0,
-        difficulty: lesson.difficulty || 'beginner',
-        grading_mode: lesson.gradingMode || 'stdout',
-        status: lesson.status || 'draft',
-        qa_checklist: lesson.qaChecklist || [],
-        debug_starter_code: lesson.debugStarterCode || '',
-        debug_task_description: lesson.debugTaskDescription || '',
-        debug_validation_rules: lesson.debugValidationRules || [],
-        debug_hint: lesson.debugHint || '',
-      })
-
-      setLesson((current: any) => ({ ...current, id: saved.id }))
-      setMessage('Đã lưu lesson.')
-
-      if (isNew) {
-        navigate(`/admin/lessons/${saved.id}`, { replace: true })
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu lesson')
-    } finally {
-      setSaving(false)
-    }
+    void runMutation(() => contentService.upsertLesson(buildLessonPayload()), {
+      onSuccess: saved => {
+        setLesson((current: any) => ({ ...current, id: saved.id }))
+        setMessage('Đã lưu lesson.')
+        if (isNew) navigate(`/admin/lessons/${saved.id}`, { replace: true })
+      },
+      onError: err => setError(getAdminErrorMessage(err, 'Không thể lưu lesson')),
+    })
   }
 
   const handleEditTestCase = (testCase: LessonTestCase) => {
@@ -292,53 +295,48 @@ const LessonEditorPage: React.FC = () => {
     setExpectedOutputText(stringifyJson(testCase.expected_output ?? ''))
   }
 
-  const handleSaveTestCase = async () => {
+  const handleSaveTestCase = () => {
     const lessonId = lesson.id || id
-    if (!lessonId) {
+    if (!lessonId || isNew) {
       setError('Lưu lesson trước khi thêm test case.')
       return
     }
-
-    setSavingTestCase(true)
     setError(null)
     setMessage(null)
-
-    try {
-      const saved = await contentService.upsertLessonTestCase(lessonId, {
-        ...editingTestCase,
-        input: parseJsonField(testInputText, []),
-        expected_output: parseJsonField(expectedOutputText, ''),
-        weight: Number(editingTestCase.weight) || 10,
-        timeout: Number(editingTestCase.timeout) || 1000,
-        order_index: Number(editingTestCase.order_index) || testCases.length + 1,
-      })
-
-      setTestCases(current => {
-        const exists = current.some(item => item.id === saved.id)
-        const next = exists ? current.map(item => (item.id === saved.id ? saved : item)) : [...current, saved]
-        return next.sort((a, b) => a.order_index - b.order_index)
-      })
-      resetTestCaseForm(testCases.length + 2)
-      setMessage('Đã lưu test case.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu test case')
-    } finally {
-      setSavingTestCase(false)
-    }
+    void runMutation(
+      () =>
+        contentService.upsertLessonTestCase(lessonId, {
+          ...editingTestCase,
+          input: parseJsonField(testInputText, [], 'Input'),
+          expected_output: parseJsonField(expectedOutputText, '', 'Expected output'),
+          weight: editingTestCase.weight ?? 10,
+          timeout: editingTestCase.timeout ?? 1000,
+          order_index: editingTestCase.order_index ?? testCases.length + 1,
+        }),
+      {
+        onSuccess: saved => {
+          const next = mergeSavedDetail(testCases, editingTestCase, saved, lessonId)
+          setTestCases(next)
+          resetTestCaseForm(nextDetailOrder(next))
+          setMessage('Đã lưu test case.')
+        },
+        onError: err => setError(getAdminErrorMessage(err, 'Không thể lưu test case')),
+      }
+    )
   }
 
-  const handleDeleteTestCase = async (testCase: LessonTestCase) => {
-    if (!testCase.id) return
-    if (!window.confirm(`Xóa test case "${testCase.description}"?`)) return
-
+  const handleDeleteTestCase = (testCase: LessonTestCase) => {
+    if (!testCase.id || !window.confirm(`Xóa test case "${testCase.description}"?`)) return
     setError(null)
-    try {
-      await contentService.deleteLessonTestCase(testCase.id)
-      setTestCases(current => current.filter(item => item.id !== testCase.id))
-      setMessage('Đã xóa test case.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể xóa test case')
-    }
+    setMessage(null)
+    void runMutation(() => contentService.deleteLessonTestCase(testCase.id!), {
+      onSuccess: () => {
+        setTestCases(current => current.filter(item => item.id !== testCase.id))
+        if (editingTestCase.id === testCase.id) resetTestCaseForm()
+        setMessage('Đã xóa test case.')
+      },
+      onError: err => setError(getAdminErrorMessage(err, 'Không thể xóa test case')),
+    })
   }
 
   const handleEditLessonStep = (step: LessonStep) => {
@@ -347,82 +345,52 @@ const LessonEditorPage: React.FC = () => {
     setStepCorrectAnswerText(stringifyJson(step.correct_answer ?? null))
   }
 
-  const handleSaveLessonStep = async () => {
+  const resetLessonStepForm = (nextOrder = nextDetailOrder(lessonSteps)) => {
+    setEditingLessonStep({ ...emptyLessonStep, order_index: nextOrder })
+    setStepOptionsText('[]')
+    setStepCorrectAnswerText('null')
+  }
+
+  const handleSaveLessonStep = () => {
     const lessonId = lesson.id || id
-    if (!lessonId) {
+    if (!lessonId || isNew) {
       setError('Lưu lesson trước khi thêm lesson step.')
       return
     }
-
-    setSavingLessonStep(true)
     setError(null)
     setMessage(null)
-
-    try {
-      const saved = await contentService.upsertLessonStep(lessonId, {
-        ...editingLessonStep,
-        options: parseJsonField(stepOptionsText, []),
-        correct_answer: parseJsonField(stepCorrectAnswerText, null),
-        order_index: Number(editingLessonStep.order_index) || lessonSteps.length + 1,
-      })
-
-      setLessonSteps(current => {
-        const exists = current.some(item => item.id === saved.id)
-        const next = exists ? current.map(item => (item.id === saved.id ? saved : item)) : [...current, saved]
-        return next.sort((a, b) => a.order_index - b.order_index)
-      })
-      setEditingLessonStep({ ...emptyLessonStep, order_index: lessonSteps.length + 2 })
-      setStepOptionsText('[]')
-      setStepCorrectAnswerText('null')
-      setMessage('Đã lưu lesson step.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu lesson step')
-    } finally {
-      setSavingLessonStep(false)
-    }
+    void runMutation(
+      () =>
+        contentService.upsertLessonStep(lessonId, {
+          ...editingLessonStep,
+          options: parseJsonArray(stepOptionsText, 'Options'),
+          correct_answer: parseAnswerKey(stepCorrectAnswerText),
+          order_index: editingLessonStep.order_index ?? lessonSteps.length + 1,
+        }),
+      {
+        onSuccess: saved => {
+          const next = mergeSavedDetail(lessonSteps, editingLessonStep, saved, lessonId)
+          setLessonSteps(next)
+          resetLessonStepForm(nextDetailOrder(next))
+          setMessage('Đã lưu lesson step.')
+        },
+        onError: err => setError(getAdminErrorMessage(err, 'Không thể lưu lesson step')),
+      }
+    )
   }
 
-  const handleDeleteLessonStep = async (step: LessonStep) => {
-    if (!step.id) return
-    if (!window.confirm(`Xóa lesson step "${step.title || step.prompt}"?`)) return
-
+  const handleDeleteLessonStep = (step: LessonStep) => {
+    if (!step.id || !window.confirm(`Xóa lesson step "${step.title || step.prompt}"?`)) return
     setError(null)
-    try {
-      await contentService.deleteLessonStep(step.id)
-      setLessonSteps(current => current.filter(item => item.id !== step.id))
-      setMessage('Đã xóa lesson step.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể xóa lesson step')
-    }
-  }
-
-  const autoSaveChecklist = async (newChecklist: any) => {
-    if (!lesson.id) return // Chỉ auto-save nếu lesson đã có ID
-    try {
-      await contentService.upsertLesson({
-        id: lesson.id,
-        chapter_id: lesson.chapterId,
-        lesson_id: lesson.lessonId,
-        title: lesson.title,
-        description: lesson.description,
-        starter_code: lesson.starterCode,
-        task_description: lesson.taskDescription,
-        hint: lesson.hint,
-        hint_level_1: lesson.hintLevel1,
-        hint_level_2: lesson.hintLevel2,
-        hint_level_3: lesson.hintLevel3,
-        common_mistakes: lesson.commonMistakes,
-        solution_code: lesson.solutionCode,
-        is_aha_lesson: lesson.isAhaLesson,
-        order_index: Number(lesson.orderIndex) || 0,
-        difficulty: lesson.difficulty || 'beginner',
-        grading_mode: lesson.gradingMode || 'stdout',
-        status: lesson.status || 'draft',
-        qa_checklist: newChecklist,
-      })
-    } catch (err) {
-      console.error('Auto-save checklist failed:', err)
-    }
+    setMessage(null)
+    void runMutation(() => contentService.deleteLessonStep(step.id!), {
+      onSuccess: () => {
+        setLessonSteps(current => current.filter(item => item.id !== step.id))
+        if (editingLessonStep.id === step.id) resetLessonStepForm()
+        setMessage('Đã xóa lesson step.')
+      },
+      onError: err => setError(getAdminErrorMessage(err, 'Không thể xóa lesson step')),
+    })
   }
 
   const handleAddChecklistItem = () => {
@@ -436,7 +404,6 @@ const LessonEditorPage: React.FC = () => {
     const newChecklist = [...(lesson.qaChecklist || []), item]
     updateLesson({ qaChecklist: newChecklist as any })
     setNewChecklistItem('')
-    autoSaveChecklist(newChecklist)
   }
 
   const handleToggleChecklistItem = (itemId: string) => {
@@ -446,7 +413,6 @@ const LessonEditorPage: React.FC = () => {
     updateLesson({
       qaChecklist: newChecklist as any,
     })
-    autoSaveChecklist(newChecklist)
   }
 
   const handleDeleteChecklistItem = (itemId: string) => {
@@ -454,7 +420,6 @@ const LessonEditorPage: React.FC = () => {
     updateLesson({
       qaChecklist: newChecklist as any,
     })
-    autoSaveChecklist(newChecklist)
   }
 
   const handleMoveChecklistItem = (itemId: string, direction: 'up' | 'down') => {
@@ -468,53 +433,64 @@ const LessonEditorPage: React.FC = () => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1
     ;[newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]]
 
-    // Update order numbers
-    newItems.forEach((item: any, i: number) => {
-      item.order = i + 1
-    })
-
-    updateLesson({ qaChecklist: newItems as any })
-    autoSaveChecklist(newItems)
+    updateLesson({ qaChecklist: newItems.map((item, index) => ({ ...item, order: index + 1 })) })
   }
 
-  if (loading) return <LessonEditorSkeleton />
+  if (loading) return <AdminEditorSkeleton />
+  if (loadError)
+    return (
+      <EditorLoadError
+        message={loadError}
+        onRetry={() => setLoadRevision(value => value + 1)}
+        backTo="/admin/lessons"
+      />
+    )
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-4">
-          <button
+    <div className="min-w-0 space-y-6">
+      <AdminPageHeader
+        title={isNew ? 'Tạo lesson' : 'Chỉnh lesson'}
+        eyebrow="Lesson editor"
+        description="Soạn nội dung, thiết lập checker và kiểm tra dữ liệu trước khi lưu lesson."
+        leading={
+          <AdminButton
+            size="icon"
+            className="mt-1"
+            aria-label="Quay lại danh sách lessons"
             onClick={() => navigate('/admin/lessons')}
-            className="mt-1 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50"
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-teal-700">
-              <FileText className="h-3.5 w-3.5" />
-              Lesson editor
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-              {isNew ? 'Tạo lesson' : 'Chỉnh lesson'}
-            </h1>
-            <p className="mt-2 max-w-2xl text-base font-medium text-slate-600">
-              Author nội dung theo flow See-Change-Run-Fix-Build. Test case quản lý trực tiếp ở cuối trang.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSaveLesson}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-teal-800 disabled:opacity-50"
-        >
-          <Save className="h-4 w-4" />
-          {saving ? 'Đang lưu...' : 'Lưu lesson'}
-        </button>
-      </div>
+          </AdminButton>
+        }
+        actions={
+          <AdminButton
+            variant="primary"
+            onClick={handleSaveLesson}
+            aria-label="Lưu lesson"
+            aria-busy={saving}
+            disabled={saving}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? 'Đang lưu...' : 'Lưu lesson'}
+          </AdminButton>
+        }
+      />
+      <AdminSectionNav
+        sections={[
+          { id: 'lesson-basics', label: 'Thông tin' },
+          { id: 'lesson-flow', label: 'Flow học' },
+          { id: 'lesson-steps', label: 'Steps' },
+          { id: 'lesson-tests', label: 'Test cases' },
+          { id: 'lesson-settings', label: 'Settings' },
+          { id: 'lesson-qa', label: 'QA Checklist' },
+        ]}
+      />
 
       {error && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700"
+        >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -527,12 +503,18 @@ const LessonEditorPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr,340px]">
-        <div className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <fieldset
+        disabled={saving}
+        className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]"
+      >
+        <div className="min-w-0 space-y-5">
+          <section
+            id="lesson-basics"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+          >
             <h2 className="mb-5 text-xl font-black text-slate-950">Thông tin cơ bản</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Chapter</span>
                 <select
                   value={lesson.chapterId}
@@ -547,7 +529,7 @@ const LessonEditorPage: React.FC = () => {
                   ))}
                 </select>
               </label>
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Slug</span>
                 <input
                   value={lesson.lessonId}
@@ -556,7 +538,7 @@ const LessonEditorPage: React.FC = () => {
                   placeholder="loi-chao-dau-tien"
                 />
               </label>
-              <label className="block md:col-span-2">
+              <label className="block min-w-0 md:col-span-2">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Title</span>
                 <input
                   value={lesson.title}
@@ -567,18 +549,23 @@ const LessonEditorPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <section
+            id="lesson-flow"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+          >
             <h2 className="mb-5 text-xl font-black text-slate-950">Flow học</h2>
-            <div className="space-y-5">
-              <label className="block">
-                <span className="mb-2 block text-sm font-black text-slate-700">1. See - giải thích</span>
+            <div className="min-w-0 space-y-5">
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-black text-slate-700">
+                  1. See - giải thích
+                </span>
                 <textarea
                   value={lesson.description}
                   onChange={event => updateLesson({ description: event.target.value })}
                   className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-black text-slate-700">Starter code</span>
                 <textarea
                   value={lesson.starterCode}
@@ -586,8 +573,10 @@ const LessonEditorPage: React.FC = () => {
                   className="h-44 w-full resize-none rounded-lg border border-slate-200 bg-slate-950 px-3 py-3 font-mono text-sm text-slate-100 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-black text-slate-700">2. Change - task description</span>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-black text-slate-700">
+                  2. Change - task description
+                </span>
                 <textarea
                   value={lesson.taskDescription}
                   onChange={event => updateLesson({ taskDescription: event.target.value })}
@@ -601,9 +590,11 @@ const LessonEditorPage: React.FC = () => {
                     Viết hint theo 3 mức tăng dần. AI chỉ là bước cuối khi các hint này chưa đủ.
                   </p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 1 - gợi hướng</span>
+                <div className="grid min-w-0 gap-4 2xl:grid-cols-3">
+                  <label className="block min-w-0">
+                    <span className="mb-2 block text-sm font-black text-teal-800">
+                      Hint 1 - gợi hướng
+                    </span>
                     <textarea
                       value={lesson.hintLevel1}
                       onChange={event => updateLesson({ hintLevel1: event.target.value })}
@@ -611,8 +602,10 @@ const LessonEditorPage: React.FC = () => {
                       placeholder="Nhắc nhẹ điều cần quan sát, chưa nói cách làm."
                     />
                   </label>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 2 - chiến lược</span>
+                  <label className="block min-w-0">
+                    <span className="mb-2 block text-sm font-black text-teal-800">
+                      Hint 2 - chiến lược
+                    </span>
                     <textarea
                       value={lesson.hintLevel2}
                       onChange={event => updateLesson({ hintLevel2: event.target.value })}
@@ -620,8 +613,10 @@ const LessonEditorPage: React.FC = () => {
                       placeholder="Gợi cách tiếp cận hoặc bước kiểm tra tiếp theo."
                     />
                   </label>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black text-teal-800">Hint 3 - gần lời giải</span>
+                  <label className="block min-w-0">
+                    <span className="mb-2 block text-sm font-black text-teal-800">
+                      Hint 3 - gần lời giải
+                    </span>
                     <textarea
                       value={lesson.hintLevel3}
                       onChange={event => updateLesson({ hintLevel3: event.target.value })}
@@ -631,7 +626,9 @@ const LessonEditorPage: React.FC = () => {
                   </label>
                 </div>
                 <label className="mt-4 block">
-                  <span className="mb-2 block text-sm font-black text-slate-700">Legacy/general hint fallback</span>
+                  <span className="mb-2 block text-sm font-black text-slate-700">
+                    Legacy/general hint fallback
+                  </span>
                   <textarea
                     value={lesson.hint}
                     onChange={event => updateLesson({ hint: event.target.value })}
@@ -640,16 +637,20 @@ const LessonEditorPage: React.FC = () => {
                   />
                 </label>
               </section>
-              <label className="block">
-                <span className="mb-2 block text-sm font-black text-slate-700">Common mistakes</span>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-black text-slate-700">
+                  Common mistakes
+                </span>
                 <textarea
                   value={lesson.commonMistakes}
                   onChange={event => updateLesson({ commonMistakes: event.target.value })}
                   className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-black text-slate-700">Build - solution code</span>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-black text-slate-700">
+                  Build - solution code
+                </span>
                 <textarea
                   value={lesson.solutionCode}
                   onChange={event => updateLesson({ solutionCode: event.target.value })}
@@ -658,10 +659,14 @@ const LessonEditorPage: React.FC = () => {
               </label>
 
               <div className="border-t border-slate-200 pt-5">
-                <h3 className="mb-4 text-lg font-black text-slate-950">Fix - Debug Challenge (Data-driven)</h3>
-                <div className="space-y-5">
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-700">Debug starter code (code với bug)</span>
+                <h3 className="mb-4 text-lg font-black text-slate-950">
+                  Fix - Debug Challenge (Data-driven)
+                </h3>
+                <div className="min-w-0 space-y-5">
+                  <label className="block min-w-0">
+                    <span className="mb-2 block text-sm font-black text-slate-700">
+                      Debug starter code (code với bug)
+                    </span>
                     <textarea
                       value={lesson.debugStarterCode}
                       onChange={event => updateLesson({ debugStarterCode: event.target.value })}
@@ -669,8 +674,10 @@ const LessonEditorPage: React.FC = () => {
                       placeholder="Code với bug(s) để user sửa"
                     />
                   </label>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-black text-slate-700">Debug task description</span>
+                  <label className="block min-w-0">
+                    <span className="mb-2 block text-sm font-black text-slate-700">
+                      Debug task description
+                    </span>
                     <textarea
                       value={lesson.debugTaskDescription}
                       onChange={event => updateLesson({ debugTaskDescription: event.target.value })}
@@ -678,7 +685,7 @@ const LessonEditorPage: React.FC = () => {
                       placeholder="Mô tả user cần sửa gì"
                     />
                   </label>
-                  <label className="block">
+                  <label className="block min-w-0">
                     <span className="mb-2 block text-sm font-black text-slate-700">Debug hint</span>
                     <textarea
                       value={lesson.debugHint}
@@ -688,7 +695,9 @@ const LessonEditorPage: React.FC = () => {
                     />
                   </label>
                   <div>
-                    <label className="mb-3 block text-sm font-black text-slate-700">Debug validation rules</label>
+                    <label className="mb-3 block text-sm font-black text-slate-700">
+                      Debug validation rules
+                    </label>
                     <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3">
                       {(lesson.debugValidationRules || []).length === 0 ? (
                         <div className="text-xs font-bold text-slate-500">Chưa có rule</div>
@@ -696,18 +705,26 @@ const LessonEditorPage: React.FC = () => {
                         (lesson.debugValidationRules || []).map((rule: any, index: number) => (
                           <div key={index} className="flex items-start gap-2 rounded bg-white p-2">
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-bold text-slate-700">{rule.type}: {rule.value}</div>
-                              {rule.description && <div className="text-xs text-slate-500">{rule.description}</div>}
+                              <div className="text-xs font-bold text-slate-700">
+                                {rule.type}: {rule.value}
+                              </div>
+                              {rule.description && (
+                                <div className="text-xs text-slate-500">{rule.description}</div>
+                              )}
                             </div>
-                            <button
+                            <AdminButton
+                              variant="danger"
+                              size="icon"
+                              aria-label={`Xóa rule ${rule.description || rule.value}`}
                               onClick={() => {
-                                const newRules = (lesson.debugValidationRules || []).filter((_: any, i: number) => i !== index)
+                                const newRules = (lesson.debugValidationRules || []).filter(
+                                  (_: any, i: number) => i !== index
+                                )
                                 updateLesson({ debugValidationRules: newRules as any })
                               }}
-                              className="rounded px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50"
                             >
-                              ✕
-                            </button>
+                              <Trash2 size={16} aria-hidden="true" />
+                            </AdminButton>
                           </div>
                         ))
                       )}
@@ -735,21 +752,29 @@ const LessonEditorPage: React.FC = () => {
                         placeholder="Description (optional)"
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                       />
-                      <button
+                      <AdminButton
+                        variant="primary"
+                        className="w-full"
                         onClick={() => {
-                          const type = (document.getElementById('ruleType') as HTMLSelectElement)?.value || 'rule'
-                          const value = (document.getElementById('ruleValue') as HTMLInputElement)?.value || ''
-                          const description = (document.getElementById('ruleDesc') as HTMLInputElement)?.value || ''
+                          const type =
+                            (document.getElementById('ruleType') as HTMLSelectElement)?.value ||
+                            'rule'
+                          const value =
+                            (document.getElementById('ruleValue') as HTMLInputElement)?.value || ''
+                          const description =
+                            (document.getElementById('ruleDesc') as HTMLInputElement)?.value || ''
                           if (!value.trim()) return
-                          const newRules = [...(lesson.debugValidationRules || []), { type, value, description }]
+                          const newRules = [
+                            ...(lesson.debugValidationRules || []),
+                            { type, value, description },
+                          ]
                           updateLesson({ debugValidationRules: newRules as any })
                           ;(document.getElementById('ruleValue') as HTMLInputElement).value = ''
                           ;(document.getElementById('ruleDesc') as HTMLInputElement).value = ''
                         }}
-                        className="w-full rounded-lg bg-teal-700 px-3 py-2 text-sm font-black text-white hover:bg-teal-800"
                       >
                         + Thêm rule
-                      </button>
+                      </AdminButton>
                     </div>
                   </div>
                 </div>
@@ -757,12 +782,16 @@ const LessonEditorPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-lg border border-indigo-100 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center justify-between gap-4">
+          <section
+            id="lesson-steps"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-indigo-100 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black text-slate-950">Lesson steps</h2>
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Activity nhỏ trong Learn. Không dùng để hoàn thành lesson và không trộn với Practice.
+                  Câu hỏi đầu tiên là câu được chấm trong bài trả lời. Note chỉ bổ sung nội dung;
+                  code_prompt dùng cho bài dự đoán output khi chưa có câu hỏi khác.
                 </p>
               </div>
               <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700">
@@ -770,7 +799,7 @@ const LessonEditorPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1fr,380px]">
+            <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
               <div className="space-y-3">
                 {lessonSteps.length === 0 && (
                   <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-bold text-slate-500">
@@ -778,7 +807,10 @@ const LessonEditorPage: React.FC = () => {
                   </div>
                 )}
                 {lessonSteps.map(step => (
-                  <div key={step.id || step.order_index} className="rounded-lg border border-slate-200 p-4">
+                  <div
+                    key={step.id || step.order_index}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-black text-slate-950">
@@ -787,19 +819,19 @@ const LessonEditorPage: React.FC = () => {
                         <div className="mt-1 text-xs font-bold text-indigo-700">{step.type}</div>
                         <p className="mt-2 text-sm font-medium text-slate-600">{step.prompt}</p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEditLessonStep(step)}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50"
-                        >
+                      <div className="flex flex-wrap gap-1.5">
+                        <AdminButton onClick={() => handleEditLessonStep(step)}>
+                          <Pencil size={14} aria-hidden="true" />
                           Sửa
-                        </button>
-                        <button
+                        </AdminButton>
+                        <AdminButton
+                          variant="danger"
+                          size="icon"
                           onClick={() => handleDeleteLessonStep(step)}
-                          className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
+                          aria-label={`Xóa step ${step.title || step.prompt}`}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </AdminButton>
                       </div>
                     </div>
                   </div>
@@ -813,7 +845,12 @@ const LessonEditorPage: React.FC = () => {
                 <div className="space-y-3">
                   <select
                     value={editingLessonStep.type}
-                    onChange={event => setEditingLessonStep(current => ({ ...current, type: event.target.value as LessonStep['type'] }))}
+                    onChange={event =>
+                      setEditingLessonStep(current => ({
+                        ...current,
+                        type: event.target.value as LessonStep['type'],
+                      }))
+                    }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold outline-none"
                   >
                     <option value="note">note</option>
@@ -825,13 +862,17 @@ const LessonEditorPage: React.FC = () => {
                   </select>
                   <input
                     value={editingLessonStep.title || ''}
-                    onChange={event => setEditingLessonStep(current => ({ ...current, title: event.target.value }))}
+                    onChange={event =>
+                      setEditingLessonStep(current => ({ ...current, title: event.target.value }))
+                    }
                     placeholder="Title optional"
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                   />
                   <textarea
                     value={editingLessonStep.prompt}
-                    onChange={event => setEditingLessonStep(current => ({ ...current, prompt: event.target.value }))}
+                    onChange={event =>
+                      setEditingLessonStep(current => ({ ...current, prompt: event.target.value }))
+                    }
                     placeholder="Prompt"
                     className="h-24 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                   />
@@ -849,13 +890,20 @@ const LessonEditorPage: React.FC = () => {
                   />
                   <textarea
                     value={editingLessonStep.explanation || ''}
-                    onChange={event => setEditingLessonStep(current => ({ ...current, explanation: event.target.value }))}
+                    onChange={event =>
+                      setEditingLessonStep(current => ({
+                        ...current,
+                        explanation: event.target.value,
+                      }))
+                    }
                     placeholder="Explanation optional"
                     className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                   />
                   <input
                     value={editingLessonStep.hint || ''}
-                    onChange={event => setEditingLessonStep(current => ({ ...current, hint: event.target.value }))}
+                    onChange={event =>
+                      setEditingLessonStep(current => ({ ...current, hint: event.target.value }))
+                    }
                     placeholder="Hint optional"
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
                   />
@@ -863,7 +911,12 @@ const LessonEditorPage: React.FC = () => {
                     <input
                       type="number"
                       value={editingLessonStep.order_index}
-                      onChange={event => setEditingLessonStep(current => ({ ...current, order_index: Number(event.target.value) }))}
+                      onChange={event =>
+                        setEditingLessonStep(current => ({
+                          ...current,
+                          order_index: Number(event.target.value),
+                        }))
+                      }
                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
                       placeholder="Order"
                     />
@@ -871,39 +924,39 @@ const LessonEditorPage: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={editingLessonStep.is_required || false}
-                        onChange={event => setEditingLessonStep(current => ({ ...current, is_required: event.target.checked }))}
+                        onChange={event =>
+                          setEditingLessonStep(current => ({
+                            ...current,
+                            is_required: event.target.checked,
+                          }))
+                        }
                         className="h-4 w-4 accent-indigo-700"
                       />
                       Required
                     </label>
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <AdminButton
+                      variant="primary"
+                      className="flex-1"
                       onClick={handleSaveLessonStep}
-                      disabled={savingLessonStep || !lesson.id || !editingLessonStep.prompt.trim()}
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-black text-white hover:bg-indigo-800 disabled:opacity-50"
+                      disabled={saving || !lesson.id || !editingLessonStep.prompt.trim()}
                     >
                       <PlusCircle className="h-4 w-4" />
-                      {savingLessonStep ? 'Đang lưu...' : 'Lưu step'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingLessonStep({ ...emptyLessonStep, order_index: lessonSteps.length + 1 })
-                        setStepOptionsText('[]')
-                        setStepCorrectAnswerText('null')
-                      }}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-50"
-                    >
-                      Clear
-                    </button>
+                      {saving ? 'Đang lưu...' : 'Lưu step'}
+                    </AdminButton>
+                    <AdminButton onClick={() => resetLessonStepForm()}>Clear</AdminButton>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center justify-between gap-4">
+          <section
+            id="lesson-tests"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-black text-slate-950">Test cases</h2>
                 <p className="mt-1 text-sm font-medium text-slate-500">
@@ -915,7 +968,7 @@ const LessonEditorPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1fr,360px]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
               <div className="space-y-3">
                 {testCases.length === 0 && (
                   <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-bold text-slate-500">
@@ -923,7 +976,10 @@ const LessonEditorPage: React.FC = () => {
                   </div>
                 )}
                 {testCases.map(testCase => (
-                  <div key={testCase.id || testCase.order_index} className="rounded-lg border border-slate-200 p-4">
+                  <div
+                    key={testCase.id || testCase.order_index}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-black text-slate-950">
@@ -934,19 +990,19 @@ const LessonEditorPage: React.FC = () => {
                           {testCase.is_hidden ? ' / hidden' : ''}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEditTestCase(testCase)}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-50"
-                        >
+                      <div className="flex flex-wrap gap-1.5">
+                        <AdminButton onClick={() => handleEditTestCase(testCase)}>
+                          <Pencil size={14} aria-hidden="true" />
                           Sửa
-                        </button>
-                        <button
+                        </AdminButton>
+                        <AdminButton
+                          variant="danger"
+                          size="icon"
                           onClick={() => handleDeleteTestCase(testCase)}
-                          className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
+                          aria-label={`Xóa test case ${testCase.description}`}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </AdminButton>
                       </div>
                     </div>
                   </div>
@@ -960,7 +1016,12 @@ const LessonEditorPage: React.FC = () => {
                 <div className="space-y-3">
                   <input
                     value={editingTestCase.description}
-                    onChange={event => setEditingTestCase(current => ({ ...current, description: event.target.value }))}
+                    onChange={event =>
+                      setEditingTestCase(current => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
                     placeholder="Mô tả test case"
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                   />
@@ -980,21 +1041,36 @@ const LessonEditorPage: React.FC = () => {
                     <input
                       type="number"
                       value={editingTestCase.order_index}
-                      onChange={event => setEditingTestCase(current => ({ ...current, order_index: Number(event.target.value) }))}
+                      onChange={event =>
+                        setEditingTestCase(current => ({
+                          ...current,
+                          order_index: Number(event.target.value),
+                        }))
+                      }
                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
                       placeholder="Order"
                     />
                     <input
                       type="number"
                       value={editingTestCase.weight ?? 10}
-                      onChange={event => setEditingTestCase(current => ({ ...current, weight: Number(event.target.value) }))}
+                      onChange={event =>
+                        setEditingTestCase(current => ({
+                          ...current,
+                          weight: Number(event.target.value),
+                        }))
+                      }
                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
                       placeholder="Weight"
                     />
                     <input
                       type="number"
                       value={editingTestCase.timeout ?? 1000}
-                      onChange={event => setEditingTestCase(current => ({ ...current, timeout: Number(event.target.value) }))}
+                      onChange={event =>
+                        setEditingTestCase(current => ({
+                          ...current,
+                          timeout: Number(event.target.value),
+                        }))
+                      }
                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none"
                       placeholder="Timeout"
                     />
@@ -1003,26 +1079,27 @@ const LessonEditorPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={editingTestCase.is_hidden || false}
-                      onChange={event => setEditingTestCase(current => ({ ...current, is_hidden: event.target.checked }))}
+                      onChange={event =>
+                        setEditingTestCase(current => ({
+                          ...current,
+                          is_hidden: event.target.checked,
+                        }))
+                      }
                       className="h-4 w-4 accent-teal-700"
                     />
                     Hidden test case
                   </label>
                   <div className="flex gap-2">
-                    <button
+                    <AdminButton
+                      variant="primary"
+                      className="flex-1"
                       onClick={handleSaveTestCase}
-                      disabled={savingTestCase || !lesson.id}
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50"
+                      disabled={saving || !lesson.id}
                     >
                       <PlusCircle className="h-4 w-4" />
-                      {savingTestCase ? 'Đang lưu...' : 'Lưu test case'}
-                    </button>
-                    <button
-                      onClick={() => resetTestCaseForm()}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-black text-slate-700 hover:bg-white"
-                    >
-                      Clear
-                    </button>
+                      {saving ? 'Đang lưu...' : 'Lưu test case'}
+                    </AdminButton>
+                    <AdminButton onClick={() => resetTestCaseForm()}>Clear</AdminButton>
                   </div>
                 </div>
               </div>
@@ -1030,11 +1107,14 @@ const LessonEditorPage: React.FC = () => {
           </section>
         </div>
 
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <aside className="min-w-0 space-y-5">
+          <section
+            id="lesson-settings"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          >
             <h2 className="mb-4 text-lg font-black text-slate-950">Settings</h2>
             <div className="space-y-4">
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Status</span>
                 <select
                   value={lesson.status}
@@ -1046,7 +1126,21 @@ const LessonEditorPage: React.FC = () => {
                   <option value="archived">Archived (Đã lưu trữ)</option>
                 </select>
               </label>
-              <label className="block">
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Lesson type</span>
+                <select
+                  value={lesson.lessonType}
+                  onChange={event => updateLesson({ lessonType: event.target.value as LessonType })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                >
+                  {lessonTypeOptions.map(type => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Difficulty</span>
                 <select
                   value={lesson.difficulty}
@@ -1058,7 +1152,7 @@ const LessonEditorPage: React.FC = () => {
                   <option value="advanced">advanced</option>
                 </select>
               </label>
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Grading mode</span>
                 <select
                   value={lesson.gradingMode}
@@ -1069,7 +1163,50 @@ const LessonEditorPage: React.FC = () => {
                   <option value="function">function</option>
                 </select>
               </label>
-              <label className="block">
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Validation type</span>
+                <select
+                  value={lesson.validationType}
+                  onChange={event =>
+                    updateLesson({ validationType: event.target.value as ValidationType })
+                  }
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none"
+                >
+                  {validationTypeOptions.map(type => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-bold text-slate-600">
+                  Validation rules JSON
+                </span>
+                <textarea
+                  value={validationRulesText}
+                  onChange={event => setValidationRulesText(event.target.value)}
+                  className="h-28 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 font-mono text-xs outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                  placeholder='{"requiredIncludes":["print"]}'
+                />
+              </label>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Success output</span>
+                <textarea
+                  value={lesson.successOutput}
+                  onChange={event => updateLesson({ successOutput: event.target.value })}
+                  className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+              <label className="block min-w-0">
+                <span className="mb-2 block text-sm font-bold text-slate-600">Failure hint</span>
+                <textarea
+                  value={lesson.failureHint}
+                  onChange={event => updateLesson({ failureHint: event.target.value })}
+                  className="h-20 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+                />
+              </label>
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-slate-600">Order</span>
                 <input
                   type="number"
@@ -1100,7 +1237,10 @@ const LessonEditorPage: React.FC = () => {
                 </div>
               ) : (
                 qualityIssues.map(issue => (
-                  <div key={issue} className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-700">
+                  <div
+                    key={issue}
+                    className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-700"
+                  >
                     <AlertTriangle className="h-4 w-4" />
                     {issue}
                   </div>
@@ -1109,8 +1249,14 @@ const LessonEditorPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section
+            id="lesson-qa"
+            className="scroll-mt-24 min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          >
             <h2 className="mb-4 text-lg font-black text-slate-950">QA Checklist</h2>
+            <p className="mb-3 text-xs font-medium text-slate-600">
+              Checklist được lưu cùng nội dung khi bấm Lưu lesson.
+            </p>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {(lesson.qaChecklist || []).length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-3 text-center text-xs font-bold text-slate-500">
@@ -1118,7 +1264,10 @@ const LessonEditorPage: React.FC = () => {
                 </div>
               ) : (
                 (lesson.qaChecklist || []).map((item: any, index: number) => (
-                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3"
+                  >
                     <input
                       type="checkbox"
                       checked={item.checked || false}
@@ -1126,35 +1275,39 @@ const LessonEditorPage: React.FC = () => {
                       className="mt-1 h-4 w-4 accent-teal-700"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className={`text-xs font-bold ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                      <div
+                        className={`text-xs font-bold ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}
+                      >
                         {item.label}
                       </div>
                     </div>
                     <div className="flex gap-1">
                       {index > 0 && (
-                        <button
+                        <AdminButton
+                          size="icon"
                           onClick={() => handleMoveChecklistItem(item.id, 'up')}
-                          className="rounded px-1.5 py-1 text-xs font-bold text-slate-500 hover:bg-white"
                           title="Lên"
                         >
                           ↑
-                        </button>
+                        </AdminButton>
                       )}
                       {index < (lesson.qaChecklist || []).length - 1 && (
-                        <button
+                        <AdminButton
+                          size="icon"
                           onClick={() => handleMoveChecklistItem(item.id, 'down')}
-                          className="rounded px-1.5 py-1 text-xs font-bold text-slate-500 hover:bg-white"
                           title="Xuống"
                         >
                           ↓
-                        </button>
+                        </AdminButton>
                       )}
-                      <button
+                      <AdminButton
+                        variant="danger"
+                        size="icon"
                         onClick={() => handleDeleteChecklistItem(item.id)}
-                        className="rounded px-1.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50"
+                        aria-label={`Xóa mục QA ${item.label}`}
                       >
-                        ✕
-                      </button>
+                        <Trash2 size={16} aria-hidden="true" />
+                      </AdminButton>
                     </div>
                   </div>
                 ))
@@ -1172,12 +1325,9 @@ const LessonEditorPage: React.FC = () => {
                 placeholder="Thêm mục check..."
                 className="flex-1 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
               />
-              <button
-                onClick={handleAddChecklistItem}
-                className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white hover:bg-teal-800"
-              >
+              <AdminButton variant="primary" size="icon" onClick={handleAddChecklistItem}>
                 +
-              </button>
+              </AdminButton>
             </div>
           </section>
 
@@ -1187,13 +1337,18 @@ const LessonEditorPage: React.FC = () => {
               Rule nhắc lại
             </h2>
             <p className="text-sm font-medium leading-6 text-slate-600">
-              `Chạy thử` chỉ execute code. `Kiểm tra` mới validate bằng test case/rule. Lesson chỉ hoàn thành sau khi backend lưu progress thành công.
+              `Chạy thử` chỉ execute code. `Kiểm tra` mới validate bằng test case/rule. Lesson chỉ
+              hoàn thành sau khi backend lưu progress thành công.
             </p>
           </section>
         </aside>
-      </div>
+      </fieldset>
     </div>
   )
 }
 
-export default LessonEditorPage
+export default function LessonEditorPage() {
+  const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  return <LessonEditorForm key={location.key} id={id} />
+}

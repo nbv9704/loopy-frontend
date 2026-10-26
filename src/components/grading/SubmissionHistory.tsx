@@ -32,13 +32,10 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
   highlightBest = true,
 }) => {
   const { t } = useTranslation()
-  // Find best submission ID
-  const bestSubmissionId = highlightBest
-    ? history.submissions.reduce(
-        (best, s) => ((s.finalScore ?? 0) > (best?.finalScore ?? 0) ? s : best),
-        history.submissions[0]
-      )?.id
-    : null
+  const bestSubmissionId =
+    highlightBest && history.bestScore !== null
+      ? history.submissions.find(submission => submission.finalScore === history.bestScore)?.id
+      : null
 
   return (
     <div className="bg-bg-elevated rounded-xl border border-brand-teal/10 p-6">
@@ -48,18 +45,20 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
           <FiClock className="w-4 h-4 text-brand-teal" />
           {t('grading.history')}
         </h4>
-        <span className="text-xs text-gray-500">{t('gradingUI.submissionCount', { count: history.totalAttempts })}</span>
+        <span className="text-xs text-gray-500">
+          {t('gradingUI.submissionCount', { count: history.totalAttempts })}
+        </span>
       </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
           <p className="text-xs text-gray-500 mb-1">{t('grading.bestScore')}</p>
-          <p className="text-lg font-bold text-green-400">{history.bestScore}</p>
+          <p className="text-lg font-bold text-green-400">{history.bestScore ?? '—'}</p>
         </div>
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
           <p className="text-xs text-gray-500 mb-1">{t('grading.average')}</p>
-          <p className="text-lg font-bold text-brand-cyan">{history.averageScore}</p>
+          <p className="text-lg font-bold text-brand-cyan">{history.averageScore ?? '—'}</p>
         </div>
         <div className="bg-bg-primary rounded-lg p-3 border border-white/5 text-center">
           <p className="text-xs text-gray-500 mb-1">{t('grading.history')}</p>
@@ -96,7 +95,10 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
             {t('gradingUI.previous')}
           </button>
           <span className="text-xs text-gray-500">
-            {t('gradingUI.pageOf', { page: history.page, total: Math.ceil(history.totalAttempts / history.limit) })}
+            {t('gradingUI.pageOf', {
+              page: history.page,
+              total: Math.ceil(history.totalAttempts / history.limit),
+            })}
           </span>
           <button
             onClick={() => onPageChange?.(history.page + 1)}
@@ -170,7 +172,9 @@ const SubmissionRow: React.FC<SubmissionRowProps> = ({ submission, isBest, onCli
       <div className="flex items-center gap-4">
         {submission.testScore !== null && (
           <div className="text-right">
-            <p className="text-[10px] text-gray-500">{t('grading.submission.test_label', 'Test')}</p>
+            <p className="text-[10px] text-gray-500">
+              {t('grading.submission.test_label', 'Test')}
+            </p>
             <p className="text-xs text-gray-300">{submission.testScore}</p>
           </div>
         )}

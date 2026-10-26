@@ -25,13 +25,15 @@ const navigation = [
   { name: 'Content Moderation', href: '/admin/moderation', icon: FiShield, section: 'System' },
 ]
 
-export default function Sidebar() {
+export function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-slate-200 bg-white text-slate-900 shadow-sm scrollbar-thin">
+    <>
       {/* Logo */}
       <div className="border-b border-slate-200 p-6">
         <img src={logoImg} alt="Loopy Admin" className="h-8 w-auto" />
-        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-slate-500">Admin Console</p>
+        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-slate-500">
+          Admin Console
+        </p>
       </div>
 
       {/* Navigation */}
@@ -49,6 +51,8 @@ export default function Sidebar() {
               )}
               <NavLink
                 to={item.href}
+                end={item.href === '/admin'}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
                     'relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all',
@@ -73,6 +77,14 @@ export default function Sidebar() {
           &copy; {new Date().getFullYear()} Loopy
         </p>
       </div>
+    </>
+  )
+}
+
+export default function Sidebar() {
+  return (
+    <aside className="fixed left-0 top-0 z-20 hidden h-screen w-64 flex-col border-r border-slate-200 bg-white text-slate-900 shadow-sm lg:flex">
+      <AdminSidebarContent />
     </aside>
   )
 }

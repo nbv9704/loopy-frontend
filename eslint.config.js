@@ -20,6 +20,7 @@ export default [
       '**/*.test.tsx',
       'src/**/__tests__/**',
       'scripts/**',
+      'e2e/**',
     ],
     languageOptions: {
       ecmaVersion: 2022,
@@ -141,6 +142,7 @@ export default [
   {
     // Override react-refresh rule for contexts to allow exporting hooks along with providers
     files: ['src/contexts/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

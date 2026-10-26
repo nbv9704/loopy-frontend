@@ -1,126 +1,72 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, Code2, BookOpen } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import headerLogo from '../assets/images/logos/header/logo-w256.png'
 
 export interface FooterProps {
-  footerContent?: {
-    [key: string]: string | null
-  }
+  footerContent?: Record<string, string | null>
 }
 
 const Footer: React.FC<FooterProps> = ({ footerContent = {} }) => {
-  const currentYear = new Date().getFullYear()
-
-  // Helper to get footer content with fallback
-  const getFooterText = (key: string, fallback: string = ''): string => {
-    return footerContent[key] || fallback
-  }
-
-  const FOOTER_COLUMNS = [
+  const { t } = useTranslation()
+  const text = (key: string, fallback: string) =>
+    footerContent[key] || t(key, { defaultValue: fallback })
+  // Only expose destinations implemented by AppRouter; no placeholder company/legal links.
+  const columns = [
     {
-      id: 'about',
-      titleKey: 'footer.aboutLoopy',
+      title: text('footer.learning', 'Học cùng Loopy'),
       items: [
-        { labelKey: 'footer.about', path: '/about' },
-        { labelKey: 'footer.team', path: '/team' },
-        { labelKey: 'footer.contact', path: '/contact' },
+        { to: '/languages', label: text('footer.languages', 'Ngôn ngữ lập trình') },
+        { to: '/onboarding', label: text('footer.paths', 'Chọn lộ trình') },
+        { to: '/practice', label: text('footer.practice', 'Luyện tập') },
       ],
     },
     {
-      id: 'resources',
-      titleKey: 'footer.resources',
+      title: text('footer.resources', 'Tài nguyên'),
       items: [
-        { labelKey: 'footer.docs', path: '/docs' },
-        { labelKey: 'footer.blog', path: '/blog' },
-        { labelKey: 'footer.faq', path: '/faq' },
+        { to: '/docs', label: text('footer.docs', 'Tài liệu') },
+        { to: '/playground', label: text('footer.playground', 'Chạy thử code') },
       ],
     },
   ]
-
   return (
     <footer className="loopy-surface relative mt-auto border-t loopy-border">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-16">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* Brand Column */}
+      <div className="mx-auto max-w-[1600px] px-6 py-12 md:px-12">
+        <div className="mb-10 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <img src={headerLogo} alt="Loopy" className="h-10" />
-            </div>
-            <p className="loopy-body text-sm leading-relaxed mb-6 max-w-md">
-              {getFooterText('footer.description', 'Learn to code by building real projects.')}
+            <Link to="/" aria-label={text('nav.home', 'Trang chủ')}>
+              <img src={headerLogo} alt="Loopy" className="mb-4 h-10" />
+            </Link>
+            <p className="loopy-body max-w-md text-sm leading-relaxed">
+              {text('footer.description', 'Học lập trình theo lộ trình và thực hành từng bước.')}
             </p>
-
-            {/* Social */}
-            <div className="flex items-center gap-3">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
-              >
-                <Code2 size={20} />
-              </a>
-              <a
-                href="mailto:hello@loopy.dev"
-                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
-              >
-                <Mail size={20} />
-              </a>
-              <a
-                href="https://blog.loopy.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-brand-teal/10 transition-colors loopy-muted hover:text-brand-teal"
-              >
-                <BookOpen size={20} />
-              </a>
-            </div>
           </div>
-
-          {/* Footer Columns */}
-          {FOOTER_COLUMNS.map(column => (
-            <div key={column.id}>
-              <h3 className="loopy-heading text-sm font-bold uppercase tracking-wider mb-4">
-                {getFooterText(column.titleKey, column.titleKey)}
-              </h3>
+          {columns.map(column => (
+            <nav key={column.title} aria-label={column.title}>
+              <h2 className="loopy-heading mb-4 text-sm font-bold uppercase tracking-wider">
+                {column.title}
+              </h2>
               <ul className="space-y-3">
                 {column.items.map(item => (
-                  <li key={item.path}>
+                  <li key={item.to}>
                     <Link
-                      to={item.path}
-                      className="text-sm loopy-muted hover:text-brand-teal transition-colors"
+                      to={item.to}
+                      className="loopy-muted text-sm transition-colors hover:text-brand-teal"
                     >
-                      {getFooterText(item.labelKey, item.labelKey)}
+                      {item.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
-
-        {/* Divider */}
-        <div className="border-t loopy-border pt-8">
-          {/* Bottom Section */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs loopy-muted">
-              © {currentYear} Loopy. {getFooterText('footer.allRightsReserved', 'All rights reserved.')}
-            </p>
-            <div className="flex items-center gap-6">
-              <Link to="/privacy" className="text-xs loopy-muted hover:text-brand-teal transition-colors">
-                {getFooterText('footer.privacy', 'Privacy')}
-              </Link>
-              <Link to="/terms" className="text-xs loopy-muted hover:text-brand-teal transition-colors">
-                {getFooterText('footer.terms', 'Terms')}
-              </Link>
-            </div>
-          </div>
-        </div>
+        <p className="loopy-muted border-t loopy-border pt-6 text-xs">
+          © {new Date().getFullYear()} Loopy.{' '}
+          {text('footer.allRightsReserved', 'All rights reserved.')}
+        </p>
       </div>
     </footer>
   )
 }
-
 export default Footer
