@@ -50,6 +50,7 @@ async function fixture(page: Page) {
     conflict: false,
     pending: Promise.resolve(),
     oldRead: Promise.resolve(),
+    oldReadsStarted: 0,
     delayOld: false,
     lessons: [{ ...lesson }] as AdminLesson[],
     sets: [{ ...practice }],
@@ -127,7 +128,10 @@ async function fixture(page: Page) {
       const rows = state.attempts
         .filter(item => status === 'all' || item.is_correct === (status === 'pass'))
         .map(item => ({ ...item, code: `${owner}: ${item.code}` }))
-      if (state.delayOld && status === 'all' && owner === 'admin') await state.oldRead
+      if (state.delayOld && status === 'all' && owner === 'admin') {
+        state.oldReadsStarted++
+        await state.oldRead
+      }
       return state.submissionError
         ? reply(route, { message: 'Submissions unavailable' }, 503)
         : reply(route, {
@@ -411,6 +415,8 @@ test('changing admin hides the previous private submission code and ignores its 
     release = resolve
   })
   await page.goto('/admin/submissions')
+  // Advance the session clock only after the old account's read is actually pending.
+  await expect.poll(() => state.oldReadsStarted).toBe(1)
   state.admin = 'second-admin'
   await page.clock.fastForward(121000)
   await expect.poll(() => state.checks).toBeGreaterThan(1)

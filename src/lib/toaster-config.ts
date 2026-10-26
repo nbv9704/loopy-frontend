@@ -16,6 +16,10 @@ export const toasterConfig = {
     },
   },
   error: {
+    // Text-only error notices must not block the retry action underneath them.
+    style: {
+      pointerEvents: 'none' as const,
+    },
     iconTheme: {
       primary: '#ef4444',
       secondary: '#f9fafb',
