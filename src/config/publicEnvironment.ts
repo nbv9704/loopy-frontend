@@ -1,5 +1,29 @@
 export const PUBLIC_ENV_KEYS = ['VITE_API_URL', 'VITE_ENABLE_DEV_LOGIN', 'VITE_USE_BACKEND_API']
 
+// Vercel injects these build details for Vite projects. Recognize them without
+// adding them to envPrefix, so they never become part of the app's public config.
+const BUILD_METADATA_KEYS = new Set([
+  'VITE_VERCEL_BRANCH_URL',
+  'VITE_VERCEL_DEPLOYMENT_ID',
+  'VITE_VERCEL_ENV',
+  'VITE_VERCEL_GIT_COMMIT_AUTHOR_LOGIN',
+  'VITE_VERCEL_GIT_COMMIT_AUTHOR_NAME',
+  'VITE_VERCEL_GIT_COMMIT_MESSAGE',
+  'VITE_VERCEL_GIT_COMMIT_REF',
+  'VITE_VERCEL_GIT_COMMIT_SHA',
+  'VITE_VERCEL_GIT_PREVIOUS_SHA',
+  'VITE_VERCEL_GIT_PROVIDER',
+  'VITE_VERCEL_GIT_PULL_REQUEST_ID',
+  'VITE_VERCEL_GIT_REPO_ID',
+  'VITE_VERCEL_GIT_REPO_OWNER',
+  'VITE_VERCEL_GIT_REPO_SLUG',
+  'VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG',
+  'VITE_VERCEL_PROJECT_ID',
+  'VITE_VERCEL_PROJECT_PRODUCTION_URL',
+  'VITE_VERCEL_TARGET_ENV',
+  'VITE_VERCEL_URL',
+])
+
 /** Shared by Vite's build preflight and every HTTP/Socket.IO client. */
 export function resolveApiOrigin(value: string | undefined, production: boolean): string {
   const input = value?.trim()
@@ -31,7 +55,9 @@ export function validatePublicEnvironment(
 ) {
   // Recognize obsolete public Supabase settings without embedding them in the client bundle.
   const allowed = new Set([...PUBLIC_ENV_KEYS, 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'])
-  const unexpected = Object.keys(env).filter(key => key.startsWith('VITE_') && !allowed.has(key))
+  const unexpected = Object.keys(env).filter(
+    key => key.startsWith('VITE_') && !allowed.has(key) && !BUILD_METADATA_KEYS.has(key)
+  )
   if (unexpected.length)
     throw new Error(
       `Undocumented public environment variables: ${unexpected.sort().join(', ')}. Remove them before building.`

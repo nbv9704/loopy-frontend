@@ -30,6 +30,7 @@ Ghi chú:
 - Khi deploy production, biến này phải trỏ tới backend public URL.
 - Dùng origin, ví dụ `https://api.example.com`, không thêm `/api`, query, hash hoặc credentials. Dấu `/` cuối được chuẩn hóa. REST/Socket.IO dùng cùng origin.
 - Build kiểm tra cấu hình trước khi tạo bundle; thiếu/sai URL hoặc có biến `VITE_*` ngoài các setting được app dùng sẽ dừng. Không đặt service key, Redis hoặc AI key trong frontend env.
+- Metadata `VITE_VERCEL_*` được nền tảng tự thêm được nhận diện theo danh sách trong validator; chúng không được đưa vào `envPrefix` của app. Biến lạ hoặc key nhạy cảm vẫn bị chặn, không bỏ toàn bộ kiểm tra env để deploy.
 - Production yêu cầu HTTPS (HTTP localhost dành cho preview local) và `VITE_ENABLE_DEV_LOGIN=false`. Thay URL sau build cần build lại.
 
 ## 3. Chạy môi trường development
