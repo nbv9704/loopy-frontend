@@ -58,6 +58,8 @@ yarn build
 
 Kết quả build nằm trong thư mục `dist/`.
 
+Trên Vercel, `vercel.json` quy định Install Command là `yarn install --frozen-lockfile`, Build Command là `yarn build` và Output Directory là `dist`. Chỉ giữ `yarn.lock`; không tạo hoặc commit `package-lock.json`. Cấu hình `VITE_API_URL` thành origin HTTPS của backend và `VITE_ENABLE_DEV_LOGIN=false` trong môi trường Production/Preview phù hợp. Node.js 22.x trong `package.json` được ưu tiên hơn phiên bản ở Project Settings; cảnh báo khác phiên bản này không phải lỗi build.
+
 Xem quy trình bàn giao ở `../docs/RELEASE.md`. Gói source không chứa dependencies, `dist` hay `.env` thật; cài/build trên host đích. Dùng `yarn preview` để xem output local, không dùng Vite dev/preview làm production server.
 
 ## Lỗi thường gặp
